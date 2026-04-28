@@ -5,3 +5,4 @@
 /.vs/Trackmaster_Backend
 /.vs
 /.gitignore
+/Trackmaster_Backend/obj/Release/net8.0
