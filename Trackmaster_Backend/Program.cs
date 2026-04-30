@@ -9,11 +9,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 //-------------------Registration of services------------------------//
-builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddSingleton<IAccountService, AccountService>();
 
 
 //-------------------Registration of repositories------------------------//
-builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddSingleton<IAccountRepository, AccountRepository>();
 
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
