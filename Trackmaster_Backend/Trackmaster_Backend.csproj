@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Trackmaster_Model\Trackmaster_Model.csproj" />
     <ProjectReference Include="..\Trackmaster_Service\Trackmaster_Service.csproj" />
   </ItemGroup>
 

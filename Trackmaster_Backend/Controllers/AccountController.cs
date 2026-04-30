@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Trackmaster_Service.Interface;
 namespace Trackmaster_Backend.Controllers
 {
@@ -11,6 +10,27 @@ namespace Trackmaster_Backend.Controllers
         public AccountController(IAccountService accountService)
         {
             _accountService = accountService;
+        }
+        [AcceptVerbs("GET")]
+        public async Task<IActionResult> AuthorizeUser(string userId, string password)
+        {
+            try
+            {
+                var user = _accountService.AuthorizeUser(userId, password);
+
+                if (user == null)
+                {
+                    return Unauthorized(new
+                    {
+                        message = "Invalid Username or Password!"
+                    });
+                }
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

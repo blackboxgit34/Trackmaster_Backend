@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HMSCL.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,5 +9,6 @@ namespace Trackmaster_Repository.Interface
 {
     public interface IAccountRepository
     {
+        LoginUser AuthorizeUser(string userId, string password);
     }
 }

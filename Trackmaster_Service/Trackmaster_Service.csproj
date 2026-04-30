@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Trackmaster_Model\Trackmaster_Model.csproj" />
     <ProjectReference Include="..\Trackmaster_Repository\Trackmaster_Repository.csproj" />
   </ItemGroup>
 
