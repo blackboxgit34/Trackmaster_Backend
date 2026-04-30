@@ -11,25 +11,37 @@ namespace Trackmaster_Backend.Controllers
         {
             _accountService = accountService;
         }
-        [AcceptVerbs("GET")]
-        public async Task<IActionResult> AuthorizeUser(string userId, string password)
+        [HttpGet("login")]
+        public IActionResult AuthorizeUser(string userId, string password)
         {
             try
             {
                 var user = _accountService.AuthorizeUser(userId, password);
 
-                if (user == null)
+                if (!user.IsSuccess)
                 {
                     return Unauthorized(new
                     {
-                        message = "Invalid Username or Password!"
+                        success = false,
+                        message = user.Message
                     });
                 }
-                return Ok(user);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = user.Message,
+                    data = user
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
             }
         }
     }
