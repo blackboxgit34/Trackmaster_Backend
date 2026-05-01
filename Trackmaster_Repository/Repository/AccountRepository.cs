@@ -8,7 +8,7 @@ using Trackmaster_Repository.Interface;
 using static Trackmaster_Repository.DataTypeHelper;
 namespace Trackmaster_Repository.Repository
 {
-    public class AccountRepository:IAccountRepository
+    public class AccountRepository : IAccountRepository
     {
         private readonly string _connectionString43;
         public AccountRepository(IConfiguration configuration)
@@ -21,86 +21,98 @@ namespace Trackmaster_Repository.Repository
 
             try
             {
-                password = EncryptPassword(password);
 
                 using (SqlConnection con = new SqlConnection(_connectionString43))
                 {
                     con.Open();
 
-                    using (SqlCommand cmd = new SqlCommand("[dbo].[ht_selcustnewtest]", con))
+                    using (SqlCommand cmd = new SqlCommand("SELECT CASE WHEN EXISTS (SELECT 1 FROM tbemp WHERE empId = @empId and password=@password and IsActive = 1) THEN 1 ELSE 0 END", con))
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@login", userId);
-                        cmd.Parameters.AddWithValue("@pwd", password);
-
-                        using (SqlDataReader dr = cmd.ExecuteReader())
+                        cmd.Parameters.AddWithValue("@empId", userId);
+                        cmd.Parameters.AddWithValue("@password", password);
+                        objUser.IsStaffMember = Convert.ToInt32(cmd.ExecuteScalar()) == 1;
+                        objUser.IsSuccess = true;
+                        objUser.Message = "User is from Staff !";
+                    }
+                    if (!objUser.IsStaffMember)
+                    {
+                        password = EncryptPassword(password);
+                        using (SqlCommand cmd = new SqlCommand("[dbo].[ht_selcustnewtest]", con))
                         {
-                            if (!dr.HasRows)
+                            cmd.CommandType = CommandType.StoredProcedure;
+                            cmd.Parameters.AddWithValue("@login", userId);
+                            cmd.Parameters.AddWithValue("@pwd", password);
+
+                            using (SqlDataReader dr = cmd.ExecuteReader())
                             {
-                                return new LoginUser
+                                if (!dr.HasRows)
                                 {
-                                    IsSuccess = false,
-                                    Message = "Invalid Username or Password!"
-                                };
-                            }
+                                    return new LoginUser
+                                    {
+                                        IsSuccess = false,
+                                        Message = "Invalid Username or Password!"
+                                    };
+                                }
 
-                            dr.Read();
+                                dr.Read();
 
-                            int isBlocked = Convert.IsDBNull(dr["isblocked"]) ? 0 : Convert.ToInt32(dr["isblocked"]);
-                            int custStatus = Convert.IsDBNull(dr["cust_status"]) ? 0 : Convert.ToInt32(dr["cust_status"]);
+                                int isBlocked = Convert.IsDBNull(dr["isblocked"]) ? 0 : Convert.ToInt32(dr["isblocked"]);
+                                int custStatus = Convert.IsDBNull(dr["cust_status"]) ? 0 : Convert.ToInt32(dr["cust_status"]);
 
-                            if (isBlocked == 1)
-                            {
-                                return new LoginUser
+                                if (isBlocked == 1)
                                 {
-                                    IsSuccess = false,
-                                    Message = "Your Account is blocked due to non payment!"
-                                };
-                            }
+                                    return new LoginUser
+                                    {
+                                        IsSuccess = false,
+                                        Message = "Your Account is blocked due to non payment!"
+                                    };
+                                }
 
-                            if (custStatus == 0)
-                            {
-                                return new LoginUser
+                                if (custStatus == 0)
                                 {
-                                    IsSuccess = false,
-                                    Message = "Your Account is deactivated!"
-                                };
-                            }
+                                    return new LoginUser
+                                    {
+                                        IsSuccess = false,
+                                        Message = "Your Account is deactivated!"
+                                    };
+                                }
 
-                            objUser.CustId = GetString(dr["custid"]);
-                            objUser.CustName = GetString(dr["name"]);
-                            objUser.UserName = GetString(dr["login"]);
-                            objUser.CustType = GetString(dr["type"]);
-                            objUser.role = GetString(dr["role"]);
-                            objUser.IsPasswordUpdated = GetBool(dr["IsPasswordUpdated"]);
-                            objUser.IsCustomMenu = GetBool(dr["IsCustomMenu"]);
-                            objUser.IsCustomDashboard = GetInt(dr["IsCustomDashboard"]);
-                            objUser.IsCamEnable = GetBool(dr["IsCameraEnabled"]);
-                            objUser.ForeignRoleIdFk = GetShort(dr["ForeignRoleIdFk"]);
-                            objUser.ChannelPartnerID = GetInt(dr["ChannelPartnerID"]);
-                            objUser.userTypeFlag = GetBool(dr["IsBlocked"]);
+                                objUser.CustId = GetString(dr["custid"]);
+                                objUser.CustName = GetString(dr["name"]);
+                                objUser.UserName = GetString(dr["login"]);
+                                objUser.CustType = GetString(dr["type"]);
+                                objUser.role = GetString(dr["role"]);
+                                objUser.IsPasswordUpdated = GetBool(dr["IsPasswordUpdated"]);
+                                objUser.IsCustomMenu = GetBool(dr["IsCustomMenu"]);
+                                objUser.IsCustomDashboard = GetInt(dr["IsCustomDashboard"]);
+                                objUser.IsCamEnable = GetBool(dr["IsCameraEnabled"]);
+                                objUser.ForeignRoleIdFk = GetShort(dr["ForeignRoleIdFk"]);
+                                objUser.ChannelPartnerID = GetInt(dr["ChannelPartnerID"]);
+                                objUser.userTypeFlag = GetBool(dr["IsBlocked"]);
 
-                            objUser.IsSuccess = true;
-                            objUser.Message = "Login successful";
+                                objUser.IsSuccess = true;
+                                objUser.Message = "Login successful";
 
-                            dr.Close();
+                                dr.Close();
 
-                            using (SqlCommand cmdLoginLimit = new SqlCommand("[dbo].[CheckLoginLimit]", con))
-                            {
-                                cmdLoginLimit.CommandType = CommandType.StoredProcedure;
-                                cmdLoginLimit.Parameters.AddWithValue("@custId", objUser.CustId);
+                                using (SqlCommand cmdLoginLimit = new SqlCommand("[dbo].[CheckLoginLimit]", con))
+                                {
+                                    cmdLoginLimit.CommandType = CommandType.StoredProcedure;
+                                    cmdLoginLimit.Parameters.AddWithValue("@custId", objUser.CustId);
 
-                                var result = cmdLoginLimit.ExecuteScalar();
-                                objUser.LoginCount = result != null ? Convert.ToInt32(result) : 0;
-                            }
+                                    var result = cmdLoginLimit.ExecuteScalar();
+                                    objUser.LoginCount = result != null ? Convert.ToInt32(result) : 0;
+                                }
 
-                            using (SqlCommand cmdInsertLogin = new SqlCommand("[dbo].[InsertLoginCustId]", con))
-                            {
-                                cmdInsertLogin.CommandType = CommandType.StoredProcedure;
-                                cmdInsertLogin.Parameters.AddWithValue("@custId", objUser.CustId);
-                                cmdInsertLogin.ExecuteNonQuery();
+                                using (SqlCommand cmdInsertLogin = new SqlCommand("[dbo].[InsertLoginCustId]", con))
+                                {
+                                    cmdInsertLogin.CommandType = CommandType.StoredProcedure;
+                                    cmdInsertLogin.Parameters.AddWithValue("@custId", objUser.CustId);
+                                    cmdInsertLogin.ExecuteNonQuery();
+                                }
                             }
                         }
+
                     }
                 }
             }
