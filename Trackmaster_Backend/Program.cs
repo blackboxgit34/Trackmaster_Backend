@@ -10,10 +10,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 //-------------------Registration of services------------------------//
 builder.Services.AddSingleton<IAccountService, AccountService>();
+builder.Services.AddSingleton<IDashboardService, DashboardService>();
+
 
 
 //-------------------Registration of repositories------------------------//
 builder.Services.AddSingleton<IAccountRepository, AccountRepository>();
+builder.Services.AddSingleton<IDashboardRepository, DashboardRepository>();
 
 
 builder.Services.AddCors(options =>
