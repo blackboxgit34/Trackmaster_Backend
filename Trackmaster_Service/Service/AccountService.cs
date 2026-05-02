@@ -1,4 +1,5 @@
 ﻿using HMSCL.Models;
+using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
 using Trackmaster_Service.Interface;
 
@@ -11,9 +12,13 @@ namespace Trackmaster_Service.Repository
         {
             _accountRepository = accountRepository;
         }
-        public LoginUser AuthorizeUser(string userId, string password)
+        public LoginUser AuthorizeUser(string userId, string password, string type)
         {
-            return _accountRepository.AuthorizeUser(userId, password);
+            return _accountRepository.AuthorizeUser(userId, password, type);
+        }
+        public List<MasterList> GetUserBySearching(string search)
+        {
+            return _accountRepository.GetUserBySearching(search);
         }
     }
 }

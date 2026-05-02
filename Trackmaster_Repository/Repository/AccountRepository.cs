@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using System.Data;
 using System.Security.Cryptography;
 using System.Text;
+using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
 using static Trackmaster_Repository.DataTypeHelper;
 namespace Trackmaster_Repository.Repository
@@ -15,7 +16,7 @@ namespace Trackmaster_Repository.Repository
         {
             _connectionString43 = configuration.GetConnectionString("DefaultConnection43");
         }
-        public LoginUser AuthorizeUser(string userId, string password)
+        public LoginUser AuthorizeUser(string userId, string password, string type)
         {
             var objUser = new LoginUser();
 
@@ -36,7 +37,7 @@ namespace Trackmaster_Repository.Repository
                     }
                     if (!objUser.IsStaffMember)
                     {
-                        password = EncryptPassword(password);
+                        password = type == "Customer" ? EncryptPassword(password) : password;
                         using (SqlCommand cmd = new SqlCommand("[dbo].[ht_selcustnewtest]", con))
                         {
                             cmd.CommandType = CommandType.StoredProcedure;
@@ -134,6 +135,54 @@ namespace Trackmaster_Repository.Repository
             byte[] combined = encoder.GetBytes(password);
             string encryptedPwd = BitConverter.ToString(sha.ComputeHash(combined)).Replace("-", "");
             return encryptedPwd;
+        }
+        public List<MasterList> GetUserBySearching(string search)
+        {
+            var userList = new List<MasterList>();
+
+            try
+            {
+                using (SqlConnection con = new SqlConnection(_connectionString43))
+                {
+                    con.Open();
+
+                    string query = @"
+                SELECT 
+                    custid AS Id, 
+                    [login] AS value, 
+                    CONCAT([name], ' - ', custid) AS label,
+                    pwd as otherValue 
+                FROM ht_cust 
+                WHERE 
+                    ([name] LIKE @search OR custid LIKE @search OR [login] LIKE @search)
+                    AND Cust_status = 1 
+                    AND ISNULL(IsBlocked, 0) <> 1
+                    ORDER BY custid";
+                    using (SqlCommand cmd = new SqlCommand(query, con))
+                    {
+                        cmd.CommandType = CommandType.Text;
+                        cmd.Parameters.AddWithValue("@search", "%" + search + "%");
+                        using (SqlDataReader dr = cmd.ExecuteReader())
+                        {
+                            while (dr.Read())
+                            {
+                                var objUser = new MasterList();
+                                objUser.Id = GetInt(dr["Id"]);  
+                                objUser.value = GetString(dr["value"]);
+                                objUser.label = GetString(dr["label"]);
+                                objUser.otherValue = GetString(dr["otherValue"]);
+                                userList.Add(objUser);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
+            return userList;
         }
     }
 }

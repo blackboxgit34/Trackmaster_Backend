@@ -12,11 +12,11 @@ namespace Trackmaster_Backend.Controllers
             _accountService = accountService;
         }
         [HttpGet("login")]
-        public IActionResult AuthorizeUser(string userId, string password)
+        public async Task<IActionResult> AuthorizeUser(string userId, string password, string type)
         {
             try
             {
-                var user = _accountService.AuthorizeUser(userId, password);
+                var user = _accountService.AuthorizeUser(userId, password, type);
 
                 if (!user.IsSuccess)
                 {
@@ -33,6 +33,24 @@ namespace Trackmaster_Backend.Controllers
                     message = user.Message,
                     data = user
                 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
+        [HttpGet("GetUserBySearching")]
+        public async Task<IActionResult> GetUserBySearching(string search)
+        {
+            try
+            {
+                var user = _accountService.GetUserBySearching(search);
+                return Ok(user);
             }
             catch (Exception ex)
             {
