@@ -37,7 +37,15 @@ namespace Trackmaster_Repository.Repository
                         {
                             if (reader.Read())
                             {
-                                objUser.TotalVehicles = Convert.ToInt32(reader["VehicleCount"]);
+                                objUser.TotalVehicles = Convert.ToInt32(reader["TotalVehicles"]);
+                                objUser.Moving = Convert.ToInt32(reader["Moving"]);
+                                objUser.HighSpeed = Convert.ToInt32(reader["HiSpeed"]);
+                                objUser.IgnitionOn = Convert.ToInt32(reader["IgnitionOn"]);
+                                objUser.Parked = Convert.ToInt32(reader["Parked"]);
+                                objUser.Towed = Convert.ToInt32(reader["Towed"]);
+                                objUser.Unreachable = Convert.ToInt32(reader["Unreachable"]);
+                                objUser.BatteryDisconnect = Convert.ToInt32(reader["BatteryDisconnect"]);
+                                objUser.Breakdown = Convert.ToInt32(reader["Breakdown"]);
                             }
                         }
                     }
@@ -55,12 +63,10 @@ namespace Trackmaster_Repository.Repository
                 };
             }
 
-            return new DashboardData
-            {
-                IsSuccess = true,
-                Message = "Dashboard data retrieved successfully",
-                TotalVehicles = objUser.TotalVehicles
-            };
+            objUser.IsSuccess = true;
+            objUser.Message = "Dashboard data retrieved successfully";
+
+            return objUser;
         }
 
     }
