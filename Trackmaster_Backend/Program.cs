@@ -2,6 +2,7 @@ using Trackmaster_Repository.Interface;
 using Trackmaster_Repository.Repository;
 using Trackmaster_Service.Interface;
 using Trackmaster_Service.Repository;
+using Trackmaster_Service.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,12 +12,14 @@ builder.Services.AddControllers();
 //-------------------Registration of services------------------------//
 builder.Services.AddSingleton<IAccountService, AccountService>();
 builder.Services.AddSingleton<IDashboardService, DashboardService>();
+builder.Services.AddSingleton<IReportsService, ReportsService>(); 
 
 
 
 //-------------------Registration of repositories------------------------//
 builder.Services.AddSingleton<IAccountRepository, AccountRepository>();
 builder.Services.AddSingleton<IDashboardRepository, DashboardRepository>();
+builder.Services.AddSingleton<IReportsRepository, ReportsRepository>();
 
 
 builder.Services.AddCors(options =>
