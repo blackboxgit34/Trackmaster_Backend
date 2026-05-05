@@ -19,6 +19,5 @@ namespace Trackmaster_Service.Repository
         {
             return _dashboardRepository.GetDashboardData(userid);
         }
-        
     }
 }
