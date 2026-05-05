@@ -18,14 +18,11 @@ namespace Trackmaster_Repository.Repository
         public LoginUser AuthorizeUser(string userId, string password)
         {
             var objUser = new LoginUser();
-
             try
             {
-
                 using (SqlConnection con = new SqlConnection(_connectionString43))
                 {
                     con.Open();
-
                     using (SqlCommand cmd = new SqlCommand("SELECT CASE WHEN EXISTS (SELECT 1 FROM tbemp WHERE empId = @empId and password=@password and IsActive = 1) THEN 1 ELSE 0 END", con))
                     {
                         cmd.Parameters.AddWithValue("@empId", userId);
@@ -42,7 +39,6 @@ namespace Trackmaster_Repository.Repository
                             cmd.CommandType = CommandType.StoredProcedure;
                             cmd.Parameters.AddWithValue("@login", userId);
                             cmd.Parameters.AddWithValue("@pwd", password);
-
                             using (SqlDataReader dr = cmd.ExecuteReader())
                             {
                                 if (!dr.HasRows)
@@ -53,12 +49,9 @@ namespace Trackmaster_Repository.Repository
                                         Message = "Invalid Username or Password!"
                                     };
                                 }
-
                                 dr.Read();
-
                                 int isBlocked = Convert.IsDBNull(dr["isblocked"]) ? 0 : Convert.ToInt32(dr["isblocked"]);
                                 int custStatus = Convert.IsDBNull(dr["cust_status"]) ? 0 : Convert.ToInt32(dr["cust_status"]);
-
                                 if (isBlocked == 1)
                                 {
                                     return new LoginUser
@@ -67,7 +60,6 @@ namespace Trackmaster_Repository.Repository
                                         Message = "Your Account is blocked due to non payment!"
                                     };
                                 }
-
                                 if (custStatus == 0)
                                 {
                                     return new LoginUser
