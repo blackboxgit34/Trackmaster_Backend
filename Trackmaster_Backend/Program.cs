@@ -7,7 +7,7 @@ using Trackmaster_Service.Service;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddMemoryCache();
+
 builder.Services.AddControllers();
 //-------------------Registration of services------------------------//
 builder.Services.AddSingleton<IAccountService, AccountService>();
