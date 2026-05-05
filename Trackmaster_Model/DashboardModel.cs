@@ -14,7 +14,7 @@ namespace Trackmaster_Model
         public int IgnitionON { get; set; }
         public int Parked { get; set; }
         public int Totalvehicle { get; set; }
-        public int IgnitionOn { get; set; }
+       
         public int HighSpeed { get; set; }
         public int Towed { get; set; }
         public int Unreachable { get; set; }

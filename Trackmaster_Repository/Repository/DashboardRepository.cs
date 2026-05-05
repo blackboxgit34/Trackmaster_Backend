@@ -41,10 +41,10 @@ namespace Trackmaster_Repository.Repository
                                 {
                                     if (reader.Read())
                                     {
-                                        objUser.TotalVehicles = Convert.ToInt32(reader["VehicleCount"]);
+                                        objUser.TotalVehicles = Convert.ToInt32(reader["TotalVehicles"]);
                                         objUser.Moving = Convert.ToInt32(reader["Moving"]);
                                         objUser.HighSpeed = Convert.ToInt32(reader["HiSpeed"]);
-                                        objUser.IgnitionOn = Convert.ToInt32(reader["IgnitionOn"]);
+                                        objUser.IgnitionON = Convert.ToInt32(reader["IgnitionOn"]);
                                         objUser.Parked = Convert.ToInt32(reader["Parked"]);
                                         objUser.Towed = Convert.ToInt32(reader["Towed"]);
                                         objUser.Unreachable = Convert.ToInt32(reader["Unreachable"]);
