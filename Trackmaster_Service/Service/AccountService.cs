@@ -20,5 +20,13 @@ namespace Trackmaster_Service.Repository
         {
             return _accountRepository.GetUserBySearching(search);
         }
+        public UserOtp VerifyUserOtp(int custid, string website, string OTP)
+        {
+            return _accountRepository.VerifyUserOtp(custid, website, OTP);
+        }
+        public string UpdateOTPAdminPassword(string custId, string NewPassword)
+        {
+            return _accountRepository.UpdateOTPAdminPassword(custId, NewPassword);
+        }
     }
 }

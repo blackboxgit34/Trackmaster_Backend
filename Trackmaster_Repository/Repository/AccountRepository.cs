@@ -12,9 +12,11 @@ namespace Trackmaster_Repository.Repository
     public class AccountRepository : IAccountRepository
     {
         private readonly string _connectionString43;
+        private readonly string _blackboxSecurityString;
         public AccountRepository(IConfiguration configuration)
         {
             _connectionString43 = configuration.GetConnectionString("DefaultConnection43");
+            _blackboxSecurityString = configuration.GetConnectionString("BlackboxSecurity");
         }
         public LoginUser AuthorizeUser(string userId, string password, string type)
         {
@@ -183,6 +185,62 @@ namespace Trackmaster_Repository.Repository
             }
 
             return userList;
+        }
+        public UserOtp VerifyUserOtp(int custid, string website, string OTP)
+        {
+            UserOtp uotp = new UserOtp();
+
+            using (SqlConnection conn = new SqlConnection(_blackboxSecurityString))
+            using (SqlCommand cmd = new SqlCommand("VerifyUserOtp", conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@custid", custid);
+                cmd.Parameters.AddWithValue("@website", website);
+                cmd.Parameters.AddWithValue("@OTP", OTP);
+
+                try
+                {
+                    conn.Open();
+                    object result = cmd.ExecuteScalar();
+                    uotp.message = result?.ToString() ?? "Failed";
+                }
+                catch (Exception ex)
+                {
+                    uotp.message = "Failed: " + ex.Message;
+                }
+            }
+
+            return uotp;
+        }
+        public string UpdateOTPAdminPassword(string custId, string NewPassword)
+        {
+            string resultMessage = "Failed";
+
+            var newPWD = EncryptPassword(NewPassword);
+
+            using (SqlConnection conn = new SqlConnection(_connectionString43))
+            using (SqlCommand cmd = new SqlCommand("GHMCUpdateOTPPassword", conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@custid", custId);
+                cmd.Parameters.AddWithValue("@password","123456");
+                cmd.Parameters.AddWithValue("@newPwd", newPWD);
+
+                try
+                {
+                    conn.Open();
+                    object result = cmd.ExecuteScalar();
+                    resultMessage = "Success";
+                }
+                catch (Exception ex)
+                {
+                    resultMessage = "Failed: " + ex.Message;
+                }
+            }
+
+            return resultMessage;
         }
     }
 }

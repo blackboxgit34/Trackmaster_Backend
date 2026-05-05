@@ -82,7 +82,6 @@ namespace Trackmaster_Repository.Repository
                 objUser.Message = ex.Message;
                 return objUser;
             }
-
         }
     }
 }
