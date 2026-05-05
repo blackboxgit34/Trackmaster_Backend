@@ -6,6 +6,6 @@ namespace Trackmaster_Repository.Interface
 {
     public interface IDashboardRepository
     {
-        DashboardData GetDashboardData(int userid);
-        
+        DashboardData GetDashboardData(int userid, string type);
+    }
 }
