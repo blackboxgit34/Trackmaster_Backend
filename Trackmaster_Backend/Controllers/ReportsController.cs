@@ -15,8 +15,7 @@ namespace Trackmaster_Backend.Controllers
             _reportsService = reportsService;
         }
 
-        [HttpGet]
-        [ActionName("GetConductorInfo")]
+        [HttpGet("GetConductorInfo")]
         public async Task<IActionResult> GetConductorInfo(int CustId, int sEcho, int iDisplayStart, int iDisplayLength, string sSearch)
         {
             var lowerBound = iDisplayStart;
