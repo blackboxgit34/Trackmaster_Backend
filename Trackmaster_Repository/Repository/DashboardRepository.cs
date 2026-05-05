@@ -75,6 +75,24 @@ namespace Trackmaster_Repository.Repository
                                 }
                             }
                             break;
+                        case "SpeedAnalysis":
+                           
+
+                                using (SqlCommand cmd = new SqlCommand("getDashGraphOverSpeed", con))
+                                {
+                                    cmd.CommandType = CommandType.StoredProcedure;
+                                    cmd.Parameters.AddWithValue("@custid", userid);
+
+                                    using (SqlDataReader reader = cmd.ExecuteReader())
+                                    {
+                                        if (reader.Read())
+                                        {
+                                            objUser.OS = Convert.ToInt32(reader["overSpeedCount"]);
+                                            objUser.nonOS = Convert.ToInt32(reader["nonOverSpeed"]);
+                                        }
+                                    }
+                                }
+                                break;
                         default:
                             break;
                     }
