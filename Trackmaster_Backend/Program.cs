@@ -11,11 +11,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 //-------------------Registration of services------------------------//
 builder.Services.AddSingleton<IAccountService, AccountService>();
+builder.Services.AddSingleton<IDashboardService, DashboardService>();
 builder.Services.AddSingleton<IReportsService, ReportsService>(); 
+
 
 
 //-------------------Registration of repositories------------------------//
 builder.Services.AddSingleton<IAccountRepository, AccountRepository>();
+builder.Services.AddSingleton<IDashboardRepository, DashboardRepository>();
 builder.Services.AddSingleton<IReportsRepository, ReportsRepository>();
 
 
@@ -32,7 +35,7 @@ builder.Services.AddCors(options =>
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
+builder.Services.AddHttpClient();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
