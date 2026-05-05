@@ -10,6 +10,6 @@ namespace Trackmaster_Service.Interface
 {
     public interface IDashboardService
     {
-        DashboardData GetDashboardData(int userid);
+        DashboardData GetDashboardData(int userid, string type);
     }
 }

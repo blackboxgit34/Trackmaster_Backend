@@ -15,9 +15,9 @@ namespace Trackmaster_Service.Repository
             _dashboardRepository = dashboardRepository;
         }
 
-        public DashboardData GetDashboardData(int userid)
+        public DashboardData GetDashboardData(int userid, string type)
         {
-            return _dashboardRepository.GetDashboardData(userid);
+            return _dashboardRepository.GetDashboardData(userid, type);
         }
     }
 }
