@@ -19,5 +19,17 @@ namespace Trackmaster_Service.Repository
         {
             return _dashboardRepository.GetDashboardData(userid);
         }
+
+
+        public List<VehicleList> GetAllVehicleListByCustId(int custId)
+        {
+            return _dashboardRepository.GetAllVehicleListByCustId(custId);
+        }
+
+        public OverSpeedReport GetOverSpeedGraphReport(int custid,string bbid)
+        {
+            return _dashboardRepository.GetOverSpeedGraphReport(custid, bbid);
+        }
+
     }
 }

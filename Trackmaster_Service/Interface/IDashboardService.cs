@@ -11,5 +11,7 @@ namespace Trackmaster_Service.Interface
     public interface IDashboardService
     {
         DashboardData GetDashboardData(int userid);
+        List<VehicleList> GetAllVehicleListByCustId(int custId);
+        OverSpeedReport GetOverSpeedGraphReport(int custid, string bbid);
     }
 }
