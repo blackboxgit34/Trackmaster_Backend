@@ -15,7 +15,7 @@ namespace Trackmaster_Service.Service
             _cache = cache;
         }
 
-        public async Task<DashboardData> GetDashboardData(int userid,string bbid)
+        public async Task<DashboardData> GetDashboardData(int userid, string type, string bbid)
         {
             string cacheKey = $"dashboard_{userid}";
 
@@ -28,19 +28,29 @@ namespace Trackmaster_Service.Service
 
             try
             {
-                var vehicleStatusTask = _dashboardRepository.GetVehicleStatus(userid);
-                var utilizationTask = _dashboardRepository.GetVehicleUtilization(userid);
-                var speedTask = _dashboardRepository.GetSpeedAnalysis(userid);
-                var vehicleList = _dashboardRepository.GetAllVehicleListByCustId(userid);
-                var graphData = _dashboardRepository.GetOverSpeedGraphData(userid,bbid);
+                switch (type?.ToLower())
+                {
+                    case "vehiclestatus":
+                        dashboard.vehicleStatus = await _dashboardRepository.GetVehicleStatus(userid);
+                        break;
 
-                await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask, vehicleList, graphData);
+                    case null:
+                        var vehicleStatusTask = _dashboardRepository.GetVehicleStatus(userid);
+                        var utilizationTask = _dashboardRepository.GetVehicleUtilization(userid);
+                        var speedTask = _dashboardRepository.GetSpeedAnalysis(userid);
+                        var vehicleList = _dashboardRepository.GetAllVehicleListByCustId(userid);
+                        var graphData = _dashboardRepository.GetOverSpeedGraphData(userid, bbid);
 
-                dashboard.vehicleStatus = vehicleStatusTask.Result;
-                dashboard.vehicleUtilization = utilizationTask.Result;
-                dashboard.speedAnalysis = speedTask.Result;
-                dashboard.vehicleList = vehicleList.Result;    
-                dashboard.overSpeedReport = graphData.Result;    
+                        await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask, vehicleList, graphData);
+
+                        dashboard.vehicleStatus = vehicleStatusTask.Result;
+                        dashboard.vehicleUtilization = utilizationTask.Result;
+                        dashboard.speedAnalysis = speedTask.Result;
+                        dashboard.vehicleList = vehicleList.Result;    
+                        dashboard.overSpeedReport = graphData.Result;    
+                        break;
+                }
+
                 dashboard.IsSuccess = true;
                 dashboard.Message = "Success";
 
