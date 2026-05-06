@@ -66,8 +66,6 @@ namespace Trackmaster_Service.Service
             }
         }
 
-
-
         public async Task<List<VehicleList>> GetAllVehicleListByCustId(int userid)
         {
             return await _dashboardRepository.GetAllVehicleListByCustId(userid);

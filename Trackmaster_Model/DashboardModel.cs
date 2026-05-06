@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 
 namespace Trackmaster_Model
 {
-
     public class DashboardData
     {
         public bool IsSuccess { get; set; }
@@ -44,7 +43,6 @@ namespace Trackmaster_Model
         public int nonOS { get; set; }
     }
 
-
     public class VehicleList
     {
         public string VehName { get; set; }
@@ -52,14 +50,10 @@ namespace Trackmaster_Model
 
     }
 
-
-
     public class OverSpeedReport
     {
         public int overspeedCount { get; set; }
         public int OverCustomCount { get; set; }
         public string DateTime { get; set; }
     }
-
-   
 }

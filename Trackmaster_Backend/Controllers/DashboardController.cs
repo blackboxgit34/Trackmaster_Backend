@@ -18,7 +18,6 @@ namespace Trackmaster_Backend.Controllers
         {
             _dashboardService = dashboardService;
         }
-
         [HttpGet("dashboarddata")]
         public async Task<IActionResult> GetDashboardData(int userid, string type = null, string bbid = null)
         {
@@ -37,11 +36,8 @@ namespace Trackmaster_Backend.Controllers
                 });
             }
         }
-
-
-
         [HttpGet("GetAllVehicleListByCustId")]
-        public  async Task<IActionResult> GetAllVehicleListByCustId(int userid)
+        public async Task<IActionResult> GetAllVehicleListByCustId(int userid)
         {
             try
             {
@@ -63,7 +59,5 @@ namespace Trackmaster_Backend.Controllers
                 });
             }
         }
-
-
     }
 }
