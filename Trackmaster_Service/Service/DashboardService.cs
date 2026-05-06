@@ -38,14 +38,14 @@ namespace Trackmaster_Service.Service
                         var vehicleStatusTask = _dashboardRepository.GetVehicleStatus(userid);
                         var utilizationTask = _dashboardRepository.GetVehicleUtilization(userid);
                         var speedTask = _dashboardRepository.GetSpeedAnalysis(userid);
-                        var graphData = _dashboardRepository.GetOverSpeedGraphData(userid, bbid);
+                        //var graphData = _dashboardRepository.GetOverSpeedGraphData(userid, bbid);
 
-                        await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask, graphData);
+                        await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask);
 
                         dashboard.vehicleStatus = vehicleStatusTask.Result;
                         dashboard.vehicleUtilization = utilizationTask.Result;
                         dashboard.speedAnalysis = speedTask.Result;
-                        dashboard.overSpeedReport = graphData.Result;
+                        //dashboard.overSpeedReport = graphData.Result;
                         break;
                 }
 

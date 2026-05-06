@@ -127,7 +127,7 @@ namespace Trackmaster_Repository.Repository
             {
                 Console.WriteLine("Error: " + ex.Message);
             }
-            return list;
+            return list;    
         }
 
         public async Task<List<OverSpeedReport>> GetOverSpeedGraphData(int custid, string bbid)
