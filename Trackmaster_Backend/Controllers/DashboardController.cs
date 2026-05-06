@@ -14,11 +14,11 @@ namespace Trackmaster_Backend.Controllers
         }
 
         [HttpGet("dashboarddata")]
-        public async Task<IActionResult> GetDashboardData(int userid)
+        public async Task<IActionResult> GetDashboardData(int userid, string type = null)
         {
             try
             {
-                var dashboardData = await _dashboardService.GetDashboardData(userid);
+                var dashboardData = await _dashboardService.GetDashboardData(userid, type);
                 return Ok(dashboardData);
             }
             catch (Exception ex)

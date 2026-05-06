@@ -15,7 +15,7 @@ namespace Trackmaster_Service.Service
             _cache = cache;
         }
 
-        public async Task<DashboardData> GetDashboardData(int userid)
+        public async Task<DashboardData> GetDashboardData(int userid, string type)
         {
             string cacheKey = $"dashboard_{userid}";
 
@@ -28,15 +28,24 @@ namespace Trackmaster_Service.Service
 
             try
             {
-                var vehicleStatusTask = _dashboardRepository.GetVehicleStatus(userid);
-                var utilizationTask = _dashboardRepository.GetVehicleUtilization(userid);
-                var speedTask = _dashboardRepository.GetSpeedAnalysis(userid);
+                switch (type?.ToLower())
+                {
+                    case "vehiclestatus":
+                        dashboard.vehicleStatus = await _dashboardRepository.GetVehicleStatus(userid);
+                        break;
 
-                await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask);
+                    case null:
+                        var vehicleStatusTask = _dashboardRepository.GetVehicleStatus(userid);
+                        var utilizationTask = _dashboardRepository.GetVehicleUtilization(userid);
+                        var speedTask = _dashboardRepository.GetSpeedAnalysis(userid);
 
-                dashboard.vehicleStatus = vehicleStatusTask.Result;
-                dashboard.vehicleUtilization = utilizationTask.Result;
-                dashboard.speedAnalysis = speedTask.Result;
+                        await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask);
+
+                        dashboard.vehicleStatus = vehicleStatusTask.Result;
+                        dashboard.vehicleUtilization = utilizationTask.Result;
+                        dashboard.speedAnalysis = speedTask.Result;
+                        break;
+                }
 
                 dashboard.IsSuccess = true;
                 dashboard.Message = "Success";
