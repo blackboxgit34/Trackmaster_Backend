@@ -19,73 +19,86 @@ namespace Trackmaster_Repository.Repository
         }
         public async Task<VehicleStatus> GetVehicleStatus(int userid)
         {
-            using var con = new SqlConnection(_connectionString43);
-            using var cmd = new SqlCommand("GetVehicleStatusTrackmaster", con);
-            cmd.CommandType = CommandType.StoredProcedure;
-            cmd.Parameters.AddWithValue("@custid", userid);
-
-            await con.OpenAsync();
-            using var reader = await cmd.ExecuteReaderAsync();
-
             var model = new VehicleStatus();
-
-            if (await reader.ReadAsync())
+            try
             {
-                model.TotalVehicles = GetInt(reader["TotalVehicles"]);
-                model.Moving = GetInt(reader["Moving"]);
-                model.HighSpeed = GetInt(reader["HiSpeed"]);
-                model.IgnitionON = GetInt(reader["IgnitionOn"]);
-                model.Parked = GetInt(reader["Parked"]);
-                model.Towed = GetInt(reader["Towed"]);
-                model.Unreachable = GetInt(reader["Unreachable"]);
-                model.BatteryDisconnect = GetInt(reader["BatteryDisconnect"]);
-                model.Breakdown = GetInt(reader["Breakdown"]);
-            }
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand("GetVehicleStatusTrackmaster", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@custid", userid);
 
+                await con.OpenAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    model.TotalVehicles = GetInt(reader["TotalVehicles"]);
+                    model.Moving = GetInt(reader["Moving"]);
+                    model.HighSpeed = GetInt(reader["HiSpeed"]);
+                    model.IgnitionON = GetInt(reader["IgnitionOn"]);
+                    model.Parked = GetInt(reader["Parked"]);
+                    model.Towed = GetInt(reader["Towed"]);
+                    model.Unreachable = GetInt(reader["Unreachable"]);
+                    model.BatteryDisconnect = GetInt(reader["BatteryDisconnect"]);
+                    model.Breakdown = GetInt(reader["Breakdown"]);
+                }
+
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
             return model;
         }
 
         public async Task<VehicleUtilization> GetVehicleUtilization(int userid)
         {
-            using var con = new SqlConnection(_connectionString43);
-            using var cmd = new SqlCommand("GetVehicleUtilizationTrackmaster", con);
-            cmd.CommandType = CommandType.StoredProcedure;
-            cmd.Parameters.AddWithValue("@custid", userid);
-
-            await con.OpenAsync();
-            using var reader = await cmd.ExecuteReaderAsync();
-
             var model = new VehicleUtilization();
-
-            if (await reader.ReadAsync())
+            try
             {
-                model.TotalVehicles = GetInt(reader["Totalvehicle"]);
-                model.IgnitionON = GetInt(reader["IgnitionON"]) / 3600;
-                model.Moving = GetInt(reader["Moving"]) / 3600;
-                model.Parked = GetInt(reader["Parked"]) / 3600;
-            }
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand("GetVehicleUtilizationTrackmaster", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@custid", userid);
 
+                await con.OpenAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    model.TotalVehicles = GetInt(reader["Totalvehicle"]);
+                    model.IgnitionON = GetInt(reader["IgnitionON"]) / 3600;
+                    model.Moving = GetInt(reader["Moving"]) / 3600;
+                    model.Parked = GetInt(reader["Parked"]) / 3600;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
             return model;
         }
 
         public async Task<SpeedAnalysis> GetSpeedAnalysis(int userid)
         {
-            using var con = new SqlConnection(_connectionString43);
-            using var cmd = new SqlCommand("GetSpeedAnalysisTrackmaster", con);
-            cmd.CommandType = CommandType.StoredProcedure;
-            cmd.Parameters.AddWithValue("@custid", userid);
-
-            await con.OpenAsync();
-            using var reader = await cmd.ExecuteReaderAsync();
-
             var model = new SpeedAnalysis();
-
-            if (await reader.ReadAsync())
+            try
             {
-                model.OS = GetInt(reader["overSpeedCount"]);
-                model.nonOS = GetInt(reader["nonOverSpeed"]);
-            }
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand("GetSpeedAnalysisTrackmaster", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@custid", userid);
 
+                await con.OpenAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    model.OS = GetInt(reader["overSpeedCount"]);
+                    model.nonOS = GetInt(reader["nonOverSpeed"]);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
             return model;
         }
 
@@ -101,8 +114,6 @@ namespace Trackmaster_Repository.Repository
 
                 await con.OpenAsync();
                 using var reader = await cmd.ExecuteReaderAsync();
-
-
                 while (await reader.ReadAsync())
                 {
                     list.Add(new VehicleList
@@ -111,20 +122,17 @@ namespace Trackmaster_Repository.Repository
                         BBID = GetString(reader["BBID"])
                     });
                 }
-
-                return list;
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Error: " + ex.Message);
-                return new List<VehicleList>();
             }
+            return list;
         }
 
         public async Task<List<OverSpeedReport>> GetOverSpeedGraphData(int custid, string bbid)
         {
             var list = new List<OverSpeedReport>();
-
             try
             {
                 using var con = new SqlConnection(_connectionString43);
@@ -135,12 +143,11 @@ namespace Trackmaster_Repository.Repository
 
                 await con.OpenAsync();
                 using var reader = await cmd.ExecuteReaderAsync();
-
-                while (await reader.ReadAsync()) 
+                while (await reader.ReadAsync())
                 {
                     list.Add(new OverSpeedReport
                     {
-                        DateTime = reader["ReportDay"] == DBNull.Value ? "": GetDateTime(reader["ReportDay"]).ToString("yyyy-MM-dd"),
+                        DateTime = reader["ReportDay"] == DBNull.Value ? "" : GetDateTime(reader["ReportDay"]).ToString("yyyy-MM-dd"),
 
                         overspeedCount = reader["overSpeedCount"] == DBNull.Value
                             ? 0
@@ -156,7 +163,6 @@ namespace Trackmaster_Repository.Repository
             {
                 Console.WriteLine("Error: " + ex.Message);
             }
-
             return list;
         }
     }

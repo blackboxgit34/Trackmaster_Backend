@@ -17,7 +17,7 @@ namespace Trackmaster_Service.Service
 
         public async Task<DashboardData> GetDashboardData(int userid, string type, string bbid)
         {
-            string cacheKey = $"dashboard_{userid}";
+            string cacheKey = $"dashboard_{userid}_{type}_{bbid}";
 
             if (_cache.TryGetValue(cacheKey, out DashboardData cached))
             {
