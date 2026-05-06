@@ -15,7 +15,7 @@ namespace Trackmaster_Service.Service
             _cache = cache;
         }
 
-        public async Task<DashboardData> GetDashboardData(int userid)
+        public async Task<DashboardData> GetDashboardData(int userid,string bbid)
         {
             string cacheKey = $"dashboard_{userid}";
 
@@ -31,13 +31,16 @@ namespace Trackmaster_Service.Service
                 var vehicleStatusTask = _dashboardRepository.GetVehicleStatus(userid);
                 var utilizationTask = _dashboardRepository.GetVehicleUtilization(userid);
                 var speedTask = _dashboardRepository.GetSpeedAnalysis(userid);
+                var vehicleList = _dashboardRepository.GetAllVehicleListByCustId(userid);
+                var graphData = _dashboardRepository.GetOverSpeedGraphData(userid,bbid);
 
-                await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask);
+                await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask, vehicleList, graphData);
 
                 dashboard.vehicleStatus = vehicleStatusTask.Result;
                 dashboard.vehicleUtilization = utilizationTask.Result;
                 dashboard.speedAnalysis = speedTask.Result;
-
+                dashboard.vehicleList = vehicleList.Result;    
+                dashboard.overSpeedReport = graphData.Result;    
                 dashboard.IsSuccess = true;
                 dashboard.Message = "Success";
 
@@ -56,16 +59,6 @@ namespace Trackmaster_Service.Service
         }
 
 
-
-        public List<VehicleList> GetAllVehicleListByCustId(int custId)
-        {
-            return _dashboardRepository.GetAllVehicleListByCustId(custId);
-        }
-
-        public OverSpeedReport GetOverSpeedGraphReport(int custid,string bbid)
-        {
-            return _dashboardRepository.GetOverSpeedGraphReport(custid, bbid);
-        }
 
     }
 }

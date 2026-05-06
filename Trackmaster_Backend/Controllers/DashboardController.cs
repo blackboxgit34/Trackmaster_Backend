@@ -20,11 +20,11 @@ namespace Trackmaster_Backend.Controllers
         }
 
         [HttpGet("dashboarddata")]
-        public async Task<IActionResult> GetDashboardData(int userid)
+        public async Task<IActionResult> GetDashboardData(int userid,string bbid=null)
         {
             try
             {
-                var dashboardData = await _dashboardService.GetDashboardData(userid);
+                var dashboardData = await _dashboardService.GetDashboardData(userid, bbid);
                 return Ok(dashboardData);
             }
             catch (Exception ex)
@@ -38,61 +38,5 @@ namespace Trackmaster_Backend.Controllers
             }
         }
 
-
-
-        [HttpGet("GetAllVehicleListByCustId")]
-        public IActionResult GetAllVehicleListByCustId(int custId)
-        {
-            try
-            {
-                // Call the service method to get dashboard data
-                var dashboardData = _dashboardService.GetAllVehicleListByCustId(custId);
-                return Ok(new
-                {
-                    success = true,
-                    message = "Vehicle data retrieved successfully",
-                    data = dashboardData
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    success = false,
-                    message = "Internal Server Error",
-                    error = ex.Message
-                });
-            }
-        }
-
-
-        [HttpGet("GetOverSpeedGraphReport")]
-        public IActionResult GetOverSpeedGraphReport(int custid,string bbid=null)
-        {
-            try
-            {
-                OverSpeedReport overspeedR = new OverSpeedReport();
-                overspeedR = _dashboardService.GetOverSpeedGraphReport(custid,bbid);
-                if (overspeedR != null)
-                {
-                    return Ok(new
-                    {
-                        success = true,
-                        message = "Overspeed graph report retrieved successfully",
-                        data = overspeedR
-                    });
-                }
-                else
-                {
-                    return NoContent();
-                }
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-          
-        }
     }
 }

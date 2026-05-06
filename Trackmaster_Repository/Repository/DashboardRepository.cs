@@ -88,85 +88,68 @@ namespace Trackmaster_Repository.Repository
 
             return model;
         }
-        public List<VehicleList> GetAllVehicleListByCustId(int custId)
+
+        public async Task<List<VehicleList>> GetAllVehicleListByCustId(int userid)
         {
             var list = new List<VehicleList>();
-
             try
             {
-                using (SqlConnection con = new SqlConnection(_connectionString43))
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand("GetVehicleData", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@custid", userid);
+
+                await con.OpenAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
+
+
+                while (await reader.ReadAsync())
                 {
-                    con.Open();
-
-                    using (SqlCommand cmd = new SqlCommand("GetVehicleData", con))
+                    list.Add(new VehicleList
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@custid", custId);
-
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                list.Add(new VehicleList
-                                {
-                                    VehName = reader["VehicleName"]?.ToString(),
-                                    BBID = reader["BBID"]?.ToString()
-                                });
-                            }
-                        }
-                    }
+                        VehName = GetString(reader["VehicleName"]),
+                        BBID = GetString(reader["BBID"])
+                    });
                 }
+
+                return list;
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Console.WriteLine("Error: " + ex.Message);
                 return new List<VehicleList>();
             }
-
-            return list;
         }
 
-
-      
-        public OverSpeedReport GetOverSpeedGraphReport(int custid,string bbid)
+        public async Task<List<OverSpeedReport>> GetOverSpeedGraphData(int custid, string bbid)
         {
-            OverSpeedReport overSpeedReport = new OverSpeedReport();
-            overSpeedReport.vehicleList = new List<OverSpeedAnalysisEx>();
+            var list = new List<OverSpeedReport>();
 
             try
             {
-                using (SqlConnection con = new SqlConnection(_connectionString43))
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand("OverSpeedGraphData", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@custid", custid);
+                cmd.Parameters.AddWithValue("@bbid", bbid);
+
+                await con.OpenAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync()) 
                 {
-                    using (SqlCommand cmd = new SqlCommand("GrpahOverSpeedNew", con))
+                    list.Add(new OverSpeedReport
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@custid", custid);
-                        cmd.Parameters.AddWithValue("@bbid", bbid);
+                        DateTime = reader["ReportDay"] == DBNull.Value ? "": GetDateTime(reader["ReportDay"]).ToString("yyyy-MM-dd"),
 
-                        con.Open();
+                        overspeedCount = reader["overSpeedCount"] == DBNull.Value
+                            ? 0
+                            : GetInt(reader["overSpeedCount"]),
 
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            while (reader.Read()) // ✅ multiple rows (7 days)
-                            {
-                                overSpeedReport.vehicleList.Add(new OverSpeedAnalysisEx
-                                {
-                                    // use existing fields (no new model)
-                                    DateTime = reader["ReportDay"] == DBNull.Value
-                                        ? ""
-                                        : Convert.ToDateTime(reader["ReportDay"]).ToString("yyyy-MM-dd"),
-
-                                    overspeedCount = reader["overSpeedCount"] == DBNull.Value
-                                        ? 0
-                                        : Convert.ToInt32(reader["overSpeedCount"]),
-
-                                    OverCustomCount = reader["nonOverSpeed"] == DBNull.Value
-                                        ? 0
-                                        : Convert.ToInt32(reader["nonOverSpeed"])
-                                });
-                            }
-                        }
-                    }
+                        OverCustomCount = reader["nonOverSpeed"] == DBNull.Value
+                            ? 0
+                            : GetInt(reader["nonOverSpeed"])
+                    });
                 }
             }
             catch (Exception ex)
@@ -174,8 +157,9 @@ namespace Trackmaster_Repository.Repository
                 Console.WriteLine("Error: " + ex.Message);
             }
 
-            return overSpeedReport;
+            return list;
         }
+
 
     }
 }
