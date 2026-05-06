@@ -1,5 +1,8 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System;
+using System.Collections.Generic;
 using System.Data;
 using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
@@ -85,69 +88,94 @@ namespace Trackmaster_Repository.Repository
 
             return model;
         }
-        //public DashboardData GetDashboardData(int userid)
-        //{
-        //    var dashboardDataModel = new DashboardData();
-        //    try
-        //    {
-        //        using (SqlConnection con = new SqlConnection(_connectionString43))
-        //        {
-        //            con.Open();
-        //            using (SqlCommand cmd = new SqlCommand("GetDashboardDataTrackmaster", con))
-        //            {
-        //                cmd.CommandType = CommandType.StoredProcedure;
-        //                cmd.Parameters.AddWithValue("@custid", userid);
+        public List<VehicleList> GetAllVehicleListByCustId(int custId)
+        {
+            var list = new List<VehicleList>();
+
+            try
+            {
+                using (SqlConnection con = new SqlConnection(_connectionString43))
+                {
+                    con.Open();
+
+                    using (SqlCommand cmd = new SqlCommand("GetVehicleData", con))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@custid", custId);
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                list.Add(new VehicleList
+                                {
+                                    VehName = reader["VehicleName"]?.ToString(),
+                                    BBID = reader["BBID"]?.ToString()
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return new List<VehicleList>();
+            }
+
+            return list;
+        }
 
 
-        //                using (SqlDataReader reader = cmd.ExecuteReader())
-        //                {
-        //                    if (reader.Read())
-        //                    {
-        //                        var VehicleStatusModel = new VehicleStatus();
-        //                        VehicleStatusModel.TotalVehicles = GetInt(reader["TotalVehicles"]);
-        //                        VehicleStatusModel.Moving = GetInt(reader["Moving"]);
-        //                        VehicleStatusModel.HighSpeed = GetInt(reader["HiSpeed"]);
-        //                        VehicleStatusModel.IgnitionON = GetInt(reader["IgnitionOn"]);
-        //                        VehicleStatusModel.Parked = GetInt(reader["Parked"]);
-        //                        VehicleStatusModel.Towed = GetInt(reader["Towed"]);
-        //                        VehicleStatusModel.Unreachable = GetInt(reader["Unreachable"]);
-        //                        VehicleStatusModel.BatteryDisconnect = GetInt(reader["BatteryDisconnect"]);
-        //                        VehicleStatusModel.Breakdown = GetInt(reader["Breakdown"]);
-        //                        dashboardDataModel.vehicleStatus = VehicleStatusModel;
-        //                    }
-        //                    if (reader.NextResult() && reader.Read())
-        //                    {
-        //                        var VehicleUtilizationModel = new VehicleUtilization();
-        //                        VehicleUtilizationModel.IgnitionON = GetInt(reader["IgnitionON"]);
-        //                        VehicleUtilizationModel.Moving = GetInt(reader["Moving"]);
-        //                        VehicleUtilizationModel.Parked = GetInt(reader["Parked"]);
-        //                        VehicleUtilizationModel.TotalVehicles = GetInt(reader["Totalvehicle"]);
-        //                        VehicleUtilizationModel.IgnitionON = VehicleUtilizationModel.IgnitionON / 3600;
-        //                        VehicleUtilizationModel.Moving = VehicleUtilizationModel.Moving / 3600;
-        //                        VehicleUtilizationModel.Parked = VehicleUtilizationModel.Parked / 3600;
-        //                        dashboardDataModel.vehicleUtilization = VehicleUtilizationModel;
-        //                    }
-        //                    if (reader.NextResult() && reader.Read())
-        //                    {
-        //                        var SpeedAnalysisModel = new SpeedAnalysis();
-        //                        SpeedAnalysisModel.OS = GetInt(reader["overSpeedCount"]);
-        //                        SpeedAnalysisModel.nonOS = GetInt(reader["nonOverSpeed"]);
-        //                        dashboardDataModel.speedAnalysis = SpeedAnalysisModel;
-        //                    }
-        //                }
-        //            }
-        //            con.Close();
-        //        }
-        //        dashboardDataModel.IsSuccess = true;
-        //        dashboardDataModel.Message = "Dashboard data retrieved successfully";
-        //        return dashboardDataModel;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        dashboardDataModel.IsSuccess = false;
-        //        dashboardDataModel.Message = ex.Message;
-        //        return dashboardDataModel;
-        //    }
-        //}
+      
+        public OverSpeedReport GetOverSpeedGraphReport(int custid,string bbid)
+        {
+            OverSpeedReport overSpeedReport = new OverSpeedReport();
+            overSpeedReport.vehicleList = new List<OverSpeedAnalysisEx>();
+
+            try
+            {
+                using (SqlConnection con = new SqlConnection(_connectionString43))
+                {
+                    using (SqlCommand cmd = new SqlCommand("GrpahOverSpeedNew", con))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@custid", custid);
+                        cmd.Parameters.AddWithValue("@bbid", bbid);
+
+                        con.Open();
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read()) // ✅ multiple rows (7 days)
+                            {
+                                overSpeedReport.vehicleList.Add(new OverSpeedAnalysisEx
+                                {
+                                    // use existing fields (no new model)
+                                    DateTime = reader["ReportDay"] == DBNull.Value
+                                        ? ""
+                                        : Convert.ToDateTime(reader["ReportDay"]).ToString("yyyy-MM-dd"),
+
+                                    overspeedCount = reader["overSpeedCount"] == DBNull.Value
+                                        ? 0
+                                        : Convert.ToInt32(reader["overSpeedCount"]),
+
+                                    OverCustomCount = reader["nonOverSpeed"] == DBNull.Value
+                                        ? 0
+                                        : Convert.ToInt32(reader["nonOverSpeed"])
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+
+            return overSpeedReport;
+        }
+
     }
 }
