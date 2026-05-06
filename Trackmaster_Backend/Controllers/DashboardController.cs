@@ -38,5 +38,32 @@ namespace Trackmaster_Backend.Controllers
             }
         }
 
+
+
+        [HttpGet("GetAllVehicleListByCustId")]
+        public  async Task<IActionResult> GetAllVehicleListByCustId(int userid)
+        {
+            try
+            {
+                var dashboardData = await _dashboardService.GetAllVehicleListByCustId(userid);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Vehicle data retrieved successfully",
+                    data = dashboardData
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
+
+
     }
 }

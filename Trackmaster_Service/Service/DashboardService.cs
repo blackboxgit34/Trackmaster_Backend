@@ -38,16 +38,14 @@ namespace Trackmaster_Service.Service
                         var vehicleStatusTask = _dashboardRepository.GetVehicleStatus(userid);
                         var utilizationTask = _dashboardRepository.GetVehicleUtilization(userid);
                         var speedTask = _dashboardRepository.GetSpeedAnalysis(userid);
-                        var vehicleList = _dashboardRepository.GetAllVehicleListByCustId(userid);
                         var graphData = _dashboardRepository.GetOverSpeedGraphData(userid, bbid);
 
-                        await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask, vehicleList, graphData);
+                        await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask, graphData);
 
                         dashboard.vehicleStatus = vehicleStatusTask.Result;
                         dashboard.vehicleUtilization = utilizationTask.Result;
                         dashboard.speedAnalysis = speedTask.Result;
-                        dashboard.vehicleList = vehicleList.Result;    
-                        dashboard.overSpeedReport = graphData.Result;    
+                        dashboard.overSpeedReport = graphData.Result;
                         break;
                 }
 
@@ -68,6 +66,12 @@ namespace Trackmaster_Service.Service
             }
         }
 
+
+
+        public async Task<List<VehicleList>> GetAllVehicleListByCustId(int userid)
+        {
+            return await _dashboardRepository.GetAllVehicleListByCustId(userid);
+        }
 
 
     }
