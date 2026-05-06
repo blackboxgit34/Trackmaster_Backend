@@ -12,21 +12,20 @@ namespace Trackmaster_Repository.Repository
     public class AccountRepository : IAccountRepository
     {
         private readonly string _connectionString43;
+        private readonly string _blackboxSecurityString;
         public AccountRepository(IConfiguration configuration)
         {
             _connectionString43 = configuration.GetConnectionString("DefaultConnection43");
+            _blackboxSecurityString = configuration.GetConnectionString("BlackboxSecurity");
         }
         public LoginUser AuthorizeUser(string userId, string password, string type)
         {
             var objUser = new LoginUser();
-
             try
             {
-
                 using (SqlConnection con = new SqlConnection(_connectionString43))
                 {
                     con.Open();
-
                     using (SqlCommand cmd = new SqlCommand("SELECT CASE WHEN EXISTS (SELECT 1 FROM tbemp WHERE empId = @empId and password=@password and IsActive = 1) THEN 1 ELSE 0 END", con))
                     {
                         cmd.Parameters.AddWithValue("@empId", userId);
@@ -43,7 +42,6 @@ namespace Trackmaster_Repository.Repository
                             cmd.CommandType = CommandType.StoredProcedure;
                             cmd.Parameters.AddWithValue("@login", userId);
                             cmd.Parameters.AddWithValue("@pwd", password);
-
                             using (SqlDataReader dr = cmd.ExecuteReader())
                             {
                                 if (!dr.HasRows)
@@ -54,12 +52,9 @@ namespace Trackmaster_Repository.Repository
                                         Message = "Invalid Username or Password!"
                                     };
                                 }
-
                                 dr.Read();
-
                                 int isBlocked = Convert.IsDBNull(dr["isblocked"]) ? 0 : Convert.ToInt32(dr["isblocked"]);
                                 int custStatus = Convert.IsDBNull(dr["cust_status"]) ? 0 : Convert.ToInt32(dr["cust_status"]);
-
                                 if (isBlocked == 1)
                                 {
                                     return new LoginUser
@@ -68,7 +63,6 @@ namespace Trackmaster_Repository.Repository
                                         Message = "Your Account is blocked due to non payment!"
                                     };
                                 }
-
                                 if (custStatus == 0)
                                 {
                                     return new LoginUser
@@ -183,6 +177,62 @@ namespace Trackmaster_Repository.Repository
             }
 
             return userList;
+        }
+        public UserOtp VerifyUserOtp(int custid, string website, string OTP)
+        {
+            UserOtp uotp = new UserOtp();
+
+            using (SqlConnection conn = new SqlConnection(_blackboxSecurityString))
+            using (SqlCommand cmd = new SqlCommand("VerifyUserOtp", conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@custid", custid);
+                cmd.Parameters.AddWithValue("@website", website);
+                cmd.Parameters.AddWithValue("@OTP", OTP);
+
+                try
+                {
+                    conn.Open();
+                    object result = cmd.ExecuteScalar();
+                    uotp.message = result?.ToString() ?? "Failed";
+                }
+                catch (Exception ex)
+                {
+                    uotp.message = "Failed: " + ex.Message;
+                }
+            }
+
+            return uotp;
+        }
+        public string UpdateOTPAdminPassword(string custId, string NewPassword)
+        {
+            string resultMessage = "Failed";
+
+            var newPWD = EncryptPassword(NewPassword);
+
+            using (SqlConnection conn = new SqlConnection(_connectionString43))
+            using (SqlCommand cmd = new SqlCommand("GHMCUpdateOTPPassword", conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@custid", custId);
+                cmd.Parameters.AddWithValue("@password","123456");
+                cmd.Parameters.AddWithValue("@newPwd", newPWD);
+
+                try
+                {
+                    conn.Open();
+                    object result = cmd.ExecuteScalar();
+                    resultMessage = "Success";
+                }
+                catch (Exception ex)
+                {
+                    resultMessage = "Failed: " + ex.Message;
+                }
+            }
+
+            return resultMessage;
         }
     }
 }
