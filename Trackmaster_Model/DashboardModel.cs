@@ -41,7 +41,6 @@ namespace Trackmaster_Model
         public int OS { get; set; }
         public int nonOS { get; set; }
     }
-}
 
 
     public class VehicleList
@@ -94,7 +93,7 @@ namespace Trackmaster_Model
 
         public string DateTime { get; set; }
 
-        
+
         public string Location { get; set; }
         public string Speed { get; set; }
 
