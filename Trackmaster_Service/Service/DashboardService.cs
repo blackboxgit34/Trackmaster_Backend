@@ -34,18 +34,22 @@ namespace Trackmaster_Service.Service
                         dashboard.vehicleStatus = await _dashboardRepository.GetVehicleStatus(userid);
                         break;
 
+                    case "avgspeedgraph":
+                        dashboard.overSpeedReport = await _dashboardRepository.GetOverSpeedGraphData(userid,bbid);
+                        break;
+
                     case null:
                         var vehicleStatusTask = _dashboardRepository.GetVehicleStatus(userid);
                         var utilizationTask = _dashboardRepository.GetVehicleUtilization(userid);
                         var speedTask = _dashboardRepository.GetSpeedAnalysis(userid);
-                        //var graphData = _dashboardRepository.GetOverSpeedGraphData(userid, bbid);
+                        var graphData = _dashboardRepository.GetOverSpeedGraphData(userid, bbid);
 
-                        await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask);
+                        await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask, graphData);
 
                         dashboard.vehicleStatus = vehicleStatusTask.Result;
                         dashboard.vehicleUtilization = utilizationTask.Result;
                         dashboard.speedAnalysis = speedTask.Result;
-                        //dashboard.overSpeedReport = graphData.Result;
+                        dashboard.overSpeedReport = graphData.Result;
                         break;
                 }
 
