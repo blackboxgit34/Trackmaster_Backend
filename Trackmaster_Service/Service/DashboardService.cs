@@ -34,11 +34,13 @@ namespace Trackmaster_Service.Service
                     case "vehiclestatus":
                         dashboard.vehicleStatus = await _dashboardRepository.GetVehicleStatus(userid);
                         break;
-
+                    case "speedanalysis":
+                        dashboard.speedAnalysis = await _dashboardRepository.GetSpeedAnalysis(userid, start, end);
+                        break;
                     case null:
                         var vehicleStatusTask = _dashboardRepository.GetVehicleStatus(userid);
                         var utilizationTask = _dashboardRepository.GetVehicleUtilization(userid);
-                        var speedTask = _dashboardRepository.GetSpeedAnalysis(userid);
+                        var speedTask = _dashboardRepository.GetSpeedAnalysis(userid, start, end);
                         var distanceTask = _dashboardRepository.GetDistanceDash(userid, start, end);
                         //var graphData = _dashboardRepository.GetOverSpeedGraphData(userid, bbid);
 

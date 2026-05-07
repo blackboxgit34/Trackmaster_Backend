@@ -77,16 +77,27 @@ namespace Trackmaster_Repository.Repository
             return model;
         }
 
-        public async Task<SpeedAnalysis> GetSpeedAnalysis(int userid)
+        public async Task<SpeedAnalysis> GetSpeedAnalysis(int userid, DateTime start, DateTime end)
         {
             var model = new SpeedAnalysis();
             try
             {
+                
+
+                if (start == DateTime.MinValue)
+                {
+                    start = GetDateTime(DateTime.Today.AddDays(-1));
+                }
+                if (end == DateTime.MinValue)
+                {
+                    end = GetDateTime(DateTime.Today.AddDays(-1).AddSeconds(-1)) ;
+                }
                 using var con = new SqlConnection(_connectionString43);
                 using var cmd = new SqlCommand("GetSpeedAnalysisTrackmaster", con);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@custid", userid);
-
+                cmd.Parameters.AddWithValue("@stdate", start);
+                cmd.Parameters.AddWithValue("@edDate", end);
                 await con.OpenAsync();
                 using var reader = await cmd.ExecuteReaderAsync();
                 if (await reader.ReadAsync())
