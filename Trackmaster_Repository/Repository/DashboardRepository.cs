@@ -147,7 +147,7 @@ namespace Trackmaster_Repository.Repository
             return list;
         }
 
-        public List<VehicleList> GetAllVehicleListByCustId(int custId)
+        public async Task<List<VehicleList>> GetAllVehicleListByCustId(int userid)
         {
             var list = new List<VehicleList>();
             try
@@ -172,12 +172,10 @@ namespace Trackmaster_Repository.Repository
             {
                 Console.WriteLine("Error: " + ex.Message);
             }
-            return list;    
+            return list;
         }
 
-
-      
-        public OverSpeedReport GetOverSpeedGraphReport(int custid,string bbid)
+        public async Task<List<OverSpeedReport>> GetOverSpeedGraphData(int custid, string bbid)
         {
             var list = new List<OverSpeedReport>();
             try

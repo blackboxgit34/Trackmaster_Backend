@@ -46,6 +46,13 @@ namespace Trackmaster_Model
     }
 
 
+    public class IdlingDuration
+    {
+        public string VehicleName { get; set; }
+        public string TotalIdlingHours { get; set; }
+
+    }
+
     public class VehicleList
     {
         public string VehName { get; set; }
