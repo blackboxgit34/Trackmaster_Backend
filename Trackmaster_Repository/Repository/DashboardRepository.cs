@@ -77,16 +77,27 @@ namespace Trackmaster_Repository.Repository
             return model;
         }
 
-        public async Task<SpeedAnalysis> GetSpeedAnalysis(int userid)
+        public async Task<SpeedAnalysis> GetSpeedAnalysis(int userid, DateTime start, DateTime end)
         {
             var model = new SpeedAnalysis();
             try
             {
+                
+
+                if (start == DateTime.MinValue)
+                {
+                    start = GetDateTime(DateTime.Today.AddDays(-1));
+                }
+                if (end == DateTime.MinValue)
+                {
+                    end = GetDateTime(DateTime.Today.AddDays(-1).AddSeconds(-1)) ;
+                }
                 using var con = new SqlConnection(_connectionString43);
                 using var cmd = new SqlCommand("GetSpeedAnalysisTrackmaster", con);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@custid", userid);
-
+                cmd.Parameters.AddWithValue("@stdate", start);
+                cmd.Parameters.AddWithValue("@edDate", end);
                 await con.OpenAsync();
                 using var reader = await cmd.ExecuteReaderAsync();
                 if (await reader.ReadAsync())
@@ -100,6 +111,40 @@ namespace Trackmaster_Repository.Repository
                 Console.WriteLine("Error: " + ex.Message);
             }
             return model;
+        }
+
+        public async Task<List<IdlingDuration>> GetIdlingDuration(int userid)
+        {
+            var list = new List<IdlingDuration>();
+
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand("GetIdlingDuration", con);
+
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@custid", userid);
+
+                await con.OpenAsync();
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    list.Add(new IdlingDuration
+                    {
+                        VehicleName = GetString(reader["VehicleName"]),
+                        TotalIdlingHours = GetString(reader["TotalIdlingHours"])
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                // You can log exception here
+                throw new Exception("Error while fetching idling duration data.", ex);
+            }
+
+            return list;
         }
 
         public async Task<List<VehicleList>> GetAllVehicleListByCustId(int userid)
@@ -127,7 +172,7 @@ namespace Trackmaster_Repository.Repository
             {
                 Console.WriteLine("Error: " + ex.Message);
             }
-            return list;    
+            return list;
         }
 
         public async Task<List<OverSpeedReport>> GetOverSpeedGraphData(int custid, string bbid)
@@ -165,5 +210,45 @@ namespace Trackmaster_Repository.Repository
             }
             return list;
         }
+
+        public async Task<List<DistanceDashModel>> GetDistanceDash(int custId, DateTime start, DateTime end)
+        {
+            var result = new List<DistanceDashModel>();
+
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand("GetDistanceDash", con);
+
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@custId", custId);
+                cmd.Parameters.AddWithValue("@start", start);
+                cmd.Parameters.AddWithValue("@end", end);
+
+                await con.OpenAsync();
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var item = new DistanceDashModel
+                    {
+                        BBID = reader["bbid"]?.ToString(),
+                        VehicleName = reader["vehname"]?.ToString(),
+                        Distance = reader["distance"] != DBNull.Value ? Convert.ToDouble(reader["distance"]): 0
+                    };
+
+                    result.Add(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+
+            return result;
+        }
+
     }
 }

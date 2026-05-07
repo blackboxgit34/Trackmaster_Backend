@@ -17,6 +17,8 @@ namespace Trackmaster_Model
         public SpeedAnalysis speedAnalysis { get; set; } = new SpeedAnalysis();
         public List<VehicleList> vehicleList { get; set; } = new List<VehicleList>();
         public List<OverSpeedReport> overSpeedReport { get; set; } = new List<OverSpeedReport>();
+        public List<DistanceDashModel> distanceData { get; set; } = new List<DistanceDashModel>();
+        public List<IdlingDuration> IdlingDuration { get; set; } = new List<IdlingDuration>();
     }
     public class VehicleStatus
     {
@@ -43,6 +45,14 @@ namespace Trackmaster_Model
         public int nonOS { get; set; }
     }
 
+
+    public class IdlingDuration
+    {
+        public string VehicleName { get; set; }
+        public string TotalIdlingHours { get; set; }
+
+    }
+
     public class VehicleList
     {
         public string VehName { get; set; }
@@ -55,5 +65,11 @@ namespace Trackmaster_Model
         public int overspeedCount { get; set; }
         public int OverCustomCount { get; set; }
         public string DateTime { get; set; }
+    }
+    public class DistanceDashModel
+    {
+        public string BBID { get; set; }
+        public string VehicleName { get; set; }
+        public double Distance { get; set; }
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
+using System;
 using System.Data;
 using System.Net;
 using Trackmaster_Model;
@@ -19,11 +20,11 @@ namespace Trackmaster_Backend.Controllers
             _dashboardService = dashboardService;
         }
         [HttpGet("dashboarddata")]
-        public async Task<IActionResult> GetDashboardData(int userid, string type = null, string bbid = null)
+        public async Task<IActionResult> GetDashboardData(int userid, DateTime start, DateTime end, string type = null, string bbid = null)
         {
             try
             {
-                var dashboardData = await _dashboardService.GetDashboardData(userid, type, bbid);
+                var dashboardData = await _dashboardService.GetDashboardData(userid, type, bbid, start, end);
                 return Ok(dashboardData);
             }
             catch (Exception ex)

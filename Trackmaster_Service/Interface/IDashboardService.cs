@@ -1,10 +1,11 @@
-﻿using Trackmaster_Model;
+﻿using System;
+using Trackmaster_Model;
 
 namespace Trackmaster_Service.Interface
 {
     public interface IDashboardService
     {
-        Task<DashboardData> GetDashboardData(int userid, string type, string bbid);
+        Task<DashboardData> GetDashboardData(int userid, string type, string bbid, DateTime start, DateTime end);
         Task<List<VehicleList>> GetAllVehicleListByCustId(int custId);
     }
 }
