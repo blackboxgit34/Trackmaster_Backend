@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
+using System;
 using System.Data;
 using System.Net;
 using Trackmaster_Model;
@@ -18,13 +19,12 @@ namespace Trackmaster_Backend.Controllers
         {
             _dashboardService = dashboardService;
         }
-
         [HttpGet("dashboarddata")]
-        public async Task<IActionResult> GetDashboardData(int userid, DateTime start , DateTime end)
+        public async Task<IActionResult> GetDashboardData(int userid, string type = null, string bbid = null, DateTime start, DateTime end)
         {
             try
             {
-                var dashboardData = await _dashboardService.GetDashboardData(userid, start, end);
+                var dashboardData = await _dashboardService.GetDashboardData(userid, type, bbid, start, end);
                 return Ok(dashboardData);
             }
             catch (Exception ex)
@@ -37,16 +37,12 @@ namespace Trackmaster_Backend.Controllers
                 });
             }
         }
-
-
-
         [HttpGet("GetAllVehicleListByCustId")]
-        public IActionResult GetAllVehicleListByCustId(int custId)
+        public async Task<IActionResult> GetAllVehicleListByCustId(int userid)
         {
             try
             {
-                // Call the service method to get dashboard data
-                var dashboardData = _dashboardService.GetAllVehicleListByCustId(custId);
+                var dashboardData = await _dashboardService.GetAllVehicleListByCustId(userid);
                 return Ok(new
                 {
                     success = true,
@@ -63,36 +59,6 @@ namespace Trackmaster_Backend.Controllers
                     error = ex.Message
                 });
             }
-        }
-
-
-        [HttpGet("GetOverSpeedGraphReport")]
-        public IActionResult GetOverSpeedGraphReport(int custid,string bbid=null)
-        {
-            try
-            {
-                OverSpeedReport overspeedR = new OverSpeedReport();
-                overspeedR = _dashboardService.GetOverSpeedGraphReport(custid,bbid);
-                if (overspeedR != null)
-                {
-                    return Ok(new
-                    {
-                        success = true,
-                        message = "Overspeed graph report retrieved successfully",
-                        data = overspeedR
-                    });
-                }
-                else
-                {
-                    return NoContent();
-                }
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-          
         }
     }
 }
