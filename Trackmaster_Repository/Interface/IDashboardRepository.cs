@@ -9,5 +9,6 @@ namespace Trackmaster_Repository.Interface
         Task<SpeedAnalysis> GetSpeedAnalysis(int userid);
         List<VehicleList> GetAllVehicleListByCustId(int custId);
         OverSpeedReport GetOverSpeedGraphReport(int custid, string bbid);
+        Task<List<DistanceDashModel>> GetDistanceDash(int custId, DateTime start, DateTime end);
     }
 }

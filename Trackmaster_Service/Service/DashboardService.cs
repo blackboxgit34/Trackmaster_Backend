@@ -15,9 +15,10 @@ namespace Trackmaster_Service.Service
             _cache = cache;
         }
 
-        public async Task<DashboardData> GetDashboardData(int userid)
+        public async Task<DashboardData> GetDashboardData(int userid, DateTime start, DateTime end)
         {
-            string cacheKey = $"dashboard_{userid}";
+            
+            string cacheKey = $"dashboard_{userid}_{start:yyyyMMddHHmm}_{end:yyyyMMddHHmm}";
 
             if (_cache.TryGetValue(cacheKey, out DashboardData cached))
             {
@@ -31,12 +32,15 @@ namespace Trackmaster_Service.Service
                 var vehicleStatusTask = _dashboardRepository.GetVehicleStatus(userid);
                 var utilizationTask = _dashboardRepository.GetVehicleUtilization(userid);
                 var speedTask = _dashboardRepository.GetSpeedAnalysis(userid);
+                var distanceTask = _dashboardRepository.GetDistanceDash(userid, start, end);
 
-                await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask);
+                await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask, distanceTask);
+
 
                 dashboard.vehicleStatus = vehicleStatusTask.Result;
                 dashboard.vehicleUtilization = utilizationTask.Result;
                 dashboard.speedAnalysis = speedTask.Result;
+                dashboard.distanceData = distanceTask.Result;
 
                 dashboard.IsSuccess = true;
                 dashboard.Message = "Success";

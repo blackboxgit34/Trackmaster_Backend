@@ -177,5 +177,44 @@ namespace Trackmaster_Repository.Repository
             return overSpeedReport;
         }
 
+        public async Task<List<DistanceDashModel>> GetDistanceDash(int custId, DateTime start, DateTime end)
+        {
+            var result = new List<DistanceDashModel>();
+
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand("GetDistanceDash", con);
+
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@custId", custId);
+                cmd.Parameters.AddWithValue("@start", start);
+                cmd.Parameters.AddWithValue("@end", end);
+
+                await con.OpenAsync();
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var item = new DistanceDashModel
+                    {
+                        BBID = reader["bbid"]?.ToString(),
+                        VehicleName = reader["vehname"]?.ToString(),
+                        Distance = reader["distance"] != DBNull.Value ? Convert.ToDouble(reader["distance"]): 0
+                    };
+
+                    result.Add(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+
+            return result;
+        }
+
     }
 }
