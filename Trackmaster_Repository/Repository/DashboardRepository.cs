@@ -88,6 +88,41 @@ namespace Trackmaster_Repository.Repository
 
             return model;
         }
+
+        public async Task<List<IdlingDuration>> GetIdlingDuration(int userid)
+        {
+            var list = new List<IdlingDuration>();
+
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand("GetIdlingDuration", con);
+
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@custid", userid);
+
+                await con.OpenAsync();
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    list.Add(new IdlingDuration
+                    {
+                        VehicleName = GetString(reader["VehicleName"]),
+                        TotalIdlingHours = GetString(reader["TotalIdlingHours"])
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                // You can log exception here
+                throw new Exception("Error while fetching idling duration data.", ex);
+            }
+
+            return list;
+        }
+
         public List<VehicleList> GetAllVehicleListByCustId(int custId)
         {
             var list = new List<VehicleList>();
@@ -125,8 +160,6 @@ namespace Trackmaster_Repository.Repository
 
             return list;
         }
-
-
       
         public OverSpeedReport GetOverSpeedGraphReport(int custid,string bbid)
         {

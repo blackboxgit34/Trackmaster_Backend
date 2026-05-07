@@ -16,6 +16,7 @@ namespace Trackmaster_Model
         public VehicleStatus vehicleStatus { get; set; } = new VehicleStatus();
         public VehicleUtilization vehicleUtilization { get; set; } = new VehicleUtilization();
         public SpeedAnalysis speedAnalysis { get; set; } = new SpeedAnalysis();
+        public List<IdlingDuration> IdlingDuration { get; set; } = new List<IdlingDuration>();
     }
     public class VehicleStatus
     {
@@ -41,7 +42,11 @@ namespace Trackmaster_Model
         public int OS { get; set; }
         public int nonOS { get; set; }
     }
-
+    public class IdlingDuration
+    {
+        public string VehicleName { get; set; }
+        public string TotalIdlingHours { get; set; }
+    }
 
     public class VehicleList
     {

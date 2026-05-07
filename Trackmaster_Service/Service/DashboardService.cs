@@ -31,12 +31,14 @@ namespace Trackmaster_Service.Service
                 var vehicleStatusTask = _dashboardRepository.GetVehicleStatus(userid);
                 var utilizationTask = _dashboardRepository.GetVehicleUtilization(userid);
                 var speedTask = _dashboardRepository.GetSpeedAnalysis(userid);
+                var IdlingTask = _dashboardRepository.GetIdlingDuration(userid);
 
-                await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask);
+                await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask, IdlingTask);
 
                 dashboard.vehicleStatus = vehicleStatusTask.Result;
                 dashboard.vehicleUtilization = utilizationTask.Result;
                 dashboard.speedAnalysis = speedTask.Result;
+                dashboard.IdlingDuration = IdlingTask.Result;
 
                 dashboard.IsSuccess = true;
                 dashboard.Message = "Success";
