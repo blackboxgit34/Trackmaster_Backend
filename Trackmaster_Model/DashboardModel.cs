@@ -18,7 +18,7 @@ namespace Trackmaster_Model
         public List<VehicleList> vehicleList { get; set; } = new List<VehicleList>();
         public List<OverSpeedReport> overSpeedReport { get; set; } = new List<OverSpeedReport>();
         public List<DistanceDashModel> distanceData { get; set; } = new List<DistanceDashModel>();
-        public List<IdlingDuration> IdlingDuration { get; set; } = new List<IdlingDuration>();
+        public List<IdlingDuration> idlingDuration { get; set; } = new List<IdlingDuration>();
         public List<AverageDrivingHours> AverageDrivingHours { get; set; } = new List<AverageDrivingHours>();
     }
     public class VehicleStatus

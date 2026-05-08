@@ -58,7 +58,7 @@ namespace Trackmaster_Service.Service
                         dashboard.speedAnalysis = speedTask.Result;
                         dashboard.distanceData = distanceTask.Result;
                         dashboard.overSpeedReport = graphData.Result;
-                        dashboard.IdlingDuration = IdlingTask.Result;
+                        dashboard.idlingDuration = IdlingTask.Result;
                         dashboard.AverageDrivingHours = averageDrivingHours.Result;
                         break;
                 }
