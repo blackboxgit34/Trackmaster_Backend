@@ -192,15 +192,9 @@ namespace Trackmaster_Repository.Repository
                 {
                     list.Add(new OverSpeedReport
                     {
-                        DateTime = reader["ReportDay"] == DBNull.Value ? "" : GetDateTime(reader["ReportDay"]).ToString("yyyy-MM-dd"),
-
-                        overspeedCount = reader["overSpeedCount"] == DBNull.Value
-                            ? 0
-                            : GetInt(reader["overSpeedCount"]),
-
-                        OverCustomCount = reader["nonOverSpeed"] == DBNull.Value
-                            ? 0
-                            : GetInt(reader["nonOverSpeed"])
+                        DateTime = GetDateTime(reader["ReportDay"]).ToString("yyyy-MM-dd"),
+                        overspeedCount =  GetInt(reader["overSpeedCount"]),
+                        OverCustomCount =  GetInt(reader["nonOverSpeed"])
                     });
                 }
             }
@@ -234,9 +228,9 @@ namespace Trackmaster_Repository.Repository
                 {
                     var item = new DistanceDashModel
                     {
-                        BBID = reader["bbid"]?.ToString(),
-                        VehicleName = reader["vehname"]?.ToString(),
-                        Distance = reader["distance"] != DBNull.Value ? Convert.ToDouble(reader["distance"]) : 0
+                        BBID = GetString(reader["bbid"]),
+                        VehicleName = GetString(reader["vehname"]),
+                        Distance = GetDouble(reader["distance"])
                     };
 
                     result.Add(item);
@@ -267,10 +261,10 @@ namespace Trackmaster_Repository.Repository
 
                     list.Add(new AverageDrivingHours
                     {
-                        ReportDate = reader["ReportDate"] == DBNull.Value ? "" : GetDateTime(reader["ReportDate"]).ToString("yyyy-MM-dd"),
-                        vehname = reader["vehname"] == DBNull.Value ? "" : GetString(reader["vehname"]),
-                        BBID = reader["BBID"] == DBNull.Value ? "" : GetString(reader["BBID"]),
-                        driving_time = reader["driving_time"] == DBNull.Value ? 0: GetInt(reader["driving_time"])
+                        ReportDate = GetDateTime(reader["ReportDate"]).ToString("yyyy-MM-dd"),
+                        vehname = GetString(reader["vehname"]),
+                        BBID = GetString(reader["BBID"]),
+                        driving_time = GetInt(reader["driving_time"])
                     });
 
                 }
