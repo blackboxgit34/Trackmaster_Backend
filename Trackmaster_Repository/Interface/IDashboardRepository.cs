@@ -1,4 +1,7 @@
-﻿using Trackmaster_Model;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Trackmaster_Model;
 
 namespace Trackmaster_Repository.Interface
 {
@@ -6,8 +9,11 @@ namespace Trackmaster_Repository.Interface
     {
         Task<VehicleStatus> GetVehicleStatus(int userid);
         Task<VehicleUtilization> GetVehicleUtilization(int userid);
-        Task<SpeedAnalysis> GetSpeedAnalysis(int userid);
+        Task<SpeedAnalysis> GetSpeedAnalysis(int userid, DateTime start, DateTime end);
         Task<List<VehicleList>> GetAllVehicleListByCustId(int userid);
         Task<List<OverSpeedReport>> GetOverSpeedGraphData(int custid, string bbid);
+        Task<List<DistanceDashModel>> GetDistanceDash(int custId, DateTime start, DateTime end);
+        Task<List<IdlingDuration>> GetIdlingDuration(int userid);
+        Task<List<AverageDrivingHours>> GetAverageDrivingHours(int custId);
     }
 }
