@@ -49,19 +49,21 @@ namespace Trackmaster_Service.Service
                     case null:
                         var vehicleStatusTask = _dashboardRepository.GetVehicleStatus(userid);
                         var utilizationTask = _dashboardRepository.GetVehicleUtilization(userid);
-                        var speedTask = _dashboardRepository.GetSpeedAnalysis(userid, start, end);
+                        var speedTask = _dashboardRepository.GetSpeedAnalysis(userid, DateTime.MinValue, DateTime.MinValue);
                         var distanceTask = _dashboardRepository.GetDistanceDash(userid, start, end);
                         var graphData = _dashboardRepository.GetOverSpeedGraphData(userid, bbid);
                         var IdlingTask = _dashboardRepository.GetIdlingDuration(userid);
+                        var averageDrivingHours = _dashboardRepository.GetAverageDrivingHours(userid);
 
-                        await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask, distanceTask, IdlingTask, graphData);
+                        await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask, distanceTask, graphData, IdlingTask, averageDrivingHours);
 
                         dashboard.vehicleStatus = vehicleStatusTask.Result;
                         dashboard.vehicleUtilization = utilizationTask.Result;
                         dashboard.speedAnalysis = speedTask.Result;
                         dashboard.distanceData = distanceTask.Result;
                         dashboard.overSpeedReport = graphData.Result;
-                        dashboard.IdlingDuration = IdlingTask.Result;
+                        dashboard.idlingDuration = IdlingTask.Result;
+                        dashboard.AverageDrivingHours = averageDrivingHours.Result;
                         break;
                 }
 
