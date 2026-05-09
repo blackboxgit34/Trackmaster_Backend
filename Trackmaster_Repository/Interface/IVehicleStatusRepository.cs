@@ -3,10 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Trackmaster_Model;
+using static Trackmaster_Model.VehicleStatusModel;
 
 namespace Trackmaster_Repository.Interface
 {
-    public class IVehicleStatusRepository
+    public interface IVehicleStatusRepository
     {
+        Task<List<VehicleonMapList>> GetvehicleStatusList(int userid);
     }
 }
