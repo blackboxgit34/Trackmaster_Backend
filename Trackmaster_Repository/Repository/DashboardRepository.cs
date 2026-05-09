@@ -90,10 +90,10 @@ namespace Trackmaster_Repository.Repository
                 }
                 if (end == DateTime.MinValue)
                 {
-                    end = GetDateTime(DateTime.Today.AddDays(-1).AddSeconds(-1)) ;
+                    end = GetDateTime(DateTime.Today.AddSeconds(-1)) ;
                 }
                 using var con = new SqlConnection(_connectionString43);
-                using var cmd = new SqlCommand("GetSpeedAnalysisTrackmaster", con);
+                using var cmd = new SqlCommand("GetSpeedAnalysisTrackmaster1", con);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@custid", userid);
                 cmd.Parameters.AddWithValue("@stdate", start);

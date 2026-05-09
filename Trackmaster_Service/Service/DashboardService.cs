@@ -45,7 +45,7 @@ namespace Trackmaster_Service.Service
                     case null:
                         var vehicleStatusTask = _dashboardRepository.GetVehicleStatus(userid);
                         var utilizationTask = _dashboardRepository.GetVehicleUtilization(userid);
-                        var speedTask = _dashboardRepository.GetSpeedAnalysis(userid, start, end);
+                        var speedTask = _dashboardRepository.GetSpeedAnalysis(userid, DateTime.MinValue, DateTime.MinValue);
                         var distanceTask = _dashboardRepository.GetDistanceDash(userid, start, end);
                         var graphData = _dashboardRepository.GetOverSpeedGraphData(userid, bbid);
                         var IdlingTask = _dashboardRepository.GetIdlingDuration(userid);
