@@ -42,6 +42,10 @@ namespace Trackmaster_Service.Service
                         dashboard.overSpeedReport = await _dashboardRepository.GetOverSpeedGraphData(userid,bbid);
                         break;
 
+                    case "distancecovered":
+                        dashboard.distanceData = await _dashboardRepository.GetDistanceDash(userid, start, end);
+                        break;
+
                     case null:
                         var vehicleStatusTask = _dashboardRepository.GetVehicleStatus(userid);
                         var utilizationTask = _dashboardRepository.GetVehicleUtilization(userid);
