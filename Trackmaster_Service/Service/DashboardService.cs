@@ -57,17 +57,21 @@ namespace Trackmaster_Service.Service
 
                         await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask, distanceTask, graphData, IdlingTask, averageDrivingHours);
 
-                        dashboard.vehicleStatus = vehicleStatusTask.Result;
-                        dashboard.vehicleUtilization = utilizationTask.Result;
-                        dashboard.speedAnalysis = speedTask.Result;
-                        dashboard.distanceData = distanceTask.Result;
-                        dashboard.overSpeedReport = graphData.Result;
-                        dashboard.idlingDuration = IdlingTask.Result;
-                        dashboard.AverageDrivingHours = averageDrivingHours.Result;
+                        dashboard.vehicleStatus = await vehicleStatusTask;
+                        dashboard.vehicleUtilization = await utilizationTask;
+                        dashboard.speedAnalysis = await speedTask;
+                        dashboard.distanceData = await distanceTask;
+                        dashboard.overSpeedReport = await graphData;
+                        dashboard.idlingDuration = await IdlingTask;
+                        dashboard.AverageDrivingHours = await averageDrivingHours;
                         break;
                 }
 
                 dashboard.IsSuccess = true;
+
+
+
+
                 dashboard.Message = "Success";
 
                 _cache.Set(cacheKey, dashboard, TimeSpan.FromMinutes(1));
