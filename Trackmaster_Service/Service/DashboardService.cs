@@ -51,7 +51,7 @@ namespace Trackmaster_Service.Service
                         var IdlingTask = _dashboardRepository.GetIdlingDuration(userid);
                         var averageDrivingHours = _dashboardRepository.GetAverageDrivingHours(userid);
 
-                        await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask, distanceTask, graphData, averageDrivingHours);
+                        await Task.WhenAll(vehicleStatusTask, utilizationTask, speedTask, distanceTask, graphData, IdlingTask, averageDrivingHours);
 
                         dashboard.vehicleStatus = vehicleStatusTask.Result;
                         dashboard.vehicleUtilization = utilizationTask.Result;
