@@ -82,7 +82,7 @@ namespace Trackmaster_Repository.Repository
             var model = new SpeedAnalysis();
             try
             {
-                
+
 
                 if (start == DateTime.MinValue)
                 {
@@ -236,7 +236,7 @@ namespace Trackmaster_Repository.Repository
                     {
                         BBID = reader["bbid"]?.ToString(),
                         VehicleName = reader["vehname"]?.ToString(),
-                        Distance = reader["distance"] != DBNull.Value ? Convert.ToDouble(reader["distance"]): 0
+                        Distance = reader["distance"] != DBNull.Value ? Convert.ToDouble(reader["distance"]) : 0
                     };
 
                     result.Add(item);
@@ -250,5 +250,38 @@ namespace Trackmaster_Repository.Repository
             return result;
         }
 
+
+        public async Task<List<AverageDrivingHours>> GetAverageDrivingHours(int custId)
+        {
+            var list = new List<AverageDrivingHours>();
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand("AverageDrivingHours", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@custId", custId);
+                await con.OpenAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+
+                    list.Add(new AverageDrivingHours
+                    {
+                        ReportDate = reader["ReportDate"] == DBNull.Value ? "" : GetDateTime(reader["ReportDate"]).ToString("yyyy-MM-dd"),
+                        vehname = reader["vehname"] == DBNull.Value ? "" : GetString(reader["vehname"]),
+                        BBID = reader["BBID"] == DBNull.Value ? "" : GetString(reader["BBID"]),
+                        driving_time = reader["driving_time"] == DBNull.Value ? 0: GetInt(reader["driving_time"])
+                    });
+
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+            return list;
+
+
+        }
     }
 }

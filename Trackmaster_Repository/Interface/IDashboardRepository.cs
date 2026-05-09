@@ -14,5 +14,6 @@ namespace Trackmaster_Repository.Interface
         Task<List<OverSpeedReport>> GetOverSpeedGraphData(int custid, string bbid);
         Task<List<DistanceDashModel>> GetDistanceDash(int custId, DateTime start, DateTime end);
         Task<List<IdlingDuration>> GetIdlingDuration(int userid);
+        Task<List<AverageDrivingHours>> GetAverageDrivingHours(int custId);
     }
 }
