@@ -93,7 +93,7 @@ namespace Trackmaster_Repository.Repository
                     end = GetDateTime(DateTime.Today.AddSeconds(-1)) ;
                 }
                 using var con = new SqlConnection(_connectionString43);
-                using var cmd = new SqlCommand("GetSpeedAnalysisTrackmaster1", con);
+                using var cmd = new SqlCommand("GetSpeedAnalysisTrackmaster", con);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@custid", userid);
                 cmd.Parameters.AddWithValue("@stdate", start);
