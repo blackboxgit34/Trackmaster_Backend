@@ -26,7 +26,7 @@ namespace Trackmaster_Repository.Repository
             try
             {
                 using var con = new SqlConnection(_connectionString43);
-                using var cmd = new SqlCommand("GetVehicleData", con);
+                using var cmd = new SqlCommand("getVehicleStatusTM", con);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@custid", userid);
 
@@ -36,9 +36,16 @@ namespace Trackmaster_Repository.Repository
                 {
                     list.Add(new VehicleonMapList
                     {
-                        VehName = GetString(reader["VehicleName"]),
-                        VehicleStatus = GetString(reader["type"]),
-                        Type = GetString(reader["statusCode"])
+                        VehName = GetString(reader["vehname"]),
+                        VehicleStatus = GetString(reader["statusCode"]),
+                        Type = GetString(reader["type"]), 
+                        model = GetString(reader["model"]),
+                        lat = GetFloat(reader["lat"]),
+                        lng = GetFloat(reader["longi"]),
+                        speed = GetString(reader["speed"]),
+                        location = GetString(reader["location"]),
+                        lastUpdated = GetString(reader["Lastdate"]),
+
                     });
                 }
             }
