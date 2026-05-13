@@ -26,6 +26,9 @@ namespace Trackmaster_Service.Service
         {
             return await _vehicleStatusRepository.GetvehicleStatusList(userid);
         }
-
+        public async Task<List<PlaybackDataModel>> GetPlaybackData(string bbid, DateTime date)
+        {
+            return await _vehicleStatusRepository.GetPlaybackData(bbid, date);
+        }
     }
 }

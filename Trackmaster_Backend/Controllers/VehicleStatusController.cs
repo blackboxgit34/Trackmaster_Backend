@@ -37,5 +37,28 @@ namespace Trackmaster_Backend.Controllers
                 });
             }
         }
+        [HttpGet("GetPlaybackData")]
+        public async Task<IActionResult> GetPlaybackData(string bbid, DateTime date)
+        {
+            try
+            {
+                var dashboardData = await _vehiclestatusService.GetPlaybackData(bbid, date);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Vehicle data retrieved successfully",
+                    data = dashboardData
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
     }
 }

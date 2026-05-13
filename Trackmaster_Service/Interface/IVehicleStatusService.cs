@@ -11,5 +11,6 @@ namespace Trackmaster_Service.Interface
     public interface IVehicleStatusService
     {
         Task<List<VehicleonMapList>> GetvehicleStatusList(int custId);
+        Task<List<PlaybackDataModel>> GetPlaybackData(string bbid, DateTime date);
     }
 }
