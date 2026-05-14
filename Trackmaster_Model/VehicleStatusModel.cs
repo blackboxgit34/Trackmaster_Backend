@@ -20,7 +20,9 @@ namespace Trackmaster_Model
             public string speed { get; set; }
             public string location { get; set; }
             public string lastUpdated { get; set; }
-
+            public string bbid { get; set; }
+            public int gsmSignal { get; set; }
+            public string IgnitionStatus { get; set; }
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Trackmaster_Model;
 using Trackmaster_Service.Interface;
 using Trackmaster_Service.Service;
 
@@ -15,11 +16,19 @@ namespace Trackmaster_Backend.Controllers
         }
 
         [HttpGet("GetvehicleStatusList")]
-        public async Task<IActionResult> GetvehicleStatusList(int userid)
+        public async Task<IActionResult> GetvehicleStatusList(string pagename,  [FromQuery] DataTableRequestModel model)
         {
             try
             {
-                var vehiclestatuslist = await _vehiclestatusService.GetvehicleStatusList(userid);
+                int sEcho = model.sEcho; 
+                int start = model.iDisplayStart;
+                int length = model.iDisplayLength;
+                string search = model.sSearch;
+                string sortColumn = model.sortColumn;
+                string sortDirection = model.sortDirection;
+
+
+                var vehiclestatuslist = await _vehiclestatusService.GetvehicleStatusList(pagename,model);
                 return Ok(new
                 {
                     success = true,
