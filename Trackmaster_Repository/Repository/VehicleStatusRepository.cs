@@ -16,9 +16,15 @@ namespace Trackmaster_Repository.Repository
     public class VehicleStatusRepository : IVehicleStatusRepository
     {
         private readonly string _connectionString43;
+        private readonly string _connectionString44;
         public VehicleStatusRepository(IConfiguration configuration)
         {
             _connectionString43 = configuration.GetConnectionString("DefaultConnection43");
+            _connectionString44 = configuration.GetConnectionString("DefaultConnection44");
+        }
+        public string GetConnectionStringTableWise(string tableName)
+        {
+            return ((tableName.StartsWith("i", StringComparison.OrdinalIgnoreCase) || tableName.StartsWith("j", StringComparison.OrdinalIgnoreCase)) && tableName.Length > 5) ? _connectionString44 : _connectionString43;
         }
         public async Task<List<VehicleonMapList>> GetvehicleStatusList(int userid)
         {
@@ -48,6 +54,45 @@ namespace Trackmaster_Repository.Repository
                         bbid = GetString(reader["bbid"]),
                         gsmSignal = GetInt(reader["gsmSignal"]),
                         IgnitionStatus = GetString(reader["currignitionStatus"]),
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+            return list;
+        }
+        public async Task<List<PlaybackDataModel>> GetPlaybackData(string bbid, DateTime date)
+        {
+            var list = new List<PlaybackDataModel>();
+            try
+            {
+                using var con = new SqlConnection(GetConnectionStringTableWise(bbid));
+                using var cmd = new SqlCommand("GetPlaybackData", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                DateTime selectedDate = Convert.ToDateTime(date);
+                DateTime startDate = selectedDate.Date;
+                DateTime endDate = selectedDate.Date.AddDays(1).AddSeconds(-1);
+
+                cmd.Parameters.AddWithValue("@bbid", bbid);
+                cmd.Parameters.AddWithValue("@startdate", startDate);
+                cmd.Parameters.AddWithValue("@enddate", endDate);
+
+                await con.OpenAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    list.Add(new PlaybackDataModel
+                    {
+                        latitude = GetDecimal(reader["latitude"]),
+                        longitude = GetDecimal(reader["longitude"]),
+                        location = GetString(reader["loc"]),
+                        speed = GetInt(reader["speed"]),
+                        datadate = GetDateTime(reader["datadate"]),
+                        acignition = GetString(reader["acignition"]),
+                        distance = GetDecimal(reader["distance"])
                     });
                 }
             }
