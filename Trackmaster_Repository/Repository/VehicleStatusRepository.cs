@@ -45,7 +45,9 @@ namespace Trackmaster_Repository.Repository
                         speed = GetString(reader["speed"]),
                         location = GetString(reader["location"]),
                         lastUpdated = GetString(reader["Lastdate"]),
-
+                        bbid = GetString(reader["bbid"]),
+                        gsmSignal = GetInt(reader["gsmSignal"]),
+                        IgnitionStatus = GetString(reader["currignitionStatus"]),
                     });
                 }
             }
