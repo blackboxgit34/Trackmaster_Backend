@@ -10,7 +10,7 @@ namespace Trackmaster_Service.Interface
 {
     public interface IVehicleStatusService
     {
-        Task<List<VehicleonMapList>> GetvehicleStatusList(int custId, string pagename);
+        Task<List<VehicleonMapList>> GetvehicleStatusList(string pagename, DataTableRequestModel model);
         Task<List<PlaybackDataModel>> GetPlaybackData(string bbid, DateTime date);
     }
 }

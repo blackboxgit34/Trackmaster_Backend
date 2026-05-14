@@ -26,7 +26,9 @@ namespace Trackmaster_Repository.Repository
         {
             return ((tableName.StartsWith("i", StringComparison.OrdinalIgnoreCase) || tableName.StartsWith("j", StringComparison.OrdinalIgnoreCase)) && tableName.Length > 5) ? _connectionString44 : _connectionString43;
         }
-        public async Task<List<VehicleonMapList>> GetvehicleStatusList(int userid, string pagename)
+
+
+        public async Task<List<VehicleonMapList>> GetvehicleStatusList(string pagename, DataTableRequestModel model)
         {
             var list = new List<VehicleonMapList>();
             try
@@ -34,8 +36,26 @@ namespace Trackmaster_Repository.Repository
                 using var con = new SqlConnection(_connectionString43);
                 using var cmd = new SqlCommand("getVehicleStatusTM", con);
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("@custid", userid);
+                cmd.Parameters.AddWithValue("@custid", model.userId);
                 cmd.Parameters.AddWithValue("@pageName", pagename);
+                // Paging Parameters
+                cmd.Parameters.AddWithValue("@lbound", model.iDisplayStart);
+
+                cmd.Parameters.AddWithValue("@ubound",model.iDisplayStart + model.iDisplayLength);
+
+                // Search Parameter
+                //cmd.Parameters.AddWithValue("@sSearch",model.sSearch);
+                cmd.Parameters.Add("@sSearch", SqlDbType.VarChar).Value =
+                   string.IsNullOrWhiteSpace(model.sSearch) || model.sSearch == "null"
+                       ? DBNull.Value
+                       : model.sSearch;
+                // Output Parameter
+                SqlParameter itemCountParam = new SqlParameter("@itemcount",SqlDbType.Int);
+
+                itemCountParam.Direction = ParameterDirection.Output;
+
+                cmd.Parameters.Add(itemCountParam);
+
                 await con.OpenAsync();
                 using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
