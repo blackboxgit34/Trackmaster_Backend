@@ -22,9 +22,9 @@ namespace Trackmaster_Service.Service
             _vehicleStatusRepository = vehicleStatusRepository;
             _cache = cache;
         }
-        public async Task<List<VehicleonMapList>> GetvehicleStatusList(int userid)
+        public async Task<List<VehicleonMapList>> GetvehicleStatusList(int userid, string pagename)
         {
-            return await _vehicleStatusRepository.GetvehicleStatusList(userid);
+            return await _vehicleStatusRepository.GetvehicleStatusList(userid, pagename);
         }
         public async Task<List<PlaybackDataModel>> GetPlaybackData(string bbid, DateTime date)
         {

@@ -26,7 +26,7 @@ namespace Trackmaster_Repository.Repository
         {
             return ((tableName.StartsWith("i", StringComparison.OrdinalIgnoreCase) || tableName.StartsWith("j", StringComparison.OrdinalIgnoreCase)) && tableName.Length > 5) ? _connectionString44 : _connectionString43;
         }
-        public async Task<List<VehicleonMapList>> GetvehicleStatusList(int userid)
+        public async Task<List<VehicleonMapList>> GetvehicleStatusList(int userid, string pagename)
         {
             var list = new List<VehicleonMapList>();
             try
@@ -35,7 +35,7 @@ namespace Trackmaster_Repository.Repository
                 using var cmd = new SqlCommand("getVehicleStatusTM", con);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@custid", userid);
-
+                cmd.Parameters.AddWithValue("@pageName", pagename);
                 await con.OpenAsync();
                 using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())

@@ -10,7 +10,7 @@ namespace Trackmaster_Repository.Interface
 {
     public interface IVehicleStatusRepository
     {
-        Task<List<VehicleonMapList>> GetvehicleStatusList(int userid);
+        Task<List<VehicleonMapList>> GetvehicleStatusList(int userid,string pagename);
         Task<List<PlaybackDataModel>> GetPlaybackData(string bbid, DateTime date);
     }
 }

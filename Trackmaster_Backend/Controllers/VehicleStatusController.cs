@@ -15,11 +15,11 @@ namespace Trackmaster_Backend.Controllers
         }
 
         [HttpGet("GetvehicleStatusList")]
-        public async Task<IActionResult> GetvehicleStatusList(int userid)
+        public async Task<IActionResult> GetvehicleStatusList(int userid, string pagename)
         {
             try
             {
-                var vehiclestatuslist = await _vehiclestatusService.GetvehicleStatusList(userid);
+                var vehiclestatuslist = await _vehiclestatusService.GetvehicleStatusList(userid, pagename);
                 return Ok(new
                 {
                     success = true,
