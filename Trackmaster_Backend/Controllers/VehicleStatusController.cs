@@ -16,11 +16,11 @@ namespace Trackmaster_Backend.Controllers
         }
 
         [HttpGet("GetvehicleStatusList")]
-        public async Task<IActionResult> GetvehicleStatusList(string pagename,  [FromQuery] DataTableRequestModel model)
+        public async Task<IActionResult> GetvehicleStatusList(string pagename, [FromQuery] DataTableRequestModel model)
         {
             try
             {
-                int sEcho = model.sEcho; 
+                int sEcho = model.sEcho;
                 int start = model.iDisplayStart;
                 int length = model.iDisplayLength;
                 string search = model.sSearch;
@@ -28,7 +28,7 @@ namespace Trackmaster_Backend.Controllers
                 string sortDirection = model.sortDirection;
 
 
-                var vehiclestatuslist = await _vehiclestatusService.GetvehicleStatusList(pagename,model);
+                var vehiclestatuslist = await _vehiclestatusService.GetvehicleStatusList(pagename, model);
                 return Ok(new
                 {
                     success = true,
@@ -51,12 +51,131 @@ namespace Trackmaster_Backend.Controllers
         {
             try
             {
-                var dashboardData = await _vehiclestatusService.GetPlaybackData(bbid, date);
+                var playbackData = await _vehiclestatusService.GetPlaybackData(bbid, date);
+
+                var movingData = new List<PlaybackDataModel>();
+
+                if (playbackData == null || playbackData.Count == 0)
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        data = movingData
+                    });
+                }
+
+                // =========================
+                // FIRST MOVING POINT
+                // =========================
+                int startIndex = playbackData.FindIndex(x => x.speed > 0);
+
+                if (startIndex == -1)
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        data = movingData
+                    });
+                }
+
+                // =========================
+                // LAST MOVING POINT
+                // =========================
+                int lastMovingIndex = -1;
+
+                for (int i = playbackData.Count - 1; i >= 0; i--)
+                {
+                    if (playbackData[i].speed > 0)
+                    {
+                        lastMovingIndex = i;
+                        break;
+                    }
+                }
+
+                // =========================
+                // FIRST STOP AFTER LAST MOVING
+                // =========================
+                int endIndex = lastMovingIndex;
+
+                for (int i = lastMovingIndex + 1; i < playbackData.Count; i++)
+                {
+                    if (playbackData[i].speed == 0)
+                    {
+                        endIndex = i;
+                        break;
+                    }
+                }
+
+                // =========================
+                // PUSH START RECORD
+                // =========================
+                movingData.Add(playbackData[startIndex]);
+
+                int? stopStartIndex = null;
+
+                // =========================
+                // LOOP
+                // =========================
+                for (int i = startIndex + 1; i < endIndex; i++)
+                {
+                    var current = playbackData[i];
+                    var previous = playbackData[i - 1];
+
+                    // =====================
+                    // STOP START
+                    // =====================
+                    if (current.speed == 0 && previous.speed > 0)
+                    {
+                        stopStartIndex = i;
+                    }
+
+                    // =====================
+                    // STOP END
+                    // =====================
+                    if (
+                        stopStartIndex != null &&
+                        (
+                            current.speed > 0 ||
+                            i == endIndex - 1
+                        )
+                    )
+                    {
+                        var stopStartPoint = playbackData[stopStartIndex.Value];
+                        var stopEndPoint = playbackData[i];
+
+                        var stopDuration =
+                            (stopEndPoint.datadate - stopStartPoint.datadate)
+                            .TotalMinutes;
+
+                        // ONLY PUSH ONE STOP RECORD IF > 1 MIN
+                        if (stopDuration > 1)
+                        {
+                            movingData.Add(stopStartPoint);
+                        }
+
+                        stopStartIndex = null;
+                    }
+
+                    // =====================
+                    // MOVING RECORD
+                    // =====================
+                    if (current.speed > 0)
+                    {
+                        movingData.Add(current);
+                    }
+                }
+
+                // =========================
+                // PUSH END RECORD
+                // =========================
+                movingData.Add(playbackData[endIndex]);
+
                 return Ok(new
                 {
                     success = true,
                     message = "Vehicle data retrieved successfully",
-                    data = dashboardData
+                    data = playbackData,
+                    movingData = movingData
                 });
             }
             catch (Exception ex)
