@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Trackmaster_Model;
 using static Trackmaster_Model.Reports;
 
 namespace Trackmaster_Service.Interface
@@ -13,6 +14,7 @@ namespace Trackmaster_Service.Interface
         List<DropDownItems> GetDesignationTypeCrew();
         List<DropDownItems> GetStatesList();
         List<DropDownItems> GetCityList(int stateid);
-        string AddUpdateEmployee(Employee objEmp);
+        //string AddUpdateEmployee(Employee objEmp);
+        string AddUpdateEmployee(Employee objEmp, string imagePaths = "");
     }
 }

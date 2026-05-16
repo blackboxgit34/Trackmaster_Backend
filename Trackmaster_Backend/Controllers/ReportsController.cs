@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Net;
 using System.Xml.Linq;
+using Trackmaster_Model;
 using Trackmaster_Service.Interface;
 using static Trackmaster_Model.Reports;
 
@@ -12,9 +15,11 @@ namespace Trackmaster_Backend.Controllers
     public class ReportsController : ControllerBase
     {
         private readonly IReportsService _reportsService;
-        public ReportsController(IReportsService reportsService)
+        private readonly IWebHostEnvironment _environment;
+        public ReportsController(IReportsService reportsService, IWebHostEnvironment environment)
         {
             _reportsService = reportsService;
+            _environment = environment;
         }
         /// <summary>
         /// Get crew report data
@@ -72,15 +77,67 @@ namespace Trackmaster_Backend.Controllers
             return Ok(new { cityData = cityList }); 
         }
 
+
         [HttpPost("AddUpdateEmployee")]
-        public async Task<IActionResult>  AddUpdateEmployee([FromBody] Employee employee)
+        public IActionResult AddUpdateEmployee([FromForm] Employee objEmp)
         {
-            string isInsertUpdate = "";
+            try
+            {
+                var folderName = "FileUpload";
+                var uploadPath = Path.Combine(_environment.WebRootPath, folderName);
 
-            isInsertUpdate = _reportsService.AddUpdateEmployee(employee);
+                if (!Directory.Exists(uploadPath))
+                {
+                    Directory.CreateDirectory(uploadPath);
+                }
 
-            return Ok(isInsertUpdate);
+                List<DocInfo> fileList = new List<DocInfo>();
+                List<string> imagePaths = new List<string>();
+
+                var files = objEmp.ImageFiles;
+
+                if (files != null && files.Count > 0)
+                {
+                    foreach (var file in files)
+                    {
+                        if (file.Length > 0)
+                        {
+                            string fileName = Guid.NewGuid().ToString("N").Substring(0, 6)
+                                              + "_" + file.FileName;
+
+                            string physicalPath = Path.Combine(uploadPath, fileName);
+
+                            using (var stream = new FileStream(physicalPath, FileMode.Create))
+                            {
+                                file.CopyTo(stream);
+                            }
+
+                            fileList.Add(new DocInfo
+                            {
+                                Name = file.FileName,
+                                fullPath = "/FileUpload/" + fileName
+                            });
+
+                            imagePaths.Add("/FileUpload/" + fileName);
+                        }
+                    }
+                }
+
+                string finalImagePath = string.Join(",", imagePaths);
+                var result = _reportsService.AddUpdateEmployee(objEmp, finalImagePath);
+
+                return Ok(new
+                {
+                    message = result,
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
+
+
 
 
     }
