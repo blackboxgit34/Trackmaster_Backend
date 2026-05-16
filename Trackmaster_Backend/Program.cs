@@ -1,11 +1,13 @@
+using OfficeOpenXml;
 using Trackmaster_Repository.Interface;
 using Trackmaster_Repository.Repository;
+using Trackmaster_Service;
 using Trackmaster_Service.Interface;
 using Trackmaster_Service.Repository;
 using Trackmaster_Service.Service;
 
 var builder = WebApplication.CreateBuilder(args);
-
+ExcelPackage.License.SetNonCommercialOrganization("BlackBox");
 // Add services to the container.
 builder.Services.AddMemoryCache();
 builder.Services.AddControllers();
@@ -23,6 +25,8 @@ builder.Services.AddSingleton<IDashboardRepository, DashboardRepository>();
 builder.Services.AddSingleton<IReportsRepository, ReportsRepository>();
 builder.Services.AddSingleton<IVehicleStatusRepository, VehicleStatusRepository>();
 
+//-------------------Registration of repositories------------------------//
+builder.Services.AddSingleton<ImportExportExcelService>();
 
 builder.Services.AddCors(options =>
 {
