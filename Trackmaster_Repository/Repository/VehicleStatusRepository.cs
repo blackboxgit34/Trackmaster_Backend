@@ -74,7 +74,11 @@ namespace Trackmaster_Repository.Repository
                         lastUpdated = GetString(reader["Lastdate"]),
                         bbid = GetString(reader["bbid"]),
                         gsmSignal = GetInt(reader["gsmSignal"]),
+                        gpsAntConStatus = GetInt(reader["gpsAntConStatus"]),
+                        GPSFix = GetInt(reader["GPSFix"]),
                         IgnitionStatus = GetString(reader["currignitionStatus"]),
+                        vehBattery = GetInt(reader["vehBatteryStatus"]),
+                        deviceBattery = GetInt(reader["boxBatteryStatus"]),
                     });
                 }
                 reader.Close();
