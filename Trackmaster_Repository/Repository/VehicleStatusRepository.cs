@@ -74,6 +74,8 @@ namespace Trackmaster_Repository.Repository
                         bbid = GetString(reader["bbid"]),
                         gsmSignal = GetInt(reader["gsmSignal"]),
                         IgnitionStatus = GetString(reader["currignitionStatus"]),
+                        vehBattery = GetInt(reader["vehBatteryStatus"]),
+                        deviceBattery = GetInt(reader["boxBatteryStatus"]),
                     });
                 }
             }
