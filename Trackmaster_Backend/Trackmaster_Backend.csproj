@@ -16,4 +16,8 @@
     <ProjectReference Include="..\Trackmaster_Service\Trackmaster_Service.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
+  </ItemGroup>
+
 </Project>
