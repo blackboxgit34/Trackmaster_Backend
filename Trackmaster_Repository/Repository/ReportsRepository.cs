@@ -26,18 +26,18 @@ namespace Trackmaster_Repository.Repository
             _FMSConString43 = configuration.GetConnectionString("FMSConString43");
         }
 
-        public VehiclesReport GetConductorInfo(int CustId, int sEcho, int iDisplayStart, int iDisplayLength, string sSearch, string sortColumn, string sortDirection)
+        public VehiclesReport GetConductorInfo(DataTableRequestModel requestModel)
         {
             var modelObj = new VehiclesReport();
             modelObj.modelObjList = new List<VehicleInformation>();
-            if (sSearch == "null" || string.IsNullOrEmpty(sSearch))
+            if (requestModel.sSearch == "null" || string.IsNullOrEmpty(requestModel.sSearch))
             {
-                sSearch = null;
+                requestModel.sSearch = null;
             }
-            if (string.IsNullOrEmpty(sortColumn))
-                sortColumn = "VehName";
-            if (string.IsNullOrEmpty(sortDirection))
-                sortDirection = "ASC";
+            if (string.IsNullOrEmpty(requestModel.sortColumn))
+                requestModel.sortColumn = "VehName";
+            if (string.IsNullOrEmpty(requestModel.sortDirection))
+                requestModel.sortDirection = "asc";
             try
             {
                 using (SqlConnection con = new SqlConnection(_connectionString43))
@@ -45,12 +45,12 @@ namespace Trackmaster_Repository.Repository
                     using (SqlCommand cmd = new SqlCommand("[dbo].[GetCrewData]", con))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@CustId", CustId);
-                        cmd.Parameters.AddWithValue("@startRowIndex", iDisplayStart);
-                        cmd.Parameters.AddWithValue("@pageSize", iDisplayLength);
-                        cmd.Parameters.AddWithValue("@vehName", string.IsNullOrEmpty(sSearch) ? (object)DBNull.Value : sSearch);
-                        cmd.Parameters.AddWithValue("@sortColumn", sortColumn);
-                        cmd.Parameters.AddWithValue("@sortDirection", sortDirection);
+                        cmd.Parameters.AddWithValue("@CustId", requestModel.CustId);
+                        cmd.Parameters.AddWithValue("@startRowIndex", requestModel.iDisplayStart);
+                        cmd.Parameters.AddWithValue("@pageSize", requestModel.iDisplayLength);
+                        cmd.Parameters.AddWithValue("@vehName", string.IsNullOrEmpty(requestModel.sSearch) ? (object)DBNull.Value : requestModel.sSearch);
+                        cmd.Parameters.AddWithValue("@sortColumn", requestModel.sortColumn);
+                        cmd.Parameters.AddWithValue("@sortDirection", requestModel.sortDirection);
                         con.Open();
                         using (SqlDataAdapter da = new SqlDataAdapter(cmd))
                         {
@@ -245,7 +245,7 @@ namespace Trackmaster_Repository.Repository
                     con.Open();
                     int rowsAffected = cmd.ExecuteNonQuery();con.Close();
                     result = rowsAffected > 0? "Employee saved successfully": "Failed to save employee";
-                    result = "testing to save employee";
+                    //result = "testing to save employee";
                 }
             }
             catch (SqlException ex)

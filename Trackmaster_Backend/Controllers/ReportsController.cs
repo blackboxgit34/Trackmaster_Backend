@@ -33,16 +33,16 @@ namespace Trackmaster_Backend.Controllers
         /// <param name="sortDirection"></param>
         /// <returns></returns>
         [HttpGet("GetConductorInfo")]
-        public async Task<IActionResult> GetConductorInfo(int CustId,int sEcho,int iDisplayStart,int iDisplayLength,string sSearch,string sortColumn,string sortDirection)
+        public async Task<IActionResult> GetConductorInfo([FromQuery] DataTableRequestModel requestModel)
         {
-            var modelObj = _reportsService.GetConductorInfo(CustId, sEcho, iDisplayStart, iDisplayLength, sSearch, sortColumn, sortDirection);
+            var modelObj = _reportsService.GetConductorInfo(requestModel);
 
             if (modelObj == null)
                 return NoContent();
 
             return Ok(new
             {
-                sEcho = sEcho,
+                sEcho = requestModel.sEcho,
                 iTotalRecords = modelObj.PageCount,
                 iTotalDisplayRecords = modelObj.PageCount,
                 aaData = modelObj.modelObjList

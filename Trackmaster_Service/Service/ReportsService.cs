@@ -19,9 +19,9 @@ namespace Trackmaster_Service.Service
         {
             _reportsRepository = reportsRepository;
         }
-        public VehiclesReport GetConductorInfo(int CustId, int sEcho, int iDisplayStart, int iDisplayLength, string sSearch, string sortColumn, string sortDirection)
+        public VehiclesReport GetConductorInfo(DataTableRequestModel requestModel)
         {
-            return _reportsRepository.GetConductorInfo(CustId, sEcho,iDisplayStart, iDisplayLength, sSearch, sortColumn, sortDirection);
+            return _reportsRepository.GetConductorInfo(requestModel);
 
         }
         public List<DropDownItems> GetDesignationTypeCrew()
