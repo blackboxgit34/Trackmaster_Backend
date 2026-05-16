@@ -33,7 +33,8 @@ namespace Trackmaster_Backend.Controllers
                 {
                     success = true,
                     message = "Vehicle data retrieved successfully",
-                    data = vehiclestatuslist
+                    data = vehiclestatuslist,
+
                 });
             }
             catch (Exception ex)

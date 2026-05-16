@@ -31,12 +31,13 @@ namespace Trackmaster_Repository.Repository
         public async Task<List<VehicleonMapList>> GetvehicleStatusList(string pagename, DataTableRequestModel model)
         {
             var list = new List<VehicleonMapList>();
+            int totalCount = 0;
             try
             {
                 using var con = new SqlConnection(_connectionString43);
                 using var cmd = new SqlCommand("getVehicleStatusTM", con);
                 cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("@custid", model.userId);
+                cmd.Parameters.AddWithValue("@custid", model.CustId);
                 cmd.Parameters.AddWithValue("@pageName", pagename);
                 // Paging Parameters
                 cmd.Parameters.AddWithValue("@lbound", model.iDisplayStart);
@@ -75,6 +76,17 @@ namespace Trackmaster_Repository.Repository
                         gsmSignal = GetInt(reader["gsmSignal"]),
                         IgnitionStatus = GetString(reader["currignitionStatus"]),
                     });
+                }
+                reader.Close();
+
+                totalCount = Convert.ToInt32(
+                    itemCountParam.Value
+                );
+
+                if (list.Count > 0)
+                {
+                    list[0].TotalRecords =
+                        totalCount;
                 }
             }
             catch (Exception ex)

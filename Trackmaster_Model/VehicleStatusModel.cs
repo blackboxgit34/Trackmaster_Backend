@@ -23,6 +23,8 @@ namespace Trackmaster_Model
             public string bbid { get; set; }
             public int gsmSignal { get; set; }
             public string IgnitionStatus { get; set; }
+            // ADD THIS
+            public int TotalRecords { get; set; }
         }
     }
 }
