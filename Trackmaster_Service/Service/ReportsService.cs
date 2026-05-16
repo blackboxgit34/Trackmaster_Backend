@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
 using Trackmaster_Repository.Repository;
 using Trackmaster_Service.Interface;
@@ -36,9 +37,14 @@ namespace Trackmaster_Service.Service
             return _reportsRepository.GetCityList(stateid);
         }
 
-        public  string AddUpdateEmployee(Employee objEmp)
+        //public  string AddUpdateEmployee(Employee objEmp)
+        //{
+        //    return _reportsRepository.AddUpdateEmployee(objEmp);
+        //}
+
+        public string AddUpdateEmployee(Employee objEmp, string imagePaths = "")
         {
-            return _reportsRepository.AddUpdateEmployee(objEmp);
+            return _reportsRepository.AddUpdateEmployee(objEmp, imagePaths);
         }
 
     }
