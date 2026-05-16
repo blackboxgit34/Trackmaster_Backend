@@ -10,7 +10,7 @@ namespace Trackmaster_Service.Interface
 {
     public interface IReportsService
     {
-         VehiclesReport GetConductorInfo(int CustId, int sEcho, int iDisplayStart, int iDisplayLength, string sSearch, string sortColumn, string sortDirection);
+        VehiclesReport GetConductorInfo(int CustId, int sEcho, int iDisplayStart, int iDisplayLength, string sSearch, string sortColumn, string sortDirection);
         List<DropDownItems> GetDesignationTypeCrew();
         List<DropDownItems> GetStatesList();
         List<DropDownItems> GetCityList(int stateid);
