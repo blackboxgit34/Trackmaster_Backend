@@ -8,9 +8,10 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
-using static Trackmaster_Repository.DataTypeHelper;
 using static Trackmaster_Model.Reports; //added model
+using static Trackmaster_Repository.DataTypeHelper;
 
 namespace Trackmaster_Repository.Repository
 {
@@ -25,18 +26,18 @@ namespace Trackmaster_Repository.Repository
             _FMSConString43 = configuration.GetConnectionString("FMSConString43");
         }
 
-        public VehiclesReport GetConductorInfo(int CustId, int sEcho, int iDisplayStart, int iDisplayLength, string sSearch, string sortColumn, string sortDirection)
+        public VehiclesReport GetConductorInfo(DataTableRequestModel requestModel)
         {
             var modelObj = new VehiclesReport();
             modelObj.modelObjList = new List<VehicleInformation>();
-            if (sSearch == "null" || string.IsNullOrEmpty(sSearch))
+            if (requestModel.sSearch == "null" || string.IsNullOrEmpty(requestModel.sSearch))
             {
-                sSearch = null;
+                requestModel.sSearch = null;
             }
-            if (string.IsNullOrEmpty(sortColumn))
-                sortColumn = "VehName";
-            if (string.IsNullOrEmpty(sortDirection))
-                sortDirection = "ASC";
+            if (string.IsNullOrEmpty(requestModel.sortColumn))
+                requestModel.sortColumn = "VehName";
+            if (string.IsNullOrEmpty(requestModel.sortDirection))
+                requestModel.sortDirection = "asc";
             try
             {
                 using (SqlConnection con = new SqlConnection(_connectionString43))
@@ -44,12 +45,12 @@ namespace Trackmaster_Repository.Repository
                     using (SqlCommand cmd = new SqlCommand("[dbo].[GetCrewData]", con))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@CustId", CustId);
-                        cmd.Parameters.AddWithValue("@startRowIndex", iDisplayStart);
-                        cmd.Parameters.AddWithValue("@pageSize", iDisplayLength);
-                        cmd.Parameters.AddWithValue("@vehName", string.IsNullOrEmpty(sSearch) ? (object)DBNull.Value : sSearch);
-                        cmd.Parameters.AddWithValue("@sortColumn", sortColumn);
-                        cmd.Parameters.AddWithValue("@sortDirection", sortDirection);
+                        cmd.Parameters.AddWithValue("@CustId", requestModel.CustId);
+                        cmd.Parameters.AddWithValue("@startRowIndex", requestModel.iDisplayStart);
+                        cmd.Parameters.AddWithValue("@pageSize", requestModel.iDisplayLength);
+                        cmd.Parameters.AddWithValue("@vehName", string.IsNullOrEmpty(requestModel.sSearch) ? (object)DBNull.Value : requestModel.sSearch);
+                        cmd.Parameters.AddWithValue("@sortColumn", requestModel.sortColumn);
+                        cmd.Parameters.AddWithValue("@sortDirection", requestModel.sortDirection);
                         con.Open();
                         using (SqlDataAdapter da = new SqlDataAdapter(cmd))
                         {
@@ -201,55 +202,50 @@ namespace Trackmaster_Repository.Repository
             return cityList;
         }
 
-
-        public string AddUpdateEmployee(Employee objEmp)
+        public string AddUpdateEmployee(Employee objEmp, string imagePaths)
         {
             string result = "";
 
             try
             {
                 using (SqlConnection con = new SqlConnection(_FMSConString43))
-                using (SqlCommand cmd = new SqlCommand("[dbo].[EmpInfoAddUpdate]", con))
+                using (SqlCommand cmd = new SqlCommand("[dbo].[EmpInfoAddUpdateCrew]", con))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@EmployeeID", objEmp.EmployeeID);
                     cmd.Parameters.AddWithValue("@Custid", objEmp.Custid);
+                    cmd.Parameters.AddWithValue("@EmployeeID", objEmp.EmployeeId); //pk in employee table
+                    cmd.Parameters.AddWithValue("@EmployeeTypeId", objEmp.Designation);// designation id
+                    cmd.Parameters.AddWithValue("@EmployeeCode", objEmp.EmployeeCode);
                     cmd.Parameters.AddWithValue("@EmployeeType", objEmp.EmployeeType);
                     cmd.Parameters.AddWithValue("@contractDuration", objEmp.contractDuration);
                     cmd.Parameters.AddWithValue("@FirstName", objEmp.FirstName);
                     cmd.Parameters.AddWithValue("@LastName", objEmp.LastName);
-                    cmd.Parameters.AddWithValue("@HireDate", objEmp.HireDate);
-                    cmd.Parameters.AddWithValue("@OfficePhone", objEmp.OfficePhone);
-                    cmd.Parameters.AddWithValue("@Mobile", objEmp.Mobile);
-                    cmd.Parameters.AddWithValue("@EmployeeTypeId", objEmp.EmployeeTypeId);
-                    cmd.Parameters.AddWithValue("@Address", objEmp.Address);
-                    cmd.Parameters.AddWithValue("@State", objEmp.State);
-                    cmd.Parameters.AddWithValue("@City", objEmp.City);
-                    cmd.Parameters.AddWithValue("@PostalCode", objEmp.PostalCode);
-                    cmd.Parameters.AddWithValue("@EmergencyContactInfo", objEmp.EmergencyContactInfo);
-                    cmd.Parameters.AddWithValue("@ImagePath", objEmp.ImagePath);
-                    cmd.Parameters.AddWithValue("@DrivingLicenseNo", objEmp.DrivingLicenseNo);
-                    cmd.Parameters.AddWithValue("@LicenseExpiryDate", objEmp.LicenseExpiryDate);
-                    cmd.Parameters.AddWithValue("@DriverCertifications", objEmp.DriverCertifications);
-                    cmd.Parameters.AddWithValue("@Remarks", objEmp.Remarks);
-                    cmd.Parameters.AddWithValue("@TechnicianCertifications", objEmp.TechnicianCertifications);
-                    cmd.Parameters.AddWithValue("@AttachmentsPath", objEmp.AttachmentsPath);
-                    cmd.Parameters.AddWithValue("@EmployeeCTC", objEmp.EmployeeCTC);
                     cmd.Parameters.AddWithValue("@Qualification", objEmp.Qualification);
                     cmd.Parameters.AddWithValue("@Experience", objEmp.Experience);
-                    cmd.Parameters.AddWithValue("@IdProof", objEmp.IdProof);
-                    cmd.Parameters.AddWithValue("@EmployeeCode", objEmp.EmployeeCode);
-                    cmd.Parameters.AddWithValue("@RoleResponisbility", objEmp.RoleResponisbility);
-                    cmd.Parameters.AddWithValue("@BloodGroup", objEmp.BloodGroup);
                     cmd.Parameters.AddWithValue("@PermanentAddress", objEmp.PermanentAddress);
+                    cmd.Parameters.AddWithValue("@PermanentPostalCode", objEmp.PermanentPostalCode);
                     cmd.Parameters.AddWithValue("@PermanentState", objEmp.PermanentState);
                     cmd.Parameters.AddWithValue("@PermanentCity", objEmp.PermanentCity);
-                    cmd.Parameters.AddWithValue("@PermanentPostalCode", objEmp.PermanentPostalCode);
-                    cmd.Parameters.AddWithValue("@ETMNO", objEmp.ETMNo);
+                    cmd.Parameters.AddWithValue("@Address", objEmp.correspondenceAddress);
+                    cmd.Parameters.AddWithValue("@PostalCode", objEmp.correspondencePostalCode);
+                    cmd.Parameters.AddWithValue("@State", objEmp.correspondenceState);
+                    cmd.Parameters.AddWithValue("@City", objEmp.correspondenceCity);
+                    cmd.Parameters.AddWithValue("@HireDate", objEmp.HireDate);
+                    cmd.Parameters.AddWithValue("@EmployeeCTC", objEmp.EmployeeCTC);
+                    cmd.Parameters.AddWithValue("@role", objEmp.Role);
+                    cmd.Parameters.AddWithValue("@OfficePhone", objEmp.OfficePhone);
+                    cmd.Parameters.AddWithValue("@EmergencyContactInfo", objEmp.EmergencyContactInfo);
+                    cmd.Parameters.AddWithValue("@Mobile", objEmp.Mobile);
+                    cmd.Parameters.AddWithValue("@IdProofNo", objEmp.IdProofNo);
+                    cmd.Parameters.AddWithValue("@IdProofType", objEmp.IdProofType);
+                    cmd.Parameters.AddWithValue("@Remarks", objEmp.Remarks);
+                    cmd.Parameters.AddWithValue("@BloodGroup", objEmp.BloodGroup);
+                    cmd.Parameters.AddWithValue("@ImagePath",string.IsNullOrEmpty(imagePaths) ? "" : imagePaths);
+
                     con.Open();
-                    int rowsAffected = cmd.ExecuteNonQuery();
-                    con.Close();
-                    result = rowsAffected > 0 ? "Employee saved successfully" : "Failed to save employee";
+                    int rowsAffected = cmd.ExecuteNonQuery();con.Close();
+                    result = rowsAffected > 0? "Employee saved successfully": "Failed to save employee";
+                    //result = "testing to save employee";
                 }
             }
             catch (SqlException ex)
@@ -260,77 +256,12 @@ namespace Trackmaster_Repository.Repository
             {
                 result = "Error: " + ex.Message;
             }
+
             return result;
         }
 
-        //public string AddUpdateEmployee(Employee objEmp)
-        //{
-        //    string result = "";
 
-        //    try
-        //    {
-        //        using (SqlConnection con = new SqlConnection(_FMSConString43))
-        //        using (SqlCommand cmd = new SqlCommand("[dbo].[EmpInfoAddUpdate]", con))
-        //        {
-        //            cmd.CommandType = CommandType.StoredProcedure;
 
-        //            cmd.Parameters.AddWithValue("@EmployeeID", objEmp.EmployeeID);
-        //            cmd.Parameters.AddWithValue("@Custid", objEmp.Custid);
-        //            cmd.Parameters.AddWithValue("@EmployeeType", objEmp.EmployeeType);
-        //            cmd.Parameters.AddWithValue("@contractDuration", objEmp.contractDuration);
-        //            cmd.Parameters.AddWithValue("@FirstName", objEmp.FirstName);
-        //            cmd.Parameters.AddWithValue("@LastName", objEmp.LastName);
-        //            cmd.Parameters.AddWithValue("@HireDate", objEmp.HireDate);
-        //            cmd.Parameters.AddWithValue("@OfficePhone", objEmp.OfficePhone);
-        //            cmd.Parameters.AddWithValue("@Mobile", objEmp.Mobile);
-        //            cmd.Parameters.AddWithValue("@EmployeeTypeId", objEmp.EmployeeTypeId);
-        //            cmd.Parameters.AddWithValue("@Address", objEmp.Address);
-        //            cmd.Parameters.AddWithValue("@State", objEmp.State);
-        //            cmd.Parameters.AddWithValue("@City", objEmp.City);
-        //            cmd.Parameters.AddWithValue("@PostalCode", objEmp.PostalCode);
-        //            cmd.Parameters.AddWithValue("@EmergencyContactInfo", objEmp.EmergencyContactInfo);
-        //            cmd.Parameters.AddWithValue("@ImagePath", objEmp.ImagePath);
-        //            cmd.Parameters.AddWithValue("@DrivingLicenseNo", objEmp.DrivingLicenseNo);
-        //            cmd.Parameters.AddWithValue("@LicenseExpiryDate", objEmp.LicenseExpiryDate);
-        //            cmd.Parameters.AddWithValue("@DriverCertifications", objEmp.DriverCertifications);
-        //            cmd.Parameters.AddWithValue("@Remarks", objEmp.Remarks);
-        //            cmd.Parameters.AddWithValue("@TechnicianCertifications", objEmp.TechnicianCertifications);
-        //            cmd.Parameters.AddWithValue("@AttachmentsPath", objEmp.AttachmentsPath);
-        //            cmd.Parameters.AddWithValue("@EmployeeCTC", objEmp.EmployeeCTC);
-        //            cmd.Parameters.AddWithValue("@Qualification", objEmp.Qualification);
-        //            cmd.Parameters.AddWithValue("@Experience", objEmp.Experience);
-        //            cmd.Parameters.AddWithValue("@IdProof", objEmp.IdProof);
-        //            cmd.Parameters.AddWithValue("@EmployeeCode", objEmp.EmployeeCode);
-        //            cmd.Parameters.AddWithValue("@RoleResponisbility", objEmp.RoleResponisbility);
-        //            cmd.Parameters.AddWithValue("@BloodGroup", objEmp.BloodGroup);
-        //            cmd.Parameters.AddWithValue("@PermanentAddress", objEmp.PermanentAddress);
-        //            cmd.Parameters.AddWithValue("@PermanentState", objEmp.PermanentState);
-        //            cmd.Parameters.AddWithValue("@PermanentCity", objEmp.PermanentCity);
-        //            cmd.Parameters.AddWithValue("@PermanentPostalCode", objEmp.PermanentPostalCode);
-        //            cmd.Parameters.AddWithValue("@ETMNO", objEmp.ETMNo);
-
-        //            con.Open();
-
-        //            // ❌ COMMENTED FOR TESTING (DO NOT SAVE TO DB)
-        //            // int rowsAffected = cmd.ExecuteNonQuery();
-
-        //            con.Close();
-
-        //            //  TEST RESPONSE ONLY
-        //            result = "Test mode: Employee API hit successfully, DB not executed";
-        //        }
-        //    }
-        //    catch (SqlException ex)
-        //    {
-        //        result = "SQL Error: " + ex.Message;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        result = "Error: " + ex.Message;
-        //    }
-
-        //    return result;
-        //}
 
 
         public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)

@@ -20,7 +20,7 @@ namespace Trackmaster_Model
 
         public string sortDirection { get; set; } = "asc";
 
-        public int userId { get; set; }
+        public int CustId { get; set; }
 
         public int interval { get; set; } = 0;
 

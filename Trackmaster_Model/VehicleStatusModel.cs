@@ -22,7 +22,13 @@ namespace Trackmaster_Model
             public string lastUpdated { get; set; }
             public string bbid { get; set; }
             public int gsmSignal { get; set; }
+            public int gpsAntConStatus { get; set; }
+            public int GPSFix { get; set; }
             public string IgnitionStatus { get; set; }
+            public int vehBattery { get; set; }
+            public int deviceBattery { get; set; }
+            // ADD THIS
+            public int TotalRecords { get; set; }
         }
     }
 }
