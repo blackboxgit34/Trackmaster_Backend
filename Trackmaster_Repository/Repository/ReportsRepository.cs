@@ -333,6 +333,81 @@ namespace Trackmaster_Repository.Repository
         //}
 
 
+        public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        {
+            var result = new VehicleStatusResponse();
+            result.VehicleData = new List<VehicleStatusDto>();
+
+            using (SqlConnection con = new SqlConnection(_connectionString43))
+            using (SqlCommand cmd = new SqlCommand("NewTMVehicleStatus", con))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@custId", custId);
+                cmd.Parameters.AddWithValue("@LowerBand", lower);
+                cmd.Parameters.AddWithValue("@UpperBand", upper);
+                cmd.Parameters.AddWithValue("@searchText", (object)search ?? DBNull.Value);
+
+                SqlParameter outParam = new SqlParameter("@ItemCount", SqlDbType.Int)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                cmd.Parameters.Add(outParam);
+
+                con.Open();
+
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                {
+                    while (dr.Read())
+                    {
+                        result.VehicleData.Add(new VehicleStatusDto
+                        {
+                            RowNo = Convert.ToInt32(dr["RowNo"]),
+                            BBID = dr["BBID"].ToString(),
+                            VehName = dr["vehname"].ToString(),
+                            DriverName = dr["DriverName"].ToString(),
+                            Overspeed = Convert.ToInt32(dr["overspeed"]),
+                            Logs = new List<SpeedLogDto>()
+                        });
+                    }
+                }
+
+                result.ItemCount = Convert.ToInt32(outParam.Value);
+            }
+
+            foreach (var item in result.VehicleData)
+            {
+                using (SqlConnection con = new SqlConnection(_connectionString43))
+                using (SqlCommand cmd = new SqlCommand("NewGetSummaryDetails", con))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.AddWithValue("@bbid", item.BBID);
+                    cmd.Parameters.AddWithValue("@overspeed", item.Overspeed);
+                    cmd.Parameters.AddWithValue("@beginDate", start);
+                    cmd.Parameters.AddWithValue("@EndDate", end);
+
+                    con.Open();
+
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        while (dr.Read())
+                        {
+                            item.Logs.Add(new SpeedLogDto
+                            {
+                                Time = Convert.ToDateTime(dr["datadate"]),
+                                Speed = dr["speed"].ToString(),
+                                Location = dr["loc"].ToString(),
+                                Status = dr["status"].ToString()
+                            });
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
 
     }
 }

@@ -101,5 +101,30 @@ namespace Trackmaster_Model
             public string IdProof { get; set; }//
             public string RoleResponisbility { get; set; }//
         }
+
+        public class VehicleStatusResponse
+        {
+            public int ItemCount { get; set; }
+            public List<VehicleStatusDto> VehicleData { get; set; } = new();
+        }
+
+        public class VehicleStatusDto
+        {
+            public int RowNo { get; set; }
+            public string BBID { get; set; }
+            public string VehName { get; set; }
+            public string DriverName { get; set; }
+            public int Overspeed { get; set; }
+
+            public List<SpeedLogDto> Logs { get; set; } = new List<SpeedLogDto>(); // ✅ SAFE INIT
+        }
+
+        public class SpeedLogDto
+        {
+            public DateTime Time { get; set; }
+            public string Speed { get; set; }
+            public string Location { get; set; }
+            public string Status { get; set; }
+        } 
     }
 }

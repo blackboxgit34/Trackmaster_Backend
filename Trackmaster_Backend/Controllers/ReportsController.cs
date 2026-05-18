@@ -82,6 +82,17 @@ namespace Trackmaster_Backend.Controllers
             return Ok(isInsertUpdate);
         }
 
+        [HttpGet("vehicle-status")]
+        public IActionResult VehicleStatus(int custId, int lower, int upper, string? search, DateTime start, DateTime end)
+        {
+            var result = _reportsService.VehicleStatus(custId, lower, upper, search, start, end);
+
+            return Ok(new
+            {
+                data = result.VehicleData,
+                count = result.ItemCount
+            });
+        }
 
     }
 }

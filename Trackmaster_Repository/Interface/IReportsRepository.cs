@@ -14,6 +14,8 @@ namespace Trackmaster_Repository.Interface
         List<DropDownItems> GetStatesList();
         List<DropDownItems> GetCityList(int stateid);
         string AddUpdateEmployee(Employee objEmp);
+        VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end);
+
 
     }
 }
