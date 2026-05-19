@@ -26,29 +26,20 @@ namespace Trackmaster_Repository.Repository
         {
 
             _connectionString43 = configuration.GetConnectionString("DefaultConnection43");
-            _connectionString44 = configuration.GetConnectionString("DefaultConnection44");
             _FMSConString43 = configuration.GetConnectionString("FMSConString43");
-
-           
+            _connectionString44 = configuration.GetConnectionString("DefaultConnection44");
         }
-        public string GetConnectionString(string boxId)
+        public string GetConnectionStringTableWise(string tableName)
         {
-            if ((boxId.StartsWith("i", StringComparison.OrdinalIgnoreCase) ||
-                 boxId.StartsWith("j", StringComparison.OrdinalIgnoreCase))
-                 && boxId.Length > 5)
-            {
-                return _connectionString44;
-            }
-            else
-            {
-                return _connectionString43;
-            }
+            return ((tableName.StartsWith("i", StringComparison.OrdinalIgnoreCase) || tableName.StartsWith("j", StringComparison.OrdinalIgnoreCase)) && tableName.Length > 5) ? _connectionString44 : _connectionString43;
         }
 
-        public VehiclesReport GetConductorInfo(DataTableRequestModel requestModel)
+        public async Task<VehiclesReport> GetConductorInfo(DataTableRequestModel requestModel)
         {
-            var modelObj = new VehiclesReport();
-            modelObj.modelObjList = new List<VehicleInformation>();
+            var modelObj = new VehiclesReport
+            {
+                modelObjList = new List<VehicleInformation>()
+            };
             if (requestModel.sSearch == "null" || string.IsNullOrEmpty(requestModel.sSearch))
             {
                 requestModel.sSearch = null;
@@ -60,35 +51,29 @@ namespace Trackmaster_Repository.Repository
             try
             {
                 using (SqlConnection con = new SqlConnection(_connectionString43))
+                using (SqlCommand cmd = new SqlCommand("[dbo].[GetCrewData]", con))
                 {
-                    using (SqlCommand cmd = new SqlCommand("[dbo].[GetCrewData]", con))
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@CustId", requestModel.CustId);
+                    cmd.Parameters.AddWithValue("@startRowIndex", requestModel.iDisplayStart);
+                    cmd.Parameters.AddWithValue("@pageSize", requestModel.iDisplayLength);
+                    cmd.Parameters.AddWithValue("@vehName",string.IsNullOrEmpty(requestModel.sSearch)? (object)DBNull.Value: requestModel.sSearch);
+                    cmd.Parameters.AddWithValue("@sortColumn", requestModel.sortColumn);
+                    cmd.Parameters.AddWithValue("@sortDirection", requestModel.sortDirection);
+                    await con.OpenAsync();
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@CustId", requestModel.CustId);
-                        cmd.Parameters.AddWithValue("@startRowIndex", requestModel.iDisplayStart);
-                        cmd.Parameters.AddWithValue("@pageSize", requestModel.iDisplayLength);
-                        cmd.Parameters.AddWithValue("@vehName", string.IsNullOrEmpty(requestModel.sSearch) ? (object)DBNull.Value : requestModel.sSearch);
-                        cmd.Parameters.AddWithValue("@sortColumn", requestModel.sortColumn);
-                        cmd.Parameters.AddWithValue("@sortDirection", requestModel.sortDirection);
-                        con.Open();
-                        using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                        while (await dr.ReadAsync())
                         {
-                            DataTable dt = new DataTable();
-                            da.Fill(dt);
-                            if (dt.Rows.Count == 0)
-                                return modelObj;
-                            foreach (DataRow dr in dt.Rows)
-                            {
-                                VehicleInformation objVeh = new VehicleInformation();
-                                modelObj.PageCount = GetInt(dr["totalrecords"]);
-                                objVeh.BBID = GetString(dr["BBID"]);
-                                objVeh.VehicleName = GetString(dr["VehName"]);
-                                objVeh.driverName = GetString(dr["DriverName"]);
-                                objVeh.ConductorName = GetString(dr["Conductor"]);
-                                objVeh.VehicleImagePath = GetString(dr["icon"]);
-                                objVeh.VehicleType = GetString(dr["type"]);
-                                modelObj.modelObjList.Add(objVeh);
-                            }
+                            VehicleInformation objVeh = new VehicleInformation();
+                            modelObj.PageCount = GetInt(dr["totalrecords"]);
+                            objVeh.BBID = GetString(dr["BBID"]);
+                            objVeh.VehicleName = GetString(dr["VehName"]);
+                            objVeh.driverName = GetString(dr["DriverName"]);
+                            objVeh.ConductorName = GetString(dr["Conductor"]);
+                            objVeh.VehicleImagePath = GetString(dr["icon"]);
+                            objVeh.VehicleType = GetString(dr["type"]);
+                            modelObj.modelObjList.Add(objVeh);
                         }
                     }
                 }
@@ -103,7 +88,7 @@ namespace Trackmaster_Repository.Repository
             return modelObj;
         }
 
-        public List<DropDownItems> GetDesignationTypeCrew()
+        public async Task<List<DropDownItems>> GetDesignationTypeCrew()
         {
             List<DropDownItems> lstEmpType = new List<DropDownItems>();
             try
@@ -112,12 +97,12 @@ namespace Trackmaster_Repository.Repository
                 using (SqlCommand cmd = new SqlCommand("[dbo].[GetDesignationTypeCrew]", con))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
-                    con.Open();
-                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    await con.OpenAsync();
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                     {
                         if (dr.HasRows)
                         {
-                            while (dr.Read())
+                            while (await dr.ReadAsync())
                             {
                                 DropDownItems objET = new DropDownItems
                                 {
@@ -131,7 +116,7 @@ namespace Trackmaster_Repository.Repository
                 }
             }
             catch (SqlException ex)
-            { 
+            {
                 Console.WriteLine("SQL Error: " + ex.Message);
             }
             catch (Exception ex)
@@ -141,7 +126,7 @@ namespace Trackmaster_Repository.Repository
             return lstEmpType;
         }
 
-        public List<DropDownItems> GetStatesList()
+        public async Task<List<DropDownItems>> GetStatesList()
         {
             List<DropDownItems> stateList = new List<DropDownItems>();
 
@@ -152,11 +137,11 @@ namespace Trackmaster_Repository.Repository
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
 
-                    con.Open();
+                    await con.OpenAsync();
 
-                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                     {
-                        while (dr.Read())
+                        while (await dr.ReadAsync())
                         {
                             DropDownItems objET = new DropDownItems
                             {
@@ -181,7 +166,7 @@ namespace Trackmaster_Repository.Repository
             return stateList;
         }
 
-        public List<DropDownItems> GetCityList(int stateid)
+        public async Task<List<DropDownItems>> GetCityList(int stateid)
         {
             List<DropDownItems> cityList = new List<DropDownItems>();
 
@@ -192,11 +177,11 @@ namespace Trackmaster_Repository.Repository
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@stateid", stateid);
-                    con.Open();
+                    await con.OpenAsync();
 
-                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    using (SqlDataReader dr = await  cmd.ExecuteReaderAsync())
                     {
-                        while (dr.Read())
+                        while (await dr.ReadAsync())
                         {
                             DropDownItems objET = new DropDownItems
                             {
@@ -221,7 +206,7 @@ namespace Trackmaster_Repository.Repository
             return cityList;
         }
 
-        public string AddUpdateEmployee(Employee objEmp, string imagePaths)
+        public async Task<string> AddUpdateEmployee(Employee objEmp, string imagePaths)
         {
             string result = "";
 
@@ -259,10 +244,10 @@ namespace Trackmaster_Repository.Repository
                     cmd.Parameters.AddWithValue("@IdProofType", objEmp.IdProofType);
                     cmd.Parameters.AddWithValue("@Remarks", objEmp.Remarks);
                     cmd.Parameters.AddWithValue("@BloodGroup", objEmp.BloodGroup);
-                    cmd.Parameters.AddWithValue("@ImagePath",string.IsNullOrEmpty(imagePaths) ? "" : imagePaths);
+                    cmd.Parameters.AddWithValue("@ImagePath", string.IsNullOrEmpty(imagePaths) ? "" : imagePaths);
 
-                    con.Open();
-                    int rowsAffected = cmd.ExecuteNonQuery();con.Close();
+                    await con.OpenAsync();
+                    int rowsAffected = await cmd.ExecuteNonQueryAsync();
                     result = rowsAffected > 0? "Employee saved successfully": "Failed to save employee";
                     //result = "testing to save employee";
                 }
@@ -354,14 +339,14 @@ namespace Trackmaster_Repository.Repository
             return result;
         }
 
-        public StoppageMainModel GetCombinedStoppageReport( DateTime beginDate,DateTime endDate,string interval,int custid, int lowerBound,int upperBound,string searchText)
+        public StoppageMainModel GetCombinedStoppageReport(DataTableRequestModel dtmodel)
         {
             var model = new StoppageMainModel
             {
                 StoppageSubModel = new List<StoppageSubModel>()
             };
 
-            var intervalParts = interval.Split('-');
+            var intervalParts = dtmodel.Interval.Split('-');
             int minInterval = Convert.ToInt32(intervalParts[0]);
             int maxInterval = Convert.ToInt32(intervalParts[1]);
 
@@ -375,17 +360,17 @@ namespace Trackmaster_Repository.Repository
 
                 SqlParameter[] param =
                 {
-            new SqlParameter("@LowerBand", lowerBound),
-            new SqlParameter("@UpperBand", upperBound),
+            new SqlParameter("@LowerBand", dtmodel.iDisplayStart),
+            new SqlParameter("@UpperBand", dtmodel.iDisplayLength),
             new SqlParameter("@ItemCount", SqlDbType.Int)
             {
                 Direction = ParameterDirection.Output
             },
-            new SqlParameter("@custId", custid),
+            new SqlParameter("@custId", dtmodel.CustId),
             new SqlParameter("@searchText",
-                string.IsNullOrWhiteSpace(searchText)
+                string.IsNullOrWhiteSpace(dtmodel.sSearch)
                     ? (object)DBNull.Value
-                    : searchText)
+                    : dtmodel.sSearch)
         };
 
                 List<string> bbidList = new List<string>();
@@ -461,7 +446,7 @@ namespace Trackmaster_Repository.Repository
                             : vehicle.DriverName;
                     }
 
-                    DataTable dt = StoppageAnalysis(beginDate, endDate, vehicleId, "normal");
+                    DataTable dt = StoppageAnalysis(Convert.ToDateTime(dtmodel.beginDate), Convert.ToDateTime(dtmodel.endDate), vehicleId, "normal");
 
                     if (dt == null || dt.Rows.Count == 0)
                     {
@@ -532,7 +517,7 @@ namespace Trackmaster_Repository.Repository
                             poiCache[poiKey] = GetPoiLoc(
                                 Convert.ToDouble(item.StopLatitude),
                                 Convert.ToDouble(item.StopLongitude),
-                                custid);
+                                dtmodel.CustId);
                         }
 
                         item.poi = poiCache[poiKey] == "0 Km  of "
@@ -579,406 +564,6 @@ namespace Trackmaster_Repository.Repository
 
             return model;
         }
-
-//        public StoppageMainModel GetCombinedStoppageReport(DateTime beginDate, DateTime endDate, string interval, int custid, int lowerBound, int upperBound, string searchText)
-        //        {
-        //            StoppageMainModel model = new StoppageMainModel();            
-        //            model.StoppageSubModel = new List<StoppageSubModel>();
-        //            using (SqlConnection con = new SqlConnection(_connectionString43))
-        //            {
-        //                con.Open();
-
-
-        //                SqlParameter[] param = new SqlParameter[]
-        //{
-        //                    new SqlParameter("@LowerBand", lowerBound),
-        //                    new SqlParameter("@UpperBand", upperBound),
-        //                    new SqlParameter("@ItemCount", 0),
-        //                    new SqlParameter("@custId", custid),
-        //                    new SqlParameter("@searchText",
-        //                        string.IsNullOrWhiteSpace(searchText) ? (object)DBNull.Value : searchText)
-        //};
-
-        //                param[2].Direction = ParameterDirection.Output;
-
-        //                SqlCommand cmd = new SqlCommand("GetVehiclesByCustIdAndSearch", con);
-        //                cmd.CommandType = CommandType.StoredProcedure;
-        //                cmd.Parameters.AddRange(param);
-
-        //                SqlDataReader dataReader = cmd.ExecuteReader();
-        //                List<string> bbidList = new List<string>();
-        //                if (dataReader.HasRows)
-        //                {
-        //                    while (dataReader.Read())
-        //                    {
-        //                        string Bbid = Convert.IsDBNull(dataReader["bbid"]) ? string.Empty : Convert.ToString(dataReader["bbid"]);
-        //                        if (!string.IsNullOrEmpty(Bbid))
-        //                            bbidList.Add(Bbid);
-        //                    }
-        //                }
-        //                dataReader.Close(); // IMPORTANT
-
-        //                model.PageCount = Convert.ToInt32(param[2].Value);
-
-        //                foreach (string vehicleId in bbidList)
-        //                {
-        //                    string Intervall = interval;
-        //                    int intv1 = 0;
-        //                    int intv2 = 0;
-        //                    string[] words = Intervall.Split('-');
-        //                    TimeSpan TotalStoppageDur = new TimeSpan();
-
-        //                    intv1 = Convert.ToInt32(words[0]);
-        //                    intv2 = Convert.ToInt32(words[1]);
-
-
-        //                    ReportBase objRepBase = new ReportBase();
-        //                    StoppageSubModel objStoppageAnalysisEx = new StoppageSubModel();
-
-        //                    List<StoppageAnalysis> listStoppageAnalysis = new List<StoppageAnalysis>();
-        //                    SqlParameter[] param1 = new SqlParameter[]
-        //                {
-        //                new SqlParameter("@BBID",vehicleId)
-        //                };
-        //                    //SqlDataReader dr = SqlHelper.ExecuteReader(con, CommandType.Text, "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED select bbid, vehname, isnull(DriverName,'Not available') as DriverName, distance, [box] from ht_main where bbid = @BBID", param);
-        //                    string query = @"SELECT bbid,
-        //                        vehname,
-        //                        ISNULL(DriverName,'Not available') AS DriverName,
-        //                        distance
-        //                 FROM ht_main WITH (NOLOCK)
-        //                 WHERE bbid = @BBID";
-
-        //                    SqlCommand cmd23 = new SqlCommand(query, con);
-        //                    cmd23.Parameters.AddRange(param1);
-        //                    SqlDataReader dr = cmd23.ExecuteReader();
-        //                    if (dr.HasRows)
-        //                    {
-        //                        dr.Read();
-        //                        objStoppageAnalysisEx.BBID = Convert.IsDBNull(dr["bbid"]) ? string.Empty : Convert.ToString(dr["bbid"]);
-        //                        objStoppageAnalysisEx.VehicleName = Convert.IsDBNull(dr["vehname"]) ? string.Empty : Convert.ToString(dr["vehname"]);
-        //                        objStoppageAnalysisEx.DriverName = Convert.IsDBNull(dr["DriverName"]) ? "Not available" : Convert.ToString(dr["DriverName"]);
-        //                        if (string.IsNullOrEmpty(objStoppageAnalysisEx.DriverName))
-        //                        {
-        //                            objStoppageAnalysisEx.DriverName = "Not available";
-        //                        }
-        //                    }
-        //                    DataTable dt = new DataTable();
-        //                    dt = StoppageAnalysis(beginDate, endDate, vehicleId, "normal");
-        //                    if (dt != null)
-        //                    {
-
-        //                        if (dt.Rows.Count > 0)
-        //                        {
-
-        //                            for (int i = 0; i < dt.Rows.Count; i++)
-        //                            {
-        //                                int days = 0;
-        //                                int hours = 0;
-        //                                int minutes = 0;
-        //                                int seconds = 0;
-        //                                TimeSpan ts = TimeSpan.Zero;
-        //                                TimeSpan tss = TimeSpan.Zero;
-        //                                TimeSpan tsss = TimeSpan.Zero;
-        //                                StoppageAnalysis objStoppageAnalysis = new StoppageAnalysis();
-        //                                if (!string.IsNullOrEmpty(dt.Rows[i]["acignition"].ToString()))
-        //                                {
-        //                                    objStoppageAnalysis.IgnitionStatus = Convert.ToBoolean(dt.Rows[i]["acignition"]);
-        //                                }
-        //                                else
-        //                                {
-        //                                    objStoppageAnalysis.IgnitionStatus = false;
-        //                                }
-
-        //                                var ddj = dt.Rows[i]["duration"].ToString();
-
-
-        //                                var dur = Convert.IsDBNull(dt.Rows[i]["floatdur"]) ? Convert.ToSingle(0) : Convert.ToSingle(dt.Rows[i]["floatdur"]);
-
-        //                                string startpoiname = GetPoiLoc(Convert.ToDouble(dt.Rows[i]["slat"]), Convert.ToDouble(dt.Rows[i]["slong"]), custid);
-        //                                if (startpoiname == "0 Km  of ")
-        //                                {
-        //                                    objStoppageAnalysis.poi = "N/A";
-        //                                }
-        //                                else
-        //                                {
-        //                                    objStoppageAnalysis.poi = startpoiname;
-        //                                }
-
-        //                                TimeSpan t = new TimeSpan();
-        //                                t = TimeSpan.FromSeconds(dur);
-        //                                ts = t;
-        //                                tss = TimeSpan.FromSeconds(intv1);
-        //                                tsss = TimeSpan.FromSeconds(intv2);
-
-
-
-        //                                if (String.IsNullOrEmpty(ddj))
-        //                                {
-        //                                }
-        //                                else
-        //                                {
-
-        //                                    dur = Convert.IsDBNull(dt.Rows[i]["floatdur"]) ? Convert.ToSingle(0) : Convert.ToSingle(dt.Rows[i]["floatdur"]);
-
-        //                                    #region commented by Amit (already declared)
-
-        //                                    t = new TimeSpan();
-
-        //                                    //TimeSpan t = new TimeSpan();
-        //                                    #endregion
-        //                                    t = new TimeSpan();
-
-        //                                    t = TimeSpan.FromSeconds(dur);
-        //                                    ts = t;
-        //                                    tss = TimeSpan.FromSeconds(intv1);
-        //                                    tsss = TimeSpan.FromSeconds(intv2);
-        //                                }
-
-        //                                double t1 = ts.TotalSeconds;
-        //                                double t2 = tss.TotalSeconds;
-        //                                if (intv1 > 0)
-        //                                {
-        //                                    if (intv1 >= 600)
-        //                                    {
-        //                                        if (ts.TotalSeconds >= tss.TotalSeconds)
-        //                                        {
-        //                                            string status = "";
-        //                                            if (objStoppageAnalysis.IgnitionStatus == true)
-        //                                            {
-        //                                                status = "~/resources/images/legends/stop.png";
-        //                                            }
-
-        //                                            else
-        //                                            {
-        //                                                status = "~/resources/images/legends/ignion.png";
-        //                                            }
-        //                                            objStoppageAnalysis.StopLatitude = Convert.IsDBNull(dt.Rows[i]["slat"]) ? string.Empty : Convert.ToString(dt.Rows[i]["slat"]);
-        //                                            objStoppageAnalysis.StopLongitude = Convert.IsDBNull(dt.Rows[i]["slong"]) ? string.Empty : Convert.ToString(dt.Rows[i]["slong"]);
-        //                                            objStoppageAnalysis.StopLocation = Convert.IsDBNull(dt.Rows[i]["sloc"]) ? string.Empty : Convert.ToString(dt.Rows[i]["sloc"]);
-
-        //                                            if (objStoppageAnalysis.StopLocation == "GPS signal not available" || objStoppageAnalysis.StopLocation == "N/A" || objStoppageAnalysis.StopLocation == "")
-        //                                            {
-        //                                                objStoppageAnalysis.StopLocation = objStoppageAnalysis.StopLocation;
-        //                                                objStoppageAnalysis.AddPoi = "N/A";
-        //                                            }
-        //                                            else
-        //                                            {
-        //                                                objStoppageAnalysis.AddPoi = "<a href='/Common/ADDPOI?lat=" + Convert.ToDouble(objStoppageAnalysis.StopLatitude) + "&longi=" + Convert.ToDouble(objStoppageAnalysis.StopLongitude) + "' target='_blank' style='color:#812DD5;text-decoration:underline;font-size:13px;'>Add POI</a>";
-        //                                                objStoppageAnalysis.StopLocation = "<a href='javascript:' onclick=showMapWindow('" + objStoppageAnalysisEx.BBID.Replace(" ", "&nbsp;") + "','" + objStoppageAnalysisEx.VehicleName.Replace(" ", "&nbsp;") + "','" + objStoppageAnalysis.StopLatitude.Replace(" ", "&nbsp;") + "','" + objStoppageAnalysis.StopLongitude.Replace(" ", "&nbsp;") + "','" + objStoppageAnalysis.StopLocation.Replace(" ", "&nbsp;") + "','" + status + "');>" + objStoppageAnalysis.StopLocation + "</a>";
-        //                                            }
-        //                                            objStoppageAnalysis.StartDate = Convert.IsDBNull(dt.Rows[i]["sdt"]) ? string.Empty : Convert.ToString(dt.Rows[i]["sdt"]);
-
-        //                                            objStoppageAnalysis.StopDate = Convert.IsDBNull(dt.Rows[i]["edt"]) ? string.Empty : Convert.ToString(dt.Rows[i]["edt"]);
-        //                                            objStoppageAnalysis.Duration = Convert.IsDBNull(dt.Rows[i]["duration"]) ? string.Empty : Convert.ToString(dt.Rows[i]["duration"]);
-        //                                            objStoppageAnalysis.StopLatitude = Convert.IsDBNull(dt.Rows[i]["slat"]) ? string.Empty : Convert.ToString(dt.Rows[i]["slat"]);
-        //                                            objStoppageAnalysis.StopLongitude = Convert.IsDBNull(dt.Rows[i]["slong"]) ? string.Empty : Convert.ToString(dt.Rows[i]["slong"]);
-
-        //                                            if (!string.IsNullOrEmpty(dt.Rows[i]["acignition"].ToString()))
-        //                                            {
-        //                                                objStoppageAnalysis.IgnitionStatus = Convert.ToBoolean(dt.Rows[i]["acignition"]);
-        //                                            }
-
-        //                                            objStoppageAnalysis.VehicleName = objRepBase.VehicleName;
-        //                                            objStoppageAnalysis.TotalDistance = objRepBase.TotalDistance;
-        //                                            listStoppageAnalysis.Add(objStoppageAnalysis);
-        //                                            TotalStoppageDur = TotalStoppageDur.Add(new TimeSpan(0, 0, Convert.ToInt32(dur)));
-        //                                            objRepBase.TotalStoppageTime = string.Format("{0}-{1}:{2}:{3}", TotalStoppageDur.Days, TotalStoppageDur.Hours, TotalStoppageDur.Minutes, TotalStoppageDur.Seconds);
-        //                                            string[] arr = objRepBase.TotalStoppageTime.ToString().Split('-');
-
-        //                                            if (arr.Length > 1)
-        //                                            {
-
-        //                                                int iDays = Convert.ToInt32(arr.GetValue(0));
-        //                                                string strTime = Convert.ToString(arr.GetValue(1));
-        //                                                string[] arrTime = strTime.Split(':');
-        //                                                int iHours = Convert.ToInt32(arrTime.GetValue(0));
-        //                                                int iMinutes = Convert.ToInt32(arrTime.GetValue(1));
-        //                                                int iSeconds = Convert.ToInt32(arrTime.GetValue(2));
-        //                                                days = days + iDays;
-        //                                                hours = hours + iHours;
-        //                                                minutes = minutes + iMinutes;
-        //                                                seconds = seconds + iSeconds;
-        //                                            }
-
-
-        //                                            Int32 totSeconds = hours * 3600 + minutes * 60 + seconds + days * 24 * 60 * 60;
-
-        //                                            TimeSpan ts1 = DateTime.Now.AddSeconds(totSeconds).Subtract(DateTime.Now);
-        //                                            objRepBase.TotalStoppageTime = ts1.Days.ToString() + " day(s) " + ts1.Hours.ToString() + " hour(s) " + ts1.Minutes.ToString() + " minute(s) " + ts1.Seconds.ToString() + " second(s)  ";
-
-        //                                        }
-        //                                    }
-        //                                    else
-        //                                    {
-
-        //                                        if (ts.TotalSeconds >= tss.TotalSeconds && ts.TotalSeconds <= tsss.TotalSeconds)
-        //                                        {
-        //                                            string status = "";
-        //                                            if (objStoppageAnalysis.IgnitionStatus == true)
-        //                                            {
-        //                                                status = "~/resources/images/legends/stop.png";
-        //                                            }
-
-        //                                            else
-        //                                            {
-        //                                                status = "~/resources/images/legends/ignion.png";
-        //                                            }
-        //                                            objStoppageAnalysis.StopLatitude = Convert.IsDBNull(dt.Rows[i]["slat"]) ? string.Empty : Convert.ToString(dt.Rows[i]["slat"]);
-        //                                            objStoppageAnalysis.StopLongitude = Convert.IsDBNull(dt.Rows[i]["slong"]) ? string.Empty : Convert.ToString(dt.Rows[i]["slong"]);
-        //                                            objStoppageAnalysis.StopLocation = Convert.IsDBNull(dt.Rows[i]["sloc"]) ? string.Empty : Convert.ToString(dt.Rows[i]["sloc"]);
-
-        //                                            if (objStoppageAnalysis.StopLocation == "GPS signal not available" || objStoppageAnalysis.StopLocation == "N/A" || objStoppageAnalysis.StopLocation == "")
-        //                                            {
-        //                                                objStoppageAnalysis.StopLocation = objStoppageAnalysis.StopLocation;
-        //                                            }
-        //                                            else
-        //                                            {
-        //                                                objStoppageAnalysis.StopLocation = "<a href='javascript:' onclick=showMapWindow('" + objStoppageAnalysisEx.BBID.Replace(" ", "&nbsp;") + "','" + objStoppageAnalysisEx.VehicleName.Replace(" ", "&nbsp;") + "','" + objStoppageAnalysis.StopLatitude.Replace(" ", "&nbsp;") + "','" + objStoppageAnalysis.StopLongitude.Replace(" ", "&nbsp;") + "','" + objStoppageAnalysis.StopLocation.Replace(" ", "&nbsp;") + "','" + status + "');>" + objStoppageAnalysis.StopLocation + "</a>";
-        //                                                objStoppageAnalysis.AddPoi = "<a href='/Common/ADDPOI?lat=" + Convert.ToDouble(objStoppageAnalysis.StopLatitude) + "&longi=" + Convert.ToDouble(objStoppageAnalysis.StopLongitude) + "' target='_blank' style='color:#812DD5;text-decoration:underline;font-size:13px;'>Add POI</a>";
-        //                                            }
-        //                                            objStoppageAnalysis.StartDate = Convert.IsDBNull(dt.Rows[i]["sdt"]) ? string.Empty : Convert.ToString(dt.Rows[i]["sdt"]);
-        //                                            objStoppageAnalysis.StopDate = Convert.IsDBNull(dt.Rows[i]["edt"]) ? string.Empty : Convert.ToString(dt.Rows[i]["edt"]);
-        //                                            objStoppageAnalysis.Duration = Convert.IsDBNull(dt.Rows[i]["duration"]) ? string.Empty : Convert.ToString(dt.Rows[i]["duration"]);
-        //                                            objStoppageAnalysis.StopLatitude = Convert.IsDBNull(dt.Rows[i]["slat"]) ? string.Empty : Convert.ToString(dt.Rows[i]["slat"]);
-        //                                            objStoppageAnalysis.StopLongitude = Convert.IsDBNull(dt.Rows[i]["slong"]) ? string.Empty : Convert.ToString(dt.Rows[i]["slong"]);
-        //                                            if (!string.IsNullOrEmpty(dt.Rows[i]["acignition"].ToString()))
-        //                                            {
-        //                                                objStoppageAnalysis.IgnitionStatus = Convert.ToBoolean(dt.Rows[i]["acignition"]);
-        //                                            }
-        //                                            objStoppageAnalysis.VehicleName = objRepBase.VehicleName;
-        //                                            objStoppageAnalysis.TotalDistance = objRepBase.TotalDistance;
-        //                                            listStoppageAnalysis.Add(objStoppageAnalysis);
-        //                                            TotalStoppageDur = TotalStoppageDur.Add(new TimeSpan(0, 0, Convert.ToInt32(dur)));
-        //                                            objRepBase.TotalStoppageTime = string.Format("{0}-{1}:{2}:{3}", TotalStoppageDur.Days, TotalStoppageDur.Hours, TotalStoppageDur.Minutes, TotalStoppageDur.Seconds);
-        //                                            string[] arr = objRepBase.TotalStoppageTime.ToString().Split('-');
-
-        //                                            if (arr.Length > 1)
-        //                                            {
-
-        //                                                int iDays = Convert.ToInt32(arr.GetValue(0));
-        //                                                string strTime = Convert.ToString(arr.GetValue(1));
-        //                                                string[] arrTime = strTime.Split(':');
-        //                                                int iHours = Convert.ToInt32(arrTime.GetValue(0));
-        //                                                int iMinutes = Convert.ToInt32(arrTime.GetValue(1));
-        //                                                int iSeconds = Convert.ToInt32(arrTime.GetValue(2));
-        //                                                days = days + iDays;
-        //                                                hours = hours + iHours;
-        //                                                minutes = minutes + iMinutes;
-        //                                                seconds = seconds + iSeconds;
-        //                                            }
-
-
-        //                                            Int32 totSeconds = hours * 3600 + minutes * 60 + seconds + days * 24 * 60 * 60;
-
-        //                                            TimeSpan ts1 = DateTime.Now.AddSeconds(totSeconds).Subtract(DateTime.Now);
-        //                                            objRepBase.TotalStoppageTime = ts1.Days.ToString() + " day(s) " + ts1.Hours.ToString() + " hour(s) " + ts1.Minutes.ToString() + " minute(s) " + ts1.Seconds.ToString() + " second(s)  ";
-        //                                        }
-        //                                    }
-        //                                }
-        //                                else
-        //                                {
-        //                                    string status = "";
-        //                                    if (objStoppageAnalysis.IgnitionStatus == true)
-        //                                    {
-        //                                        status = "~/resources/images/legends/stop.png";
-        //                                    }
-
-        //                                    else
-        //                                    {
-        //                                        status = "~/resources/images/legends/ignion.png";
-        //                                    }
-        //                                    objStoppageAnalysis.StopLatitude = Convert.IsDBNull(dt.Rows[i]["slat"]) ? string.Empty : Convert.ToString(dt.Rows[i]["slat"]);
-        //                                    objStoppageAnalysis.StopLongitude = Convert.IsDBNull(dt.Rows[i]["slong"]) ? string.Empty : Convert.ToString(dt.Rows[i]["slong"]);
-        //                                    objStoppageAnalysis.StopLocation = Convert.IsDBNull(dt.Rows[i]["sloc"]) ? string.Empty : Convert.ToString(dt.Rows[i]["sloc"]);
-
-        //                                    if (objStoppageAnalysis.StopLocation == "GPS signal not available" || objStoppageAnalysis.StopLocation == "N/A" || objStoppageAnalysis.StopLocation == "")
-        //                                    {
-        //                                        objStoppageAnalysis.StopLocation = objStoppageAnalysis.StopLocation;
-        //                                        objStoppageAnalysis.AddPoi = "N/A";
-        //                                    }
-        //                                    else
-        //                                    {
-        //                                        objStoppageAnalysis.AddPoi = "<a href='/Common/ADDPOI?lat=" + Convert.ToDouble(objStoppageAnalysis.StopLatitude) + "&longi=" + Convert.ToDouble(objStoppageAnalysis.StopLongitude) + "' target='_blank' style='color:#812DD5;text-decoration:underline;font-size:13px;'>Add POI</a>";
-        //                                        objStoppageAnalysis.StopLocation = "<a href='javascript:' onclick=showMapWindow('" + objStoppageAnalysisEx.BBID.Replace(" ", "&nbsp;") + "','" + objStoppageAnalysisEx.VehicleName.Replace(" ", "&nbsp;") + "','" + objStoppageAnalysis.StopLatitude.Replace(" ", "&nbsp;") + "','" + objStoppageAnalysis.StopLongitude.Replace(" ", "&nbsp;") + "','" + objStoppageAnalysis.StopLocation.Replace(" ", "&nbsp;") + "','" + status + "');>" + objStoppageAnalysis.StopLocation + "</a>";
-        //                                    }
-        //                                    objStoppageAnalysis.StartDate = Convert.IsDBNull(dt.Rows[i]["sdt"]) ? string.Empty : Convert.ToString(dt.Rows[i]["sdt"]);
-
-
-        //                                    objStoppageAnalysis.StopDate = Convert.IsDBNull(dt.Rows[i]["edt"]) ? string.Empty : Convert.ToString(dt.Rows[i]["edt"]);
-
-
-        //                                    objStoppageAnalysis.Duration = Convert.IsDBNull(dt.Rows[i]["duration"]) ? string.Empty : Convert.ToString(dt.Rows[i]["duration"]);
-        //                                    objStoppageAnalysis.StopLatitude = Convert.IsDBNull(dt.Rows[i]["slat"]) ? string.Empty : Convert.ToString(dt.Rows[i]["slat"]);
-        //                                    objStoppageAnalysis.StopLongitude = Convert.IsDBNull(dt.Rows[i]["slong"]) ? string.Empty : Convert.ToString(dt.Rows[i]["slong"]);
-
-
-        //                                    //objStoppageAnalysis.StopLocation = Convert.IsDBNull(dt.Rows[i]["sloc"]) ? string.Empty : Convert.ToString(dt.Rows[i]["sloc"]);
-        //                                    if (!string.IsNullOrEmpty(dt.Rows[i]["acignition"].ToString()))
-        //                                    {
-        //                                        objStoppageAnalysis.IgnitionStatus = Convert.ToBoolean(dt.Rows[i]["acignition"]);
-        //                                    }
-
-        //                                    objStoppageAnalysis.VehicleName = objRepBase.VehicleName;
-        //                                    objStoppageAnalysis.TotalDistance = objRepBase.TotalDistance;
-        //                                    listStoppageAnalysis.Add(objStoppageAnalysis);
-        //                                    TotalStoppageDur = TotalStoppageDur.Add(new TimeSpan(0, 0, Convert.ToInt32(dur)));
-        //                                    objRepBase.TotalStoppageTime = string.Format("{0}-{1}:{2}:{3}", TotalStoppageDur.Days, TotalStoppageDur.Hours, TotalStoppageDur.Minutes, TotalStoppageDur.Seconds);
-        //                                    string[] arr = objRepBase.TotalStoppageTime.ToString().Split('-');
-
-        //                                    if (arr.Length > 1)
-        //                                    {
-
-        //                                        int iDays = Convert.ToInt32(arr.GetValue(0));
-        //                                        string strTime = Convert.ToString(arr.GetValue(1));
-        //                                        string[] arrTime = strTime.Split(':');
-        //                                        int iHours = Convert.ToInt32(arrTime.GetValue(0));
-        //                                        int iMinutes = Convert.ToInt32(arrTime.GetValue(1));
-        //                                        int iSeconds = Convert.ToInt32(arrTime.GetValue(2));
-        //                                        days = days + iDays;
-        //                                        hours = hours + iHours;
-        //                                        minutes = minutes + iMinutes;
-        //                                        seconds = seconds + iSeconds;
-        //                                    }
-
-        //                                    Int32 totSeconds = hours * 3600 + minutes * 60 + seconds + days * 24 * 60 * 60;
-
-        //                                    TimeSpan ts1 = DateTime.Now.AddSeconds(totSeconds).Subtract(DateTime.Now);
-        //                                    objRepBase.TotalStoppageTime = ts1.Days.ToString() + " day(s) " + ts1.Hours.ToString() + " hour(s) " + ts1.Minutes.ToString() + " minute(s) " + ts1.Seconds.ToString() + " second(s)  ";
-
-
-        //                                }
-
-        //                            }
-
-
-
-
-
-        //                        }
-        //                        else
-        //                        {
-        //                            objRepBase.TotalStoppageTime = "0" + " day(s) " + "0" + " hour(s) " + "0" + " minute(s)" + "0" + " Seconds(s)";
-        //                        }
-
-        //                    }
-        //                    else
-        //                    {
-        //                        objRepBase.TotalStoppageTime = "0" + " day(s) " + "0" + " hour(s) " + "0" + " minute(s)" + "0" + " Seconds(s) ";
-        //                    }
-        //                    objStoppageAnalysisEx.Type = "0";
-        //                    objStoppageAnalysisEx.StoppageCount = listStoppageAnalysis.Count;
-        //                    objStoppageAnalysisEx.TotalStoppageTime = objRepBase.TotalStoppageTime;
-        //                    objStoppageAnalysisEx.objStoppageReport = listStoppageAnalysis;
-
-
-
-        //                    model.StoppageSubModel.Add(objStoppageAnalysisEx);
-
-        //                }
-        //                con.Close();
-        //            }
-        //            return model;
-        //        }
 
         public  DataTable StoppageAnalysis(DateTime beginDate, DateTime endDate, string vehicleId, string mode)
             {
@@ -1070,7 +655,7 @@ namespace Trackmaster_Repository.Repository
                     AND datadate <= @P2
                   ORDER BY datadate ASC";
 
-                using (SqlConnection con = new SqlConnection(GetConnectionString(vehicleId)))
+                using (SqlConnection con = new SqlConnection(GetConnectionStringTableWise(vehicleId)))
                 {
                     con.Open();
 
@@ -1497,6 +1082,248 @@ namespace Trackmaster_Repository.Repository
             {
             }
             return functionReturnValue;
+        }
+        public async Task<List<DistanceReportDataModel>> GetDistanceReportData(DataTableRequestModel model)
+        {
+            var result = new List<DistanceReportDataModel>();
+
+            // ================= MAIN DATA =================
+
+            using (SqlConnection con = new SqlConnection(_connectionString43))
+            using (SqlCommand cmd = new SqlCommand("GetDistanceReportData", con))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@custId", model.CustId);
+                cmd.Parameters.AddWithValue("@beginDate", model.beginDate);
+                cmd.Parameters.AddWithValue("@endDate", model.endDate);
+                cmd.Parameters.AddWithValue("@iDisplayStart", model.iDisplayStart);
+                cmd.Parameters.AddWithValue("@iDisplayLength", model.iDisplayLength);
+                cmd.Parameters.AddWithValue("@sortColumn", model.sortColumn);
+                cmd.Parameters.AddWithValue("@sortDirection", model.sortDirection);
+                cmd.Parameters.AddWithValue("@sSearch", model.sSearch);
+
+                await con.OpenAsync();
+
+                using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                {
+                    while (await dr.ReadAsync())
+                    {
+                        result.Add(new DistanceReportDataModel
+                        {
+                            Date = GetDateTime(dr["Date"]),
+                            BBID = GetString(dr["BBID"]),
+                            VehName = GetString(dr["VehName"]),
+                            _distanceReportSubDataModel =
+                                new List<DistanceReportSubDataModel>()
+                        });
+                    }
+                }
+            }
+
+            // ================= PARALLEL DEVICE TABLE CALLS =================
+
+            var tasks = result.Select(async item =>
+            {
+                var deviceDetailList = new List<PlaybackDataModel>();
+
+                using (SqlConnection con =
+                       new SqlConnection(GetConnectionStringTableWise(item.BBID)))
+                {
+                    await con.OpenAsync();
+
+                    string query = $@"
+SELECT speed, datadate, acignition, distance, loc
+FROM [{item.BBID}]
+WHERE datadate >= @startdate
+AND datadate <= @enddate
+ORDER BY datadate";
+
+                    using (SqlCommand cmd = new SqlCommand(query, con))
+                    {
+                        DateTime startDate = item.Date.Date;
+                        DateTime endDate = item.Date.Date
+                            .AddDays(1)
+                            .AddSeconds(-1);
+
+                        cmd.Parameters.AddWithValue("@startdate", startDate);
+                        cmd.Parameters.AddWithValue("@enddate", endDate);
+
+                        using (SqlDataReader dr =
+                               await cmd.ExecuteReaderAsync())
+                        {
+                            while (await dr.ReadAsync())
+                            {
+                                deviceDetailList.Add(new PlaybackDataModel
+                                {
+                                    speed = GetInt(dr["speed"]),
+                                    datadate = GetDateTime(dr["datadate"]),
+                                    acignition =
+                                        GetString(dr["acignition"]) == "1"
+                                        ? "Off"
+                                        : "On",
+                                    distance = GetDecimal(dr["distance"]),
+                                    location = GetString(dr["loc"])
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // ================= APPLY DISTANCE LOGIC =================
+
+                bool flag = false;
+
+                decimal sdist = 0;
+                decimal edist = 0;
+
+                decimal cumulativeDistance = 0;
+                decimal totalDistance = 0;
+
+                DateTime? tripStartTime = null;
+
+                for (int i = 0; i < deviceDetailList.Count; i++)
+                {
+                    var current = deviceDetailList[i];
+
+                    decimal speed = current.speed;
+                    decimal currentDistance = current.distance;
+
+                    // START MOVEMENT
+                    if (speed > 0 && flag == false)
+                    {
+                        sdist = (i == 0)
+                            ? currentDistance
+                            : deviceDetailList[i - 1].distance;
+
+                        edist = currentDistance;
+
+                        tripStartTime = current.datadate;
+
+                        flag = true;
+                    }
+
+                    // CONTINUE MOVEMENT
+                    else if (speed > 0 && flag == true)
+                    {
+                        edist = currentDistance;
+                    }
+
+                    // STOP MOVEMENT
+                    else if (speed <= 0 && flag == true)
+                    {
+                        edist = currentDistance;
+
+                        decimal tripDistance =
+                            Math.Round(edist - sdist, 1);
+
+                        DateTime tripEndTime = current.datadate;
+
+                        if (tripDistance > 0 && tripDistance < 500)
+                        {
+                            TimeSpan duration =
+                                tripEndTime - tripStartTime.Value;
+
+                            cumulativeDistance += tripDistance;
+                            totalDistance += tripDistance;
+
+                            item._distanceReportSubDataModel.Add(
+                                new DistanceReportSubDataModel
+                                {
+                                    StartTime = tripStartTime.Value.ToString("HH:mm"),
+
+                                    EndTime = tripEndTime.ToString("HH:mm"),
+
+                                    Duration = Math.Round(duration.TotalHours, 1).ToString("0.0"),
+
+                                    EstimateDistance = tripDistance.ToString("0.0"),
+
+                                    EstimateCumulativeDistance = cumulativeDistance.ToString("0.0"),
+
+                                    StartLocation = current.location
+                                });
+                        }
+
+                        flag = false;
+                    }
+                }
+
+                // HANDLE LAST RUNNING SESSION
+
+                if (flag == true)
+                {
+                    decimal tripDistance =
+                        Math.Round(edist - sdist, 1);
+
+                    DateTime tripEndTime =
+                        deviceDetailList.LastOrDefault()?.datadate
+                        ?? DateTime.Now;
+
+                    if (tripDistance > 0 && tripDistance < 500)
+                    {
+                        TimeSpan duration =
+                            tripEndTime - tripStartTime.Value;
+
+                        cumulativeDistance += tripDistance;
+                        totalDistance += tripDistance;
+
+                        item._distanceReportSubDataModel.Add(
+                            new DistanceReportSubDataModel
+                            {
+                                StartTime = tripStartTime.Value
+                                    .ToString("dd-MM-yyyy HH:mm:ss"),
+
+                                EndTime = tripEndTime
+                                    .ToString("dd-MM-yyyy HH:mm:ss"),
+
+                                Duration =
+                                    duration.ToString(@"hh\:mm\:ss"),
+
+                                EstimateDistance =
+                                    tripDistance.ToString("0.0"),
+
+                                EstimateCumulativeDistance =
+                                    cumulativeDistance.ToString("0.0"),
+
+                                StartLocation =
+                                    deviceDetailList.LastOrDefault()?.location
+                            });
+                    }
+                }
+
+                item.Distance = totalDistance.ToString("0.0");
+            });
+
+            // WAIT FOR ALL TABLES TO COMPLETE
+
+            await Task.WhenAll(tasks);
+
+            return result;
+        }
+        public async Task<List<DropDownItems>> GetMessageType()
+        {
+            var list = new List<DropDownItems>();
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand("GetMessageTypeTM", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                await con.OpenAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    list.Add(new DropDownItems
+                    {
+                        Value = GetInt(reader["type_id"]),
+                        Name = GetString(reader["type_name"])
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+            return list;
         }
     }
 }

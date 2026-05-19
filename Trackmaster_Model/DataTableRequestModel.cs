@@ -22,7 +22,7 @@ namespace Trackmaster_Model
 
         public int CustId { get; set; }
 
-        public int interval { get; set; } = 0;
+        public string? Interval { get; set; }
 
         public string? beginDate { get; set; }
 
