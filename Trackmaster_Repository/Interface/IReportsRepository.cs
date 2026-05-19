@@ -13,9 +13,11 @@ namespace Trackmaster_Repository.Interface
          VehiclesReport GetConductorInfo(DataTableRequestModel requestModel);
         List<DropDownItems> GetDesignationTypeCrew();
         List<DropDownItems> GetStatesList();
-        List<DropDownItems> GetCityList(int stateid);
+        List<DropDownItems> GetCityList(int stateid);     
+        
         string AddUpdateEmployee(Employee objEmp, string imagePaths = "");
         VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end);
+        StoppageMainModel GetCombinedStoppageReport(DateTime beginDate, DateTime endDate, string interval, int custid, int lowerBound, int upperBound, string searchText);
         Task<List<DistanceReportDataModel>> GetDistanceReportData(DataTableRequestModel model);
     }
 }

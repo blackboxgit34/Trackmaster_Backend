@@ -15,9 +15,9 @@ namespace Trackmaster_Service.Interface
         List<DropDownItems> GetDesignationTypeCrew();
         List<DropDownItems> GetStatesList();
         List<DropDownItems> GetCityList(int stateid);
-        //string AddUpdateEmployee(Employee objEmp);
         string AddUpdateEmployee(Employee objEmp, string imagePaths = "");
         VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end);
+        StoppageMainModel GetCombinedStoppageReport(DateTime beginDate, DateTime endDate, string int
         Task<List<DistanceReportDataModel>> GetDistanceReportData(DataTableRequestModel model);
     }
 }

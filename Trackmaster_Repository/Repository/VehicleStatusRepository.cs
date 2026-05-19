@@ -46,13 +46,11 @@ namespace Trackmaster_Repository.Repository
 
                 // Search Parameter
                 //cmd.Parameters.AddWithValue("@sSearch",model.sSearch);
-                cmd.Parameters.Add("@sSearch", SqlDbType.VarChar).Value =
-                   string.IsNullOrWhiteSpace(model.sSearch) || model.sSearch == "null"
-                       ? DBNull.Value
-                       : model.sSearch;
+                cmd.Parameters.Add("@sSearch", SqlDbType.VarChar).Value =string.IsNullOrWhiteSpace(model.sSearch) || model.sSearch == "null"? DBNull.Value: model.sSearch;
                 // Output Parameter
                 SqlParameter itemCountParam = new SqlParameter("@itemcount",SqlDbType.Int);
 
+                cmd.Parameters.AddWithValue("@StatusCode",model.Status ?? (object)DBNull.Value);
                 itemCountParam.Direction = ParameterDirection.Output;
 
                 cmd.Parameters.Add(itemCountParam);
@@ -77,8 +75,8 @@ namespace Trackmaster_Repository.Repository
                         gpsAntConStatus = GetInt(reader["gpsAntConStatus"]),
                         GPSFix = GetInt(reader["GPSFix"]),
                         IgnitionStatus = GetString(reader["currignitionStatus"]),
-                        vehBattery = GetInt(reader["vehBatteryStatus"]),
-                        deviceBattery = GetInt(reader["boxBatteryStatus"]),
+                        vehBattery = GetInt(reader["vehicleBattery"]),
+                        deviceBattery = GetInt(reader["deviceBattery"]),
                     });
                 }
                 reader.Close();

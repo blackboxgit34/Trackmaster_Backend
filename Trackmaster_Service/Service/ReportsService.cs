@@ -1,6 +1,9 @@
 ﻿using HMSCL.Models;
+using Microsoft.Data.SqlClient;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -37,14 +40,13 @@ namespace Trackmaster_Service.Service
             return _reportsRepository.GetCityList(stateid);
         }
 
-        //public  string AddUpdateEmployee(Employee objEmp)
-        //{
-        //    return _reportsRepository.AddUpdateEmployee(objEmp);
-        //}
-
         public string AddUpdateEmployee(Employee objEmp, string imagePaths = "")
         {
             return _reportsRepository.AddUpdateEmployee(objEmp, imagePaths);
+        }
+        public StoppageMainModel GetCombinedStoppageReport(DateTime beginDate, DateTime endDate,string interval,  int custid, int lowerBound, int upperBound, string searchText)
+        {
+            return _reportsRepository.GetCombinedStoppageReport(beginDate, endDate, interval, custid, lowerBound, upperBound, searchText);
         }
 
         public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
