@@ -293,11 +293,11 @@ namespace Trackmaster_Repository.Repository
                     {
                         result.VehicleData.Add(new VehicleStatusDto
                         {
-                            RowNo = Convert.ToInt32(dr["RowNo"]),
-                            BBID = dr["BBID"].ToString(),
-                            VehName = dr["vehname"].ToString(),
-                            DriverName = dr["DriverName"].ToString(),
-                            Overspeed = Convert.ToInt32(dr["overspeed"]),
+                            RowNo = GetInt(dr["RowNo"]),
+                            BBID = GetString(dr["BBID"]),
+                            VehName = GetString(dr["vehname"]),
+                            DriverName = GetString(dr["DriverName"]),
+                            Overspeed = GetInt(dr["overspeed"]),
                             Logs = new List<SpeedLogDto>()
                         });
                     }
@@ -326,10 +326,10 @@ namespace Trackmaster_Repository.Repository
                         {
                             item.Logs.Add(new SpeedLogDto
                             {
-                                Time = Convert.ToDateTime(dr["datadate"]),
-                                Speed = dr["speed"].ToString(),
-                                Location = dr["loc"].ToString(),
-                                Status = dr["status"].ToString()
+                                Time = GetDateTime(dr["datadate"]),
+                                Speed = GetString(dr["speed"]),
+                                Location = GetString(dr["loc"]),
+                                Status = GetString(dr["status"])
                             });
                         }
                     }

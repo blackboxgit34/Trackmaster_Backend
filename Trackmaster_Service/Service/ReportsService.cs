@@ -37,11 +37,6 @@ namespace Trackmaster_Service.Service
             return _reportsRepository.GetCityList(stateid);
         }
 
-        //public  string AddUpdateEmployee(Employee objEmp)
-        //{
-        //    return _reportsRepository.AddUpdateEmployee(objEmp);
-        //}
-
         public string AddUpdateEmployee(Employee objEmp, string imagePaths = "")
         {
             return _reportsRepository.AddUpdateEmployee(objEmp, imagePaths);
