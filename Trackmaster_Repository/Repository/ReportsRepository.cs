@@ -26,10 +26,12 @@ namespace Trackmaster_Repository.Repository
             _FMSConString43 = configuration.GetConnectionString("FMSConString43");
         }
 
-        public VehiclesReport GetConductorInfo(DataTableRequestModel requestModel)
+        public async Task<VehiclesReport> GetConductorInfo(DataTableRequestModel requestModel)
         {
-            var modelObj = new VehiclesReport();
-            modelObj.modelObjList = new List<VehicleInformation>();
+            var modelObj = new VehiclesReport
+            {
+                modelObjList = new List<VehicleInformation>()
+            };
             if (requestModel.sSearch == "null" || string.IsNullOrEmpty(requestModel.sSearch))
             {
                 requestModel.sSearch = null;
@@ -41,35 +43,29 @@ namespace Trackmaster_Repository.Repository
             try
             {
                 using (SqlConnection con = new SqlConnection(_connectionString43))
+                using (SqlCommand cmd = new SqlCommand("[dbo].[GetCrewData]", con))
                 {
-                    using (SqlCommand cmd = new SqlCommand("[dbo].[GetCrewData]", con))
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@CustId", requestModel.CustId);
+                    cmd.Parameters.AddWithValue("@startRowIndex", requestModel.iDisplayStart);
+                    cmd.Parameters.AddWithValue("@pageSize", requestModel.iDisplayLength);
+                    cmd.Parameters.AddWithValue("@vehName",string.IsNullOrEmpty(requestModel.sSearch)? (object)DBNull.Value: requestModel.sSearch);
+                    cmd.Parameters.AddWithValue("@sortColumn", requestModel.sortColumn);
+                    cmd.Parameters.AddWithValue("@sortDirection", requestModel.sortDirection);
+                    await con.OpenAsync();
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@CustId", requestModel.CustId);
-                        cmd.Parameters.AddWithValue("@startRowIndex", requestModel.iDisplayStart);
-                        cmd.Parameters.AddWithValue("@pageSize", requestModel.iDisplayLength);
-                        cmd.Parameters.AddWithValue("@vehName", string.IsNullOrEmpty(requestModel.sSearch) ? (object)DBNull.Value : requestModel.sSearch);
-                        cmd.Parameters.AddWithValue("@sortColumn", requestModel.sortColumn);
-                        cmd.Parameters.AddWithValue("@sortDirection", requestModel.sortDirection);
-                        con.Open();
-                        using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                        while (await dr.ReadAsync())
                         {
-                            DataTable dt = new DataTable();
-                            da.Fill(dt);
-                            if (dt.Rows.Count == 0)
-                                return modelObj;
-                            foreach (DataRow dr in dt.Rows)
-                            {
-                                VehicleInformation objVeh = new VehicleInformation();
-                                modelObj.PageCount = GetInt(dr["totalrecords"]);
-                                objVeh.BBID = GetString(dr["BBID"]);
-                                objVeh.VehicleName = GetString(dr["VehName"]);
-                                objVeh.driverName = GetString(dr["DriverName"]);
-                                objVeh.ConductorName = GetString(dr["Conductor"]);
-                                objVeh.VehicleImagePath = GetString(dr["icon"]);
-                                objVeh.VehicleType = GetString(dr["type"]);
-                                modelObj.modelObjList.Add(objVeh);
-                            }
+                            VehicleInformation objVeh = new VehicleInformation();
+                            modelObj.PageCount = GetInt(dr["totalrecords"]);
+                            objVeh.BBID = GetString(dr["BBID"]);
+                            objVeh.VehicleName = GetString(dr["VehName"]);
+                            objVeh.driverName = GetString(dr["DriverName"]);
+                            objVeh.ConductorName = GetString(dr["Conductor"]);
+                            objVeh.VehicleImagePath = GetString(dr["icon"]);
+                            objVeh.VehicleType = GetString(dr["type"]);
+                            modelObj.modelObjList.Add(objVeh);
                         }
                     }
                 }
@@ -84,7 +80,7 @@ namespace Trackmaster_Repository.Repository
             return modelObj;
         }
 
-        public List<DropDownItems> GetDesignationTypeCrew()
+        public async Task<List<DropDownItems>> GetDesignationTypeCrew()
         {
             List<DropDownItems> lstEmpType = new List<DropDownItems>();
             try
@@ -93,12 +89,12 @@ namespace Trackmaster_Repository.Repository
                 using (SqlCommand cmd = new SqlCommand("[dbo].[GetDesignationTypeCrew]", con))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
-                    con.Open();
-                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    await con.OpenAsync();
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                     {
                         if (dr.HasRows)
                         {
-                            while (dr.Read())
+                            while (await dr.ReadAsync())
                             {
                                 DropDownItems objET = new DropDownItems
                                 {
@@ -122,7 +118,7 @@ namespace Trackmaster_Repository.Repository
             return lstEmpType;
         }
 
-        public List<DropDownItems> GetStatesList()
+        public async Task<List<DropDownItems>> GetStatesList()
         {
             List<DropDownItems> stateList = new List<DropDownItems>();
 
@@ -133,11 +129,11 @@ namespace Trackmaster_Repository.Repository
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
 
-                    con.Open();
+                    await con.OpenAsync();
 
-                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                     {
-                        while (dr.Read())
+                        while (await dr.ReadAsync())
                         {
                             DropDownItems objET = new DropDownItems
                             {
@@ -162,7 +158,7 @@ namespace Trackmaster_Repository.Repository
             return stateList;
         }
 
-        public List<DropDownItems> GetCityList(int stateid)
+        public async Task<List<DropDownItems>> GetCityList(int stateid)
         {
             List<DropDownItems> cityList = new List<DropDownItems>();
 
@@ -173,11 +169,11 @@ namespace Trackmaster_Repository.Repository
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@stateid", stateid);
-                    con.Open();
+                    await con.OpenAsync();
 
-                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    using (SqlDataReader dr = await  cmd.ExecuteReaderAsync())
                     {
-                        while (dr.Read())
+                        while (await dr.ReadAsync())
                         {
                             DropDownItems objET = new DropDownItems
                             {
@@ -202,7 +198,7 @@ namespace Trackmaster_Repository.Repository
             return cityList;
         }
 
-        public string AddUpdateEmployee(Employee objEmp, string imagePaths)
+        public async Task<string> AddUpdateEmployee(Employee objEmp, string imagePaths)
         {
             string result = "";
 
@@ -242,8 +238,8 @@ namespace Trackmaster_Repository.Repository
                     cmd.Parameters.AddWithValue("@BloodGroup", objEmp.BloodGroup);
                     cmd.Parameters.AddWithValue("@ImagePath",string.IsNullOrEmpty(imagePaths) ? "" : imagePaths);
 
-                    con.Open();
-                    int rowsAffected = cmd.ExecuteNonQuery();con.Close();
+                    await con.OpenAsync();
+                    int rowsAffected = await cmd.ExecuteNonQueryAsync();
                     result = rowsAffected > 0? "Employee saved successfully": "Failed to save employee";
                     //result = "testing to save employee";
                 }
@@ -258,6 +254,32 @@ namespace Trackmaster_Repository.Repository
             }
 
             return result;
+        }
+
+        public async Task<List<DropDownItems>> GetMessageType()
+        {
+            var list = new List<DropDownItems>();
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand("GetMessageTypeTM", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                await con.OpenAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    list.Add(new DropDownItems
+                    {
+                        Value = GetInt(reader["type_id"]),
+                        Name = GetString(reader["type_name"])
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+            return list;
         }
 
 
