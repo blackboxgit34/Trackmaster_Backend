@@ -2,10 +2,14 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Globalization;
 using System.Net;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using Trackmaster_Model;
+using Trackmaster_Repository.Repository;
 using Trackmaster_Service.Interface;
+using Trackmaster_Service.Service;
 using static Trackmaster_Model.Reports;
 
 namespace Trackmaster_Backend.Controllers
@@ -35,7 +39,7 @@ namespace Trackmaster_Backend.Controllers
         [HttpGet("GetConductorInfo")]
         public async Task<IActionResult> GetConductorInfo([FromQuery] DataTableRequestModel requestModel)
         {
-            var modelObj = _reportsService.GetConductorInfo(requestModel);
+            var modelObj = await _reportsService.GetConductorInfo(requestModel);
 
             if (modelObj == null)
                 return NoContent();
@@ -55,7 +59,7 @@ namespace Trackmaster_Backend.Controllers
         [HttpGet ("GetDesignationTypeCrew")]
         public async Task<IActionResult> GetDesignationTypeCrew()
         {
-            List<DropDownItems> empTypeList = _reportsService.GetDesignationTypeCrew();
+            List<DropDownItems> empTypeList = await _reportsService.GetDesignationTypeCrew();
 
             var aaData = empTypeList;
             return Ok(new { aaData = empTypeList });
@@ -64,7 +68,7 @@ namespace Trackmaster_Backend.Controllers
         [HttpGet("GetStatesList")]
         public async Task<IActionResult> GetStatesList()
         {
-            List<DropDownItems> stateList = _reportsService.GetStatesList();
+            List<DropDownItems> stateList = await _reportsService.GetStatesList();
             var aaData = stateList;
             return Ok(new { aaData = stateList });
         }
@@ -72,14 +76,14 @@ namespace Trackmaster_Backend.Controllers
         [HttpGet("GetCityList")]
         public async Task<IActionResult> GetCityList(int stateid)
         {
-            List<DropDownItems> cityList = _reportsService.GetCityList(stateid);
+            List<DropDownItems> cityList = await _reportsService.GetCityList(stateid);
             var cityData = cityList;
             return Ok(new { cityData = cityList }); 
         }
 
 
         [HttpPost("AddUpdateEmployee")]
-        public IActionResult AddUpdateEmployee([FromForm] Employee objEmp)
+        public async Task<IActionResult >AddUpdateEmployee([FromForm] Employee objEmp)
         {
             try
             {
@@ -124,7 +128,7 @@ namespace Trackmaster_Backend.Controllers
                 }
 
                 string finalImagePath = string.Join(",", imagePaths);
-                var result = _reportsService.AddUpdateEmployee(objEmp, finalImagePath);
+                var result = await _reportsService.AddUpdateEmployee(objEmp, finalImagePath);
 
                 return Ok(new
                 {
@@ -137,7 +141,7 @@ namespace Trackmaster_Backend.Controllers
             }
         }
 
-        [HttpGet("vehicle-status")]
+        [HttpGet("VehicleStatus")]
         public IActionResult VehicleStatus(int custId, int lower, int upper, string? search, DateTime start, DateTime end)
         {
             var result = _reportsService.VehicleStatus(custId, lower, upper, search, start, end);
@@ -149,7 +153,62 @@ namespace Trackmaster_Backend.Controllers
             });
         }
 
+        [HttpPost("GetDistanceReportData")]
+        public async Task<IActionResult> GetDistanceReportData([FromBody] DataTableRequestModel model)
+        {
+            var result = await _reportsService.GetDistanceReportData(model);
 
+            return Ok(new
+            {
+                data = result,
+                count = result.Count()
+            });
+        }
+
+        [HttpGet("GetAllStoppageReport")]
+        public IActionResult GetAllStoppageReport([FromQuery] DataTableRequestModel dtmodel)
+        {
+            StoppageMainModel stoppage = new StoppageMainModel();
+            dtmodel.iDisplayStart = dtmodel.iDisplayStart;
+            dtmodel.iDisplayLength = dtmodel.iDisplayStart + dtmodel.iDisplayLength;
+            stoppage = _reportsService.GetCombinedStoppageReport(dtmodel);
+            if (stoppage == null)
+            {
+                return NoContent();
+            }
+
+            return Ok(new
+            {
+                sEcho = dtmodel.sEcho,
+                iTotalRecords = stoppage.PageCount,
+                iTotalDisplayRecords = stoppage.PageCount,
+                aaData = stoppage.StoppageSubModel
+            });
+
+        }
+        [HttpGet("GetMessageType")]
+        public async Task<IActionResult> GetMessageType()
+        {
+            try
+            {
+                var messageTypeData = await _reportsService.GetMessageType();
+                return Ok(new
+                {
+                    success = true,
+                    message = "message type data retrieved successfully",
+                    data = messageTypeData
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
 
     }
 }
