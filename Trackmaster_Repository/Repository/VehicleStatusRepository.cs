@@ -42,7 +42,7 @@ namespace Trackmaster_Repository.Repository
                 // Paging Parameters
                 cmd.Parameters.AddWithValue("@lbound", model.iDisplayStart);
 
-                cmd.Parameters.AddWithValue("@ubound",model.iDisplayStart + model.iDisplayLength);
+                cmd.Parameters.AddWithValue("@ubound", model.iDisplayStart + model.iDisplayLength);
 
                 // Search Parameter
                 //cmd.Parameters.AddWithValue("@sSearch",model.sSearch);
@@ -51,7 +51,7 @@ namespace Trackmaster_Repository.Repository
                        ? DBNull.Value
                        : model.sSearch;
                 // Output Parameter
-                SqlParameter itemCountParam = new SqlParameter("@itemcount",SqlDbType.Int);
+                SqlParameter itemCountParam = new SqlParameter("@itemcount", SqlDbType.Int);
 
                 itemCountParam.Direction = ParameterDirection.Output;
 
@@ -65,7 +65,7 @@ namespace Trackmaster_Repository.Repository
                     {
                         VehName = GetString(reader["vehname"]),
                         VehicleStatus = GetString(reader["statusCode"]),
-                        Type = GetString(reader["type"]), 
+                        Type = GetString(reader["type"]),
                         model = GetString(reader["model"]),
                         lat = GetFloat(reader["lat"]),
                         lng = GetFloat(reader["longi"]),
@@ -83,9 +83,7 @@ namespace Trackmaster_Repository.Repository
                 }
                 reader.Close();
 
-                totalCount = Convert.ToInt32(
-                    itemCountParam.Value
-                );
+                totalCount = itemCountParam.Value == DBNull.Value? 0: Convert.ToInt32(itemCountParam.Value);
 
                 if (list.Count > 0)
                 {
