@@ -1,9 +1,11 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
 
 namespace Trackmaster_Model
 {
@@ -40,36 +42,66 @@ namespace Trackmaster_Model
 
         public class Employee
         {
-            [DisplayName("Employee Code")]
-            public string EmployeeCode { get; set; }//
-            [DisplayName("First Name")]
+            public int Custid { get; set; }
+            public int? EmployeeId { get; set; }
 
-            public string FirstName { get; set; }//
-            [DisplayName("EmployeeType")]
+            public short Designation { get; set; }
+            public string EmployeeCode { get; set; }
             public string EmployeeType { get; set; }
-            [DisplayName("Last Name")]
-            public string LastName { get; set; }//
-            [DisplayName("Permanent Address")]
-            public string PermanentAddress { get; set; }//
-            [DisplayName("Permanent Address Postal Code")]
-            public string PermanentPostalCode { get; set; }//
-            [DisplayName("Permanent Address State")]
-            public string PermanentState { get; set; }//
-            [DisplayName("Permanent Address City")]
-            public string PermanentCity { get; set; }//
-            [DisplayName("Correspondence Address")]
-            public string Address { get; set; }
-            [DisplayName("Correspondence Address Postal Code")]
-            public string PostalCode { get; set; }//
-            [DisplayName("Correspondence Address State")]
-            public string State { get; set; }//
-            [DisplayName("Correspondence Address City")]
-            public string City { get; set; }//
-            [DisplayName("Mobile")] //
-            public string Mobile { get; set; }
-            [DisplayName("Blood Group")]
-            public string BloodGroup { get; set; }//
-            [DisplayName("Status")]
+            public int? contractDuration { get; set; }
+            public string FirstName { get; set; }
+            public string LastName { get; set; }
+            public string ?Qualification { get; set; }
+            public string ?Experience { get; set; }
+            public string ?PermanentAddress { get; set; }
+            public string ?PermanentPostalCode { get; set; }
+            public string? PermanentState { get; set; }
+            public string ?PermanentCity { get; set; }
+            public string ?correspondenceAddress { get; set; }
+            public string ?correspondencePostalCode { get; set; }
+            public string ?correspondenceState { get; set; }
+            public string ?correspondenceCity { get; set; }
+            public string ?HireDate { get; set; }
+            public double ?EmployeeCTC { get; set; }
+            public string ?Role { get; set; }
+            public string ?OfficePhone { get; set; }
+            public string ?EmergencyContactInfo { get; set; }
+            public string ?Mobile { get; set; }
+            public string ?IdProofNo { get; set; }
+            public string ?IdProofType { get; set; }
+            public string ?Remarks { get; set; }
+            public string ?BloodGroup { get; set; }
+            public List<IFormFile>? ImageFiles { get; set; }
+        }
+
+        public class DocInfo
+        {
+            public string Name { get; set; }
+            public string fullPath { get; set; }
+        }
+
+        public class VehicleStatusResponse
+        {
+            public int ItemCount { get; set; }
+            public List<VehicleStatusDto> VehicleData { get; set; } = new();
+        }
+
+        public class VehicleStatusDto
+        {
+            public int RowNo { get; set; }
+            public string BBID { get; set; }
+            public string VehName { get; set; }
+            public string DriverName { get; set; }
+            public int Overspeed { get; set; }
+
+            public List<SpeedLogDto> Logs { get; set; } = new List<SpeedLogDto>(); // ✅ SAFE INIT
+        }
+
+        public class SpeedLogDto
+        {
+            public DateTime Time { get; set; }
+            public string Speed { get; set; }
+            public string Location { get; set; }
             public string Status { get; set; }
             [DisplayName("Hire Date")]
             public string HireDate { get; set; }//

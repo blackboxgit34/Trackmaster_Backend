@@ -90,9 +90,18 @@ namespace Trackmaster_Service.Service
 
         public async Task<List<VehicleList>> GetAllVehicleListByCustId(int userid)
         {
-            return await _dashboardRepository.GetAllVehicleListByCustId(userid);
+            string cacheKey = $"vehicleList_{userid}";
+
+            if (_cache.TryGetValue(cacheKey, out List<VehicleList> cached))
+            {
+                return cached;
+            }
+
+            var vehiclelist = await _dashboardRepository.GetAllVehicleListByCustId(userid);
+
+            _cache.Set(cacheKey, vehiclelist, TimeSpan.FromMinutes(10));
+
+            return vehiclelist;
         }
-
-
     }
 }

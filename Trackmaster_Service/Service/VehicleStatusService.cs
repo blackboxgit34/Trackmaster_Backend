@@ -22,10 +22,13 @@ namespace Trackmaster_Service.Service
             _vehicleStatusRepository = vehicleStatusRepository;
             _cache = cache;
         }
-        public async Task<List<VehicleonMapList>> GetvehicleStatusList(int userid)
+        public async Task<List<VehicleonMapList>> GetvehicleStatusList(string pagename, DataTableRequestModel model)
         {
-            return await _vehicleStatusRepository.GetvehicleStatusList(userid);
+            return await _vehicleStatusRepository.GetvehicleStatusList(pagename,model);
         }
-
+        public async Task<List<PlaybackDataModel>> GetPlaybackData(string bbid, DateTime date)
+        {
+            return await _vehicleStatusRepository.GetPlaybackData(bbid, date);
+        }
     }
 }
