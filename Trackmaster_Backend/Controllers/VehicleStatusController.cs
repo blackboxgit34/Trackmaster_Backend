@@ -1,18 +1,21 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Net;
+using System.Net.Http.Headers;
 using Trackmaster_Model;
+using Trackmaster_Service;
 using Trackmaster_Service.Interface;
-using Trackmaster_Service.Service;
-
 namespace Trackmaster_Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class VehicleStatusController : ControllerBase
     {
+        private readonly ImportExportExcelService _importExportExcelService;
         private readonly IVehicleStatusService _vehiclestatusService;
-        public VehicleStatusController(IVehicleStatusService vehiclestatusService)
+        public VehicleStatusController(IVehicleStatusService vehiclestatusService, ImportExportExcelService importExportExcelService)
         {
             _vehiclestatusService = vehiclestatusService;
+            _importExportExcelService = importExportExcelService;
         }
 
         [HttpGet("GetvehicleStatusList")]
@@ -48,7 +51,7 @@ namespace Trackmaster_Backend.Controllers
             }
         }
         [HttpGet("GetPlaybackData")]
-        public async Task<IActionResult> GetPlaybackData(string bbid, DateTime date)
+        public async Task<IActionResult> GetPlaybackData(string bbid, DateTime date, string downloadType=null)
         {
             try
             {
@@ -63,6 +66,24 @@ namespace Trackmaster_Backend.Controllers
                         success = true,
                         data = movingData
                     });
+                }
+
+                if (!String.IsNullOrEmpty(downloadType) && (downloadType.Equals("Excel")))
+                {
+                    var reportName = $"RoutePlayback_{bbid}_{date:yyyyMMdd}.xlsx";
+
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(
+                        playbackData,
+                        reportName,
+                        null,
+                        null
+                    );
+
+                    return File(
+                        stream,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        reportName
+                    );
                 }
 
                 // =========================
