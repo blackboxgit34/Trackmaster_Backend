@@ -14,6 +14,7 @@ namespace Trackmaster_Repository.Interface
         List<DropDownItems> GetStatesList();
         List<DropDownItems> GetCityList(int stateid);
         string AddUpdateEmployee(Employee objEmp);
+        StoppageMainModel GetCombinedStoppageReport(DateTime beginDate, DateTime endDate, string interval, int custid, int lowerBound, int upperBound, string searchText);
 
     }
 }

@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 using System.Net;
 using System.Xml.Linq;
+using Trackmaster_Repository.Repository;
 using Trackmaster_Service.Interface;
 using static Trackmaster_Model.Reports;
 
@@ -80,6 +82,36 @@ namespace Trackmaster_Backend.Controllers
             isInsertUpdate = _reportsService.AddUpdateEmployee(employee);
 
             return Ok(isInsertUpdate);
+        }
+
+
+
+        [HttpGet("GetAllStoppageReport")]
+        public IActionResult GetAllStoppageReport(DateTime beginDate, DateTime endDate, string CustId, string? interval, string? downloadType, string? reportName,
+             int sEcho,
+             int iDisplayStart,
+             int iDisplayLength,
+             string? sSearch,
+             int iSortCol_0,
+             string sSortDir_0)
+        {
+            StoppageMainModel stoppage = new StoppageMainModel();
+            var lowerBound = iDisplayStart;
+            var upperBound = iDisplayStart + iDisplayLength;
+            stoppage = _reportsService.GetCombinedStoppageReport(beginDate, endDate, interval,Convert.ToInt32(CustId), lowerBound, upperBound, sSearch);
+            if (stoppage == null)
+            {
+                return NoContent();
+            }
+
+            return Ok(new
+            {
+                sEcho = sEcho,
+                iTotalRecords = stoppage.PageCount,
+                iTotalDisplayRecords = stoppage.PageCount,
+                aaData = stoppage.StoppageSubModel
+            });
+
         }
 
 
