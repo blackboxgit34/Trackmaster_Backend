@@ -18,7 +18,7 @@ namespace Trackmaster_Service.Interface
         Task<string> AddUpdateEmployee(Employee objEmp, string imagePaths = "");
         VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end);
         StoppageMainModel GetCombinedStoppageReport(DataTableRequestModel DataTableRequestModel);
-        Task<List<DistanceReportDataModel>> GetDistanceReportData(DataTableRequestModel model);
+        Task<(List<DistanceReportDataModel> data, int TotalCount)> GetDistanceReportData(DataTableRequestModel model);
         Task<List<DropDownItems>> GetMessageType();
     }
 }
