@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Trackmaster_Model;
@@ -17,5 +18,6 @@ namespace Trackmaster_Service.Interface
         //string AddUpdateEmployee(Employee objEmp);
         string AddUpdateEmployee(Employee objEmp, string imagePaths = "");
         VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end);
+        Task<List<DistanceReportDataModel>> GetDistanceReportData(DataTableRequestModel model);
     }
 }

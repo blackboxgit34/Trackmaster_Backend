@@ -51,5 +51,9 @@ namespace Trackmaster_Service.Service
         {
             return _reportsRepository.VehicleStatus(custId, lower, upper, search, start, end);
         }
+        public async Task<List<DistanceReportDataModel>> GetDistanceReportData(DataTableRequestModel model)
+        {
+            return await _reportsRepository.GetDistanceReportData(model);
+        }
     }
 }

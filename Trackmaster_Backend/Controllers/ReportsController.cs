@@ -149,7 +149,17 @@ namespace Trackmaster_Backend.Controllers
             });
         }
 
+        [HttpPost("GetDistanceReportData")]
+        public async Task<IActionResult> GetDistanceReportData([FromBody] DataTableRequestModel model)
+        {
+            var result = await _reportsService.GetDistanceReportData(model);
 
+            return Ok(new
+            {
+                data = result,
+                count = result.Count()
+            });
+        }
 
     }
 }
