@@ -27,5 +27,6 @@ namespace Trackmaster_Model
         public string? beginDate { get; set; }
 
         public string? endDate { get; set; }
+        public string? Status { get; set; }
     }
 }
