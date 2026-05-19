@@ -2,9 +2,12 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Globalization;
 using System.Net;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using Trackmaster_Model;
+using Trackmaster_Repository.Repository;
 using Trackmaster_Service.Interface;
 using Trackmaster_Service.Service;
 using static Trackmaster_Model.Reports;
@@ -138,6 +141,51 @@ namespace Trackmaster_Backend.Controllers
             }
         }
 
+        [HttpGet("vehicle-status")]
+        public IActionResult VehicleStatus(int custId, int lower, int upper, string? search, DateTime start, DateTime end)
+        {
+            var result = _reportsService.VehicleStatus(custId, lower, upper, search, start, end);
+
+            return Ok(new
+            {
+                data = result.VehicleData,
+                count = result.ItemCount
+            });
+        }
+
+        [HttpPost("GetDistanceReportData")]
+        public async Task<IActionResult> GetDistanceReportData([FromBody] DataTableRequestModel model)
+        {
+            var result = await _reportsService.GetDistanceReportData(model);
+
+            return Ok(new
+            {
+                data = result,
+                count = result.Count()
+            });
+        }
+
+        [HttpGet("GetAllStoppageReport")]
+        public IActionResult GetAllStoppageReport([FromQuery] DataTableRequestModel dtmodel)
+        {
+            StoppageMainModel stoppage = new StoppageMainModel();
+            dtmodel.iDisplayStart = dtmodel.iDisplayStart;
+            dtmodel.iDisplayLength = dtmodel.iDisplayStart + dtmodel.iDisplayLength;
+            stoppage = _reportsService.GetCombinedStoppageReport(dtmodel);
+            if (stoppage == null)
+            {
+                return NoContent();
+            }
+
+            return Ok(new
+            {
+                sEcho = dtmodel.sEcho,
+                iTotalRecords = stoppage.PageCount,
+                iTotalDisplayRecords = stoppage.PageCount,
+                aaData = stoppage.StoppageSubModel
+            });
+
+        }
         [HttpGet("GetMessageType")]
         public async Task<IActionResult> GetMessageType()
         {
@@ -161,9 +209,6 @@ namespace Trackmaster_Backend.Controllers
                 });
             }
         }
-
-
-
 
     }
 }

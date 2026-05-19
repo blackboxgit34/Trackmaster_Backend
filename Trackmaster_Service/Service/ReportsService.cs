@@ -1,7 +1,10 @@
 ﻿using HMSCL.Models;
+using Microsoft.Data.SqlClient;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -39,14 +42,28 @@ namespace Trackmaster_Service.Service
         {
             return await _reportsRepository.GetCityList(stateid);
         }
+
         public async Task<string> AddUpdateEmployee(Employee objEmp, string imagePaths = "")
         {
             return await _reportsRepository.AddUpdateEmployee(objEmp, imagePaths);
         }
+        public StoppageMainModel GetCombinedStoppageReport(DataTableRequestModel dtmodel)
+        {
+            return _reportsRepository.GetCombinedStoppageReport(dtmodel);
+        }
+
+        public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        {
+            return _reportsRepository.VehicleStatus(custId, lower, upper, search, start, end);
+        }
+        public async Task<List<DistanceReportDataModel>> GetDistanceReportData(DataTableRequestModel model)
+        {
+            return await _reportsRepository.GetDistanceReportData(model);
+        }
         public async Task<List<DropDownItems>> GetMessageType()
         {
             string cacheKey = "messageTypeList";
-            if (_cache.TryGetValue(cacheKey,out List <DropDownItems> cached))
+            if (_cache.TryGetValue(cacheKey, out List<DropDownItems> cached))
             {
                 return cached;
             }
@@ -54,6 +71,5 @@ namespace Trackmaster_Service.Service
             _cache.Set(vehiclelist, TimeSpan.FromMinutes(10));
             return vehiclelist;
         }
-
     }
 }
