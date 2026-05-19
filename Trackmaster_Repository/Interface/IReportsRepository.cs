@@ -17,7 +17,7 @@ namespace Trackmaster_Repository.Interface
         
         string AddUpdateEmployee(Employee objEmp, string imagePaths = "");
         VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end);
-        StoppageMainModel GetCombinedStoppageReport(DateTime beginDate, DateTime endDate, string interval, int custid, int lowerBound, int upperBound, string searchText);
+        StoppageMainModel GetCombinedStoppageReport(DataTableRequestModel dtmodel);
 
     }
 }

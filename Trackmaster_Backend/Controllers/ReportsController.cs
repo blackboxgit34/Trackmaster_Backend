@@ -154,18 +154,12 @@ namespace Trackmaster_Backend.Controllers
 
 
         [HttpGet("GetAllStoppageReport")]
-        public IActionResult GetAllStoppageReport(DateTime beginDate, DateTime endDate, string CustId, string? interval, string? downloadType, string? reportName,
-             int sEcho,
-             int iDisplayStart,
-             int iDisplayLength,
-             string? sSearch,
-             int iSortCol_0,
-             string sSortDir_0)
+        public IActionResult GetAllStoppageReport([FromQuery] DataTableRequestModel dtmodel)
         {
             StoppageMainModel stoppage = new StoppageMainModel();
-            var lowerBound = iDisplayStart;
-            var upperBound = iDisplayStart + iDisplayLength;
-            stoppage = _reportsService.GetCombinedStoppageReport(beginDate, endDate, interval,Convert.ToInt32(CustId), lowerBound, upperBound, sSearch);
+            dtmodel.iDisplayStart = dtmodel.iDisplayStart;
+            dtmodel.iDisplayLength = dtmodel.iDisplayStart + dtmodel.iDisplayLength;
+            stoppage = _reportsService.GetCombinedStoppageReport(dtmodel);
             if (stoppage == null)
             {
                 return NoContent();
@@ -173,7 +167,7 @@ namespace Trackmaster_Backend.Controllers
 
             return Ok(new
             {
-                sEcho = sEcho,
+                sEcho = dtmodel.sEcho,
                 iTotalRecords = stoppage.PageCount,
                 iTotalDisplayRecords = stoppage.PageCount,
                 aaData = stoppage.StoppageSubModel
