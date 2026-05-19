@@ -279,10 +279,6 @@ namespace Trackmaster_Repository.Repository
             return result;
         }
 
-
-
-
-
         public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
         {
             var result = new VehicleStatusResponse();
