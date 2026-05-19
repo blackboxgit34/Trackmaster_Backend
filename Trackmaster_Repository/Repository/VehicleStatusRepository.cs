@@ -77,8 +77,8 @@ namespace Trackmaster_Repository.Repository
                         gpsAntConStatus = GetInt(reader["gpsAntConStatus"]),
                         GPSFix = GetInt(reader["GPSFix"]),
                         IgnitionStatus = GetString(reader["currignitionStatus"]),
-                        vehBattery = GetInt(reader["vehBatteryStatus"]),
-                        deviceBattery = GetInt(reader["boxBatteryStatus"]),
+                        vehBattery = GetInt(reader["vehicleBattery"]),
+                        deviceBattery = GetInt(reader["deviceBattery"]),
                     });
                 }
                 reader.Close();
