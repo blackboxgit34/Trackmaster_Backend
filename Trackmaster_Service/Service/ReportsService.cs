@@ -44,9 +44,9 @@ namespace Trackmaster_Service.Service
         {
             return _reportsRepository.AddUpdateEmployee(objEmp, imagePaths);
         }
-        public StoppageMainModel GetCombinedStoppageReport(DateTime beginDate, DateTime endDate,string interval,  int custid, int lowerBound, int upperBound, string searchText)
+        public StoppageMainModel GetCombinedStoppageReport(DataTableRequestModel dtmodel)
         {
-            return _reportsRepository.GetCombinedStoppageReport(beginDate, endDate, interval, custid, lowerBound, upperBound, searchText);
+            return _reportsRepository.GetCombinedStoppageReport(dtmodel);
         }
 
         public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)

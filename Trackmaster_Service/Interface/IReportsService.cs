@@ -17,7 +17,7 @@ namespace Trackmaster_Service.Interface
         List<DropDownItems> GetCityList(int stateid);
         string AddUpdateEmployee(Employee objEmp, string imagePaths = "");
         VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end);
-        StoppageMainModel GetCombinedStoppageReport(DateTime beginDate, DateTime endDate, string int
+        StoppageMainModel GetCombinedStoppageReport(DataTableRequestModel DataTableRequestModel);
         Task<List<DistanceReportDataModel>> GetDistanceReportData(DataTableRequestModel model);
     }
 }
