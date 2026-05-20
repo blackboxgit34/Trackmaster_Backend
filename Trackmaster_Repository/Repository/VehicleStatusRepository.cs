@@ -81,9 +81,7 @@ namespace Trackmaster_Repository.Repository
                 }
                 reader.Close();
 
-                totalCount = Convert.ToInt32(
-                    itemCountParam.Value
-                );
+                totalCount = itemCountParam.Value == DBNull.Value? 0: Convert.ToInt32(itemCountParam.Value);
 
                 if (list.Count > 0)
                 {

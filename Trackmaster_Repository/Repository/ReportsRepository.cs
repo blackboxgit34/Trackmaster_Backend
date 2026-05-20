@@ -34,10 +34,12 @@ namespace Trackmaster_Repository.Repository
             return ((tableName.StartsWith("i", StringComparison.OrdinalIgnoreCase) || tableName.StartsWith("j", StringComparison.OrdinalIgnoreCase)) && tableName.Length > 5) ? _connectionString44 : _connectionString43;
         }
 
-        public VehiclesReport GetConductorInfo(DataTableRequestModel requestModel)
+        public async Task<VehiclesReport> GetConductorInfo(DataTableRequestModel requestModel)
         {
-            var modelObj = new VehiclesReport();
-            modelObj.modelObjList = new List<VehicleInformation>();
+            var modelObj = new VehiclesReport
+            {
+                modelObjList = new List<VehicleInformation>()
+            };
             if (requestModel.sSearch == "null" || string.IsNullOrEmpty(requestModel.sSearch))
             {
                 requestModel.sSearch = null;
@@ -49,35 +51,29 @@ namespace Trackmaster_Repository.Repository
             try
             {
                 using (SqlConnection con = new SqlConnection(_connectionString43))
+                using (SqlCommand cmd = new SqlCommand("[dbo].[GetCrewData]", con))
                 {
-                    using (SqlCommand cmd = new SqlCommand("[dbo].[GetCrewData]", con))
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@CustId", requestModel.CustId);
+                    cmd.Parameters.AddWithValue("@startRowIndex", requestModel.iDisplayStart);
+                    cmd.Parameters.AddWithValue("@pageSize", requestModel.iDisplayLength);
+                    cmd.Parameters.AddWithValue("@vehName",string.IsNullOrEmpty(requestModel.sSearch)? (object)DBNull.Value: requestModel.sSearch);
+                    cmd.Parameters.AddWithValue("@sortColumn", requestModel.sortColumn);
+                    cmd.Parameters.AddWithValue("@sortDirection", requestModel.sortDirection);
+                    await con.OpenAsync();
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@CustId", requestModel.CustId);
-                        cmd.Parameters.AddWithValue("@startRowIndex", requestModel.iDisplayStart);
-                        cmd.Parameters.AddWithValue("@pageSize", requestModel.iDisplayLength);
-                        cmd.Parameters.AddWithValue("@vehName", string.IsNullOrEmpty(requestModel.sSearch) ? (object)DBNull.Value : requestModel.sSearch);
-                        cmd.Parameters.AddWithValue("@sortColumn", requestModel.sortColumn);
-                        cmd.Parameters.AddWithValue("@sortDirection", requestModel.sortDirection);
-                        con.Open();
-                        using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                        while (await dr.ReadAsync())
                         {
-                            DataTable dt = new DataTable();
-                            da.Fill(dt);
-                            if (dt.Rows.Count == 0)
-                                return modelObj;
-                            foreach (DataRow dr in dt.Rows)
-                            {
-                                VehicleInformation objVeh = new VehicleInformation();
-                                modelObj.PageCount = GetInt(dr["totalrecords"]);
-                                objVeh.BBID = GetString(dr["BBID"]);
-                                objVeh.VehicleName = GetString(dr["VehName"]);
-                                objVeh.driverName = GetString(dr["DriverName"]);
-                                objVeh.ConductorName = GetString(dr["Conductor"]);
-                                objVeh.VehicleImagePath = GetString(dr["icon"]);
-                                objVeh.VehicleType = GetString(dr["type"]);
-                                modelObj.modelObjList.Add(objVeh);
-                            }
+                            VehicleInformation objVeh = new VehicleInformation();
+                            modelObj.PageCount = GetInt(dr["totalrecords"]);
+                            objVeh.BBID = GetString(dr["BBID"]);
+                            objVeh.VehicleName = GetString(dr["VehName"]);
+                            objVeh.driverName = GetString(dr["DriverName"]);
+                            objVeh.ConductorName = GetString(dr["Conductor"]);
+                            objVeh.VehicleImagePath = GetString(dr["icon"]);
+                            objVeh.VehicleType = GetString(dr["type"]);
+                            modelObj.modelObjList.Add(objVeh);
                         }
                     }
                 }
@@ -92,7 +88,7 @@ namespace Trackmaster_Repository.Repository
             return modelObj;
         }
 
-        public List<DropDownItems> GetDesignationTypeCrew()
+        public async Task<List<DropDownItems>> GetDesignationTypeCrew()
         {
             List<DropDownItems> lstEmpType = new List<DropDownItems>();
             try
@@ -101,12 +97,12 @@ namespace Trackmaster_Repository.Repository
                 using (SqlCommand cmd = new SqlCommand("[dbo].[GetDesignationTypeCrew]", con))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
-                    con.Open();
-                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    await con.OpenAsync();
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                     {
                         if (dr.HasRows)
                         {
-                            while (dr.Read())
+                            while (await dr.ReadAsync())
                             {
                                 DropDownItems objET = new DropDownItems
                                 {
@@ -130,7 +126,7 @@ namespace Trackmaster_Repository.Repository
             return lstEmpType;
         }
 
-        public List<DropDownItems> GetStatesList()
+        public async Task<List<DropDownItems>> GetStatesList()
         {
             List<DropDownItems> stateList = new List<DropDownItems>();
 
@@ -141,11 +137,11 @@ namespace Trackmaster_Repository.Repository
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
 
-                    con.Open();
+                    await con.OpenAsync();
 
-                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                     {
-                        while (dr.Read())
+                        while (await dr.ReadAsync())
                         {
                             DropDownItems objET = new DropDownItems
                             {
@@ -170,7 +166,7 @@ namespace Trackmaster_Repository.Repository
             return stateList;
         }
 
-        public List<DropDownItems> GetCityList(int stateid)
+        public async Task<List<DropDownItems>> GetCityList(int stateid)
         {
             List<DropDownItems> cityList = new List<DropDownItems>();
 
@@ -181,11 +177,11 @@ namespace Trackmaster_Repository.Repository
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@stateid", stateid);
-                    con.Open();
+                    await con.OpenAsync();
 
-                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                     {
-                        while (dr.Read())
+                        while (await dr.ReadAsync())
                         {
                             DropDownItems objET = new DropDownItems
                             {
@@ -210,7 +206,7 @@ namespace Trackmaster_Repository.Repository
             return cityList;
         }
 
-        public string AddUpdateEmployee(Employee objEmp, string imagePaths)
+        public async Task<string> AddUpdateEmployee(Employee objEmp, string imagePaths)
         {
             string result = "";
 
@@ -250,8 +246,8 @@ namespace Trackmaster_Repository.Repository
                     cmd.Parameters.AddWithValue("@BloodGroup", objEmp.BloodGroup);
                     cmd.Parameters.AddWithValue("@ImagePath", string.IsNullOrEmpty(imagePaths) ? "" : imagePaths);
 
-                    con.Open();
-                    int rowsAffected = cmd.ExecuteNonQuery(); con.Close();
+                    await con.OpenAsync();
+                    int rowsAffected = await cmd.ExecuteNonQueryAsync();
                     result = rowsAffected > 0 ? "Employee saved successfully" : "Failed to save employee";
                     //result = "testing to save employee";
                 }
@@ -267,10 +263,6 @@ namespace Trackmaster_Repository.Repository
 
             return result;
         }
-
-
-
-
 
         public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
         {
@@ -573,8 +565,8 @@ namespace Trackmaster_Repository.Repository
             return model;
         }
 
-        public  DataTable StoppageAnalysis(DateTime beginDate, DateTime endDate, string vehicleId, string mode)
-            {
+        public DataTable StoppageAnalysis(DateTime beginDate, DateTime endDate, string vehicleId, string mode)
+        {
             string p1 = beginDate.ToString("yyyy.MM.dd HH:mm:ss");
             string p2 = endDate.ToString("yyyy.MM.dd HH:mm:ss");
             try
@@ -605,7 +597,7 @@ namespace Trackmaster_Repository.Repository
                 objDT.Columns.Add("eloc", typeof(string));
                 objDT.Columns.Add("acignition", typeof(bool));
                 objDT.Columns.Add("fuelLevel", typeof(float));
-                objDT.Columns.Add("floatdur", typeof(float));            
+                objDT.Columns.Add("floatdur", typeof(float));
                 objDT.Columns.Add("ignitionOn", typeof(bool));
 
                 string query = @"SELECT overstop,
@@ -1018,7 +1010,7 @@ namespace Trackmaster_Repository.Repository
                         using (SqlDataAdapter da = new SqlDataAdapter(cmd6))
                         {
                             da.Fill(ds1);
-                        }                   
+                        }
                         if (ds1.Tables[0].Rows.Count > 0)
                         {
                             flag = false;
@@ -1091,141 +1083,189 @@ namespace Trackmaster_Repository.Repository
             }
             return functionReturnValue;
         }
-        public async Task<List<DistanceReportDataModel>> GetDistanceReportData(DataTableRequestModel model)
+        public async Task<(List<DistanceReportDataModel> data,int TotalCount)> GetDistanceReportData(DataTableRequestModel model)
         {
             var result = new List<DistanceReportDataModel>();
-
-            // ================= MAIN DATA =================
-
-            using (SqlConnection con = new SqlConnection(_connectionString43))
-            using (SqlCommand cmd = new SqlCommand("GetDistanceReportData", con))
+            int TotalCount = 0;
+            try
             {
-                cmd.CommandType = CommandType.StoredProcedure;
 
-                cmd.Parameters.AddWithValue("@custId", model.CustId);
-                cmd.Parameters.AddWithValue("@beginDate", model.beginDate);
-                cmd.Parameters.AddWithValue("@endDate", model.endDate);
-                cmd.Parameters.AddWithValue("@iDisplayStart", model.iDisplayStart);
-                cmd.Parameters.AddWithValue("@iDisplayLength", model.iDisplayLength);
-                cmd.Parameters.AddWithValue("@sortColumn", model.sortColumn);
-                cmd.Parameters.AddWithValue("@sortDirection", model.sortDirection);
-                cmd.Parameters.AddWithValue("@sSearch", model.sSearch);
+                // ================= MAIN DATA =================
 
-                await con.OpenAsync();
-
-                using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                using (SqlConnection con = new SqlConnection(_connectionString43))
+                using (SqlCommand cmd = new SqlCommand("GetDistanceReportData", con))
                 {
-                    while (await dr.ReadAsync())
-                    {
-                        result.Add(new DistanceReportDataModel
-                        {
-                            Date = GetDateTime(dr["Date"]),
-                            BBID = GetString(dr["BBID"]),
-                            VehName = GetString(dr["VehName"]),
-                            _distanceReportSubDataModel =
-                                new List<DistanceReportSubDataModel>()
-                        });
-                    }
-                }
-            }
+                    cmd.CommandType = CommandType.StoredProcedure;
 
-            // ================= PARALLEL DEVICE TABLE CALLS =================
+                    cmd.Parameters.AddWithValue("@custId", model.CustId);
+                    cmd.Parameters.AddWithValue("@beginDate", model.beginDate);
+                    cmd.Parameters.AddWithValue("@endDate", model.endDate);
+                    cmd.Parameters.AddWithValue("@iDisplayStart", model.iDisplayStart);
+                    cmd.Parameters.AddWithValue("@iDisplayLength", model.iDisplayLength);
+                    cmd.Parameters.AddWithValue("@sortColumn", model.sortColumn);
+                    cmd.Parameters.AddWithValue("@sortDirection", model.sortDirection);
+                    cmd.Parameters.AddWithValue("@sSearch", model.sSearch);
 
-            var tasks = result.Select(async item =>
-            {
-                var deviceDetailList = new List<PlaybackDataModel>();
+                    SqlParameter totalCountParam = new SqlParameter("@TotalCount", SqlDbType.Int);
+                    totalCountParam.Direction = ParameterDirection.Output;
+                    cmd.Parameters.Add(totalCountParam);
 
-                using (SqlConnection con =
-                       new SqlConnection(GetConnectionStringTableWise(item.BBID)))
-                {
                     await con.OpenAsync();
 
-                    string query = $@"
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await dr.ReadAsync())
+                        {
+                            result.Add(new DistanceReportDataModel
+                            {
+                                Date = GetDateTime(dr["Date"]),
+                                BBID = GetString(dr["BBID"]),
+                                VehName = GetString(dr["VehName"]),
+                                _distanceReportSubDataModel =
+                                    new List<DistanceReportSubDataModel>()
+                            });
+                        }
+                    }
+                    TotalCount = Convert.ToInt32(totalCountParam.Value);
+                }
+
+                // ================= PARALLEL DEVICE TABLE CALLS =================
+
+                var tasks = result.Select(async item =>
+                {
+                    var deviceDetailList = new List<PlaybackDataModel>();
+
+                    using (SqlConnection con =
+                           new SqlConnection(GetConnectionStringTableWise(item.BBID)))
+                    {
+                        await con.OpenAsync();
+
+                        string query = $@"
 SELECT speed, datadate, acignition, distance, loc
 FROM [{item.BBID}]
 WHERE datadate >= @startdate
 AND datadate <= @enddate
 ORDER BY datadate";
 
-                    using (SqlCommand cmd = new SqlCommand(query, con))
-                    {
-                        DateTime startDate = item.Date.Date;
-                        DateTime endDate = item.Date.Date
-                            .AddDays(1)
-                            .AddSeconds(-1);
-
-                        cmd.Parameters.AddWithValue("@startdate", startDate);
-                        cmd.Parameters.AddWithValue("@enddate", endDate);
-
-                        using (SqlDataReader dr =
-                               await cmd.ExecuteReaderAsync())
+                        using (SqlCommand cmd = new SqlCommand(query, con))
                         {
-                            while (await dr.ReadAsync())
+                            DateTime startDate = item.Date.Date;
+                            DateTime endDate = item.Date.Date
+                                .AddDays(1)
+                                .AddSeconds(-1);
+
+                            cmd.Parameters.AddWithValue("@startdate", startDate);
+                            cmd.Parameters.AddWithValue("@enddate", endDate);
+
+                            using (SqlDataReader dr =
+                                   await cmd.ExecuteReaderAsync())
                             {
-                                deviceDetailList.Add(new PlaybackDataModel
+                                while (await dr.ReadAsync())
                                 {
-                                    speed = GetInt(dr["speed"]),
-                                    datadate = GetDateTime(dr["datadate"]),
-                                    acignition =
-                                        GetString(dr["acignition"]) == "1"
-                                        ? "Off"
-                                        : "On",
-                                    distance = GetDecimal(dr["distance"]),
-                                    location = GetString(dr["loc"])
-                                });
+                                    deviceDetailList.Add(new PlaybackDataModel
+                                    {
+                                        speed = GetInt(dr["speed"]),
+                                        datadate = GetDateTime(dr["datadate"]),
+                                        acignition =
+                                            GetString(dr["acignition"]) == "1"
+                                            ? "Off"
+                                            : "On",
+                                        distance = GetDecimal(dr["distance"]),
+                                        location = GetString(dr["loc"])
+                                    });
+                                }
                             }
                         }
                     }
-                }
 
-                // ================= APPLY DISTANCE LOGIC =================
+                    // ================= APPLY DISTANCE LOGIC =================
 
-                bool flag = false;
+                    bool flag = false;
 
-                decimal sdist = 0;
-                decimal edist = 0;
+                    decimal sdist = 0;
+                    decimal edist = 0;
 
-                decimal cumulativeDistance = 0;
-                decimal totalDistance = 0;
+                    decimal cumulativeDistance = 0;
+                    decimal totalDistance = 0;
 
-                DateTime? tripStartTime = null;
+                    DateTime? tripStartTime = null;
 
-                for (int i = 0; i < deviceDetailList.Count; i++)
-                {
-                    var current = deviceDetailList[i];
-
-                    decimal speed = current.speed;
-                    decimal currentDistance = current.distance;
-
-                    // START MOVEMENT
-                    if (speed > 0 && flag == false)
+                    for (int i = 0; i < deviceDetailList.Count; i++)
                     {
-                        sdist = (i == 0)
-                            ? currentDistance
-                            : deviceDetailList[i - 1].distance;
+                        var current = deviceDetailList[i];
 
-                        edist = currentDistance;
+                        decimal speed = current.speed;
+                        decimal currentDistance = current.distance;
 
-                        tripStartTime = current.datadate;
+                        // START MOVEMENT
+                        if (speed > 0 && flag == false)
+                        {
+                            sdist = (i == 0)
+                                ? currentDistance
+                                : deviceDetailList[i - 1].distance;
 
-                        flag = true;
+                            edist = currentDistance;
+
+                            tripStartTime = current.datadate;
+
+                            flag = true;
+                        }
+
+                        // CONTINUE MOVEMENT
+                        else if (speed > 0 && flag == true)
+                        {
+                            edist = currentDistance;
+                        }
+
+                        // STOP MOVEMENT
+                        else if (speed <= 0 && flag == true)
+                        {
+                            edist = currentDistance;
+
+                            decimal tripDistance =
+                                Math.Round(edist - sdist, 1);
+
+                            DateTime tripEndTime = current.datadate;
+
+                            if (tripDistance > 0 && tripDistance < 500)
+                            {
+                                TimeSpan duration =
+                                    tripEndTime - tripStartTime.Value;
+
+                                cumulativeDistance += tripDistance;
+                                totalDistance += tripDistance;
+
+                                item._distanceReportSubDataModel.Add(
+                                    new DistanceReportSubDataModel
+                                    {
+                                        StartTime = tripStartTime.Value.ToString("HH:mm"),
+
+                                        EndTime = tripEndTime.ToString("HH:mm"),
+
+                                        Duration = Math.Round(duration.TotalHours, 1).ToString("0.0"),
+
+                                        EstimateDistance = tripDistance.ToString("0.0"),
+
+                                        EstimateCumulativeDistance = cumulativeDistance.ToString("0.0"),
+
+                                        StartLocation = current.location
+                                    });
+                            }
+
+                            flag = false;
+                        }
                     }
 
-                    // CONTINUE MOVEMENT
-                    else if (speed > 0 && flag == true)
-                    {
-                        edist = currentDistance;
-                    }
+                    // HANDLE LAST RUNNING SESSION
 
-                    // STOP MOVEMENT
-                    else if (speed <= 0 && flag == true)
+                    if (flag == true)
                     {
-                        edist = currentDistance;
-
                         decimal tripDistance =
                             Math.Round(edist - sdist, 1);
 
-                        DateTime tripEndTime = current.datadate;
+                        DateTime tripEndTime =
+                            deviceDetailList.LastOrDefault()?.datadate
+                            ?? DateTime.Now;
 
                         if (tripDistance > 0 && tripDistance < 500)
                         {
@@ -1248,65 +1288,49 @@ ORDER BY datadate";
 
                                     EstimateCumulativeDistance = cumulativeDistance.ToString("0.0"),
 
-                                    StartLocation = current.location
+                                    StartLocation = deviceDetailList.LastOrDefault()?.location
                                 });
                         }
-
-                        flag = false;
                     }
-                }
 
-                // HANDLE LAST RUNNING SESSION
+                    item.Distance = totalDistance.ToString("0.0");
+                });
 
-                if (flag == true)
+                // WAIT FOR ALL TABLES TO COMPLETE
+
+                await Task.WhenAll(tasks);
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+            return (result,TotalCount);
+        }
+        public async Task<List<DropDownItems>> GetMessageType()
+        {
+            var list = new List<DropDownItems>();
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand("GetMessageTypeTM", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                await con.OpenAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
                 {
-                    decimal tripDistance =
-                        Math.Round(edist - sdist, 1);
-
-                    DateTime tripEndTime =
-                        deviceDetailList.LastOrDefault()?.datadate
-                        ?? DateTime.Now;
-
-                    if (tripDistance > 0 && tripDistance < 500)
+                    list.Add(new DropDownItems
                     {
-                        TimeSpan duration =
-                            tripEndTime - tripStartTime.Value;
-
-                        cumulativeDistance += tripDistance;
-                        totalDistance += tripDistance;
-
-                        item._distanceReportSubDataModel.Add(
-                            new DistanceReportSubDataModel
-                            {
-                                StartTime = tripStartTime.Value
-                                    .ToString("dd-MM-yyyy HH:mm:ss"),
-
-                                EndTime = tripEndTime
-                                    .ToString("dd-MM-yyyy HH:mm:ss"),
-
-                                Duration =
-                                    duration.ToString(@"hh\:mm\:ss"),
-
-                                EstimateDistance =
-                                    tripDistance.ToString("0.0"),
-
-                                EstimateCumulativeDistance =
-                                    cumulativeDistance.ToString("0.0"),
-
-                                StartLocation =
-                                    deviceDetailList.LastOrDefault()?.location
-                            });
-                    }
+                        Value = GetInt(reader["type_id"]),
+                        Name = GetString(reader["type_name"])
+                    });
                 }
-
-                item.Distance = totalDistance.ToString("0.0");
-            });
-
-            // WAIT FOR ALL TABLES TO COMPLETE
-
-            await Task.WhenAll(tasks);
-
-            return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+            return list;
         }
     }
 }
