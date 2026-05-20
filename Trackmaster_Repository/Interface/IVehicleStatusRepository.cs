@@ -12,5 +12,6 @@ namespace Trackmaster_Repository.Interface
     {
         Task<List<VehicleonMapList>> GetvehicleStatusList(string pagename, DataTableRequestModel model);
         Task<List<PlaybackDataModel>> GetPlaybackData(string bbid, DateTime date);
+        Task<List<GetFuelLevelsModel>> GetFuelLevels(List<string> bbids);
     }
 }
