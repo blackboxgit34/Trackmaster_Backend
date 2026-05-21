@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using Trackmaster_Model;
 using Trackmaster_Repository.Repository;
+using Trackmaster_Service;
 using Trackmaster_Service.Interface;
 using Trackmaster_Service.Service;
 using static Trackmaster_Model.Reports;
@@ -140,6 +141,59 @@ namespace Trackmaster_Backend.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [HttpGet("GetMessageType")]
+        public async Task<IActionResult> GetMessageType()
+        {
+            try
+            {
+                var messageTypeData = await _reportsService.GetMessageType();
+                return Ok(new
+                {
+                    success = true,
+                    message = "message type data retrieved successfully",
+                    data = messageTypeData
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
+        
+     // neha k
+        [HttpGet("GetMessageReports")]
+        public async Task<IActionResult> GetMessageReports([FromQuery] DataTableRequestModel requestModel,string typeid,string messagetype)
+        {
+            try
+            {
+                SMSReportEx sms = await _reportsService.GetSentMessagesReport(requestModel,Convert.ToInt32(typeid),messagetype);
+                if (sms != null)
+                {
+                    return Ok(new
+                    {
+                        sEcho = requestModel.sEcho,
+                        iTotalRecords = sms.pagecount,
+                        iTotalDisplayRecords = sms.pagecount,
+                        aaData = sms.objSMSReport
+                    });
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "An error occurred while fetching message reports.",
+                    error = ex.Message
+                });
+            }
+        }
 
         [HttpGet("vehicle-status")]
         public IActionResult VehicleStatus(int custId, int lower, int upper, string? search, DateTime start, DateTime end)
@@ -186,29 +240,7 @@ namespace Trackmaster_Backend.Controllers
             });
 
         }
-        [HttpGet("GetMessageType")]
-        public async Task<IActionResult> GetMessageType()
-        {
-            try
-            {
-                var messageTypeData = await _reportsService.GetMessageType();
-                return Ok(new
-                {
-                    success = true,
-                    message = "message type data retrieved successfully",
-                    data = messageTypeData
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    success = false,
-                    message = "Internal Server Error",
-                    error = ex.Message
-                });
-            }
-        }
+        
 
     }
 }

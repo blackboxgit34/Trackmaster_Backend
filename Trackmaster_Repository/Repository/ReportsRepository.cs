@@ -22,18 +22,20 @@ namespace Trackmaster_Repository.Repository
         private readonly string _connectionString43;
         private readonly string _FMSConString43;
         private readonly string _connectionString44;
+        private readonly string _BlackboxMain_HITEC44; // neha k
         public ReportsRepository(IConfiguration configuration)
         {
 
             _connectionString43 = configuration.GetConnectionString("DefaultConnection43");
             _FMSConString43 = configuration.GetConnectionString("FMSConString43");
             _connectionString44 = configuration.GetConnectionString("DefaultConnection44");
+            _BlackboxMain_HITEC44 = configuration.GetConnectionString("BlackboxMain_HITEC44");
         }
         public string GetConnectionStringTableWise(string tableName)
         {
             return ((tableName.StartsWith("i", StringComparison.OrdinalIgnoreCase) || tableName.StartsWith("j", StringComparison.OrdinalIgnoreCase)) && tableName.Length > 5) ? _connectionString44 : _connectionString43;
         }
-
+        
         public async Task<VehiclesReport> GetConductorInfo(DataTableRequestModel requestModel)
         {
             var modelObj = new VehiclesReport
@@ -264,10 +266,117 @@ namespace Trackmaster_Repository.Repository
             return result;
         }
 
+        public async Task<List<DropDownItems>> GetMessageType()
+        {
+            var list = new List<DropDownItems>();
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand("GetMessageTypeTM", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                await con.OpenAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    list.Add(new DropDownItems
+                    {
+                        Value = GetInt(reader["type_id"]),
+                        Name = GetString(reader["type_name"])
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+            return list;
+        }
+        public async Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype)
+        {
+            SMSReportEx objSMSReportEx = new SMSReportEx
+            {
+                objSMSReport = new List<SMSReport>()
+            };
 
+            try
+            {
+                using (SqlConnection con = new SqlConnection(_BlackboxMain_HITEC44))
+                using (SqlCommand cmd = new SqlCommand("GetSentSms", con))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
 
+                    cmd.Parameters.AddWithValue("@LowerBand", requestModel.iDisplayStart);
+                    cmd.Parameters.AddWithValue("@UpperBand", requestModel.iDisplayLength);
 
+                    SqlParameter itemCountParam = new SqlParameter("@ItemCount", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
 
+                    cmd.Parameters.Add(itemCountParam);
+
+                    cmd.Parameters.AddWithValue("@MsgType", string.IsNullOrEmpty(messagetype) ? 0 : Convert.ToInt32(messagetype));
+                    cmd.Parameters.AddWithValue("@FromDate", requestModel.beginDate);
+                    cmd.Parameters.AddWithValue("@ToDate", requestModel.endDate);
+                    cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
+                    cmd.Parameters.AddWithValue("@type", typeid);
+                    cmd.Parameters.AddWithValue("@searchText",
+                        string.IsNullOrWhiteSpace(requestModel.sSearch)
+                        ? DBNull.Value
+                        : requestModel.sSearch);
+
+                    await con.OpenAsync();
+
+                    using (SqlDataReader dsVeh = await cmd.ExecuteReaderAsync())
+                    {
+                        // Column indexes for better performance
+                        int bbidIndex = dsVeh.GetOrdinal("BBID");
+                        int fmsVehicleIdIndex = dsVeh.GetOrdinal("FMSVehicleId");
+                        //int vehicleNameIndex = dsVeh.GetOrdinal("VehicleName");
+                        int sendTimeIndex = dsVeh.GetOrdinal("SendTime");
+                        int typeNameIndex = dsVeh.GetOrdinal("type_name");
+                        int mobileIndex = dsVeh.GetOrdinal("Mobile");
+                        int smsTextIndex = dsVeh.GetOrdinal("SMSText");
+                        int androidStatusIndex = dsVeh.GetOrdinal("Androidstatus");
+                        int iosStatusIndex = dsVeh.GetOrdinal("iOSstatus");
+
+                        while (await dsVeh.ReadAsync())
+                        {
+                            SMSReport objSMSReport = new SMSReport
+                            {
+                                BBID = dsVeh.IsDBNull(bbidIndex) ? string.Empty : dsVeh.GetString(bbidIndex),
+                                fmsVehicleId = dsVeh.IsDBNull(fmsVehicleIdIndex) ? 0 : Convert.ToInt32(dsVeh[fmsVehicleIdIndex]),
+                                //VehicleName = dsVeh.IsDBNull(vehicleNameIndex) ? string.Empty : dsVeh.GetString(vehicleNameIndex),
+                                MessageDate = dsVeh.IsDBNull(sendTimeIndex) ? string.Empty : Convert.ToString(dsVeh[sendTimeIndex]),
+                                MessageType = dsVeh.IsDBNull(typeNameIndex) ? string.Empty : dsVeh.GetString(typeNameIndex),
+                                Mobile = dsVeh.IsDBNull(mobileIndex) ? string.Empty : dsVeh.GetString(mobileIndex),
+                                MessageText = dsVeh.IsDBNull(smsTextIndex) ? string.Empty : dsVeh.GetString(smsTextIndex),
+                                androidstatus = dsVeh.IsDBNull(androidStatusIndex) ? string.Empty : dsVeh.GetString(androidStatusIndex),
+                                iosstatus = dsVeh.IsDBNull(iosStatusIndex) ? string.Empty : dsVeh.GetString(iosStatusIndex)
+                            };
+
+                            objSMSReportEx.objSMSReport.Add(objSMSReport);
+                        }
+                    }
+
+                    objSMSReportEx.pagecount = itemCountParam.Value != DBNull.Value
+                        ? Convert.ToInt32(itemCountParam.Value)
+                        : 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+
+                return new SMSReportEx
+                {
+                    objSMSReport = new List<SMSReport>(),
+                    pagecount = 0
+                };
+            }
+
+            return objSMSReportEx;
+        }
         public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
         {
             var result = new VehicleStatusResponse();
@@ -1304,30 +1413,6 @@ ORDER BY datadate";
 
             return result;
         }
-        public async Task<List<DropDownItems>> GetMessageType()
-        {
-            var list = new List<DropDownItems>();
-            try
-            {
-                using var con = new SqlConnection(_connectionString43);
-                using var cmd = new SqlCommand("GetMessageTypeTM", con);
-                cmd.CommandType = CommandType.StoredProcedure;
-                await con.OpenAsync();
-                using var reader = await cmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    list.Add(new DropDownItems
-                    {
-                        Value = GetInt(reader["type_id"]),
-                        Name = GetString(reader["type_name"])
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error: " + ex.Message);
-            }
-            return list;
-        }
+        
     }
 }

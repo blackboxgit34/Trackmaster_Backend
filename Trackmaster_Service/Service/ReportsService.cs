@@ -47,6 +47,24 @@ namespace Trackmaster_Service.Service
         {
             return await _reportsRepository.AddUpdateEmployee(objEmp, imagePaths);
         }
+        public async Task<List<DropDownItems>> GetMessageType()
+        {
+            string cacheKey = "messageTypeList";
+            if (_cache.TryGetValue(cacheKey, out List<DropDownItems> cached))
+            {
+                return cached;
+            }
+            var vehiclelist = await _reportsRepository.GetMessageType();
+            _cache.Set(vehiclelist, TimeSpan.FromMinutes(10));
+            return vehiclelist;
+        }
+        public async Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype) // neha k 
+        {
+            return await _reportsRepository.GetSentMessagesReport(requestModel, typeid, messagetype);
+
+        }
+
+
         public StoppageMainModel GetCombinedStoppageReport(DataTableRequestModel dtmodel)
         {
             return _reportsRepository.GetCombinedStoppageReport(dtmodel);
@@ -60,16 +78,6 @@ namespace Trackmaster_Service.Service
         {
             return await _reportsRepository.GetDistanceReportData(model);
         }
-        public async Task<List<DropDownItems>> GetMessageType()
-        {
-            string cacheKey = "messageTypeList";
-            if (_cache.TryGetValue(cacheKey, out List<DropDownItems> cached))
-            {
-                return cached;
-            }
-            var vehiclelist = await _reportsRepository.GetMessageType();
-            _cache.Set(vehiclelist, TimeSpan.FromMinutes(10));
-            return vehiclelist;
-        }
+       
     }
 }

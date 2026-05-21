@@ -15,9 +15,11 @@ namespace Trackmaster_Repository.Interface
         Task<List<DropDownItems>> GetStatesList();
         Task<List<DropDownItems>> GetCityList(int stateid);
         Task<string> AddUpdateEmployee(Employee objEmp, string imagePaths = "");
+        Task<List<DropDownItems>> GetMessageType();
+        Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype); // neha k
         VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end);
         StoppageMainModel GetCombinedStoppageReport(DataTableRequestModel dtmodel);
         Task<List<DistanceReportDataModel>> GetDistanceReportData(DataTableRequestModel model);
-        Task<List<DropDownItems>> GetMessageType();
+        
     }
 }
