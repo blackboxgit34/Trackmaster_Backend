@@ -46,6 +46,7 @@ namespace Trackmaster_Service.Service
         public async Task<string> AddUpdateEmployee(Employee objEmp, string imagePaths = "")
         {
             return await _reportsRepository.AddUpdateEmployee(objEmp, imagePaths);
+        }
         public async Task<List<DropDownItems>> GetMessageType()
         {
             string cacheKey = "messageTypeList";
