@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Globalization;
@@ -166,23 +167,15 @@ namespace Trackmaster_Backend.Controllers
         }
 
         [HttpGet("GetAllStoppageReport")]
-        public IActionResult GetAllStoppageReport([FromQuery] DataTableRequestModel dtmodel)
+        public async Task<IActionResult> GetAllStoppageReport([FromQuery] DataTableRequestModel dtmodel)
         {
-            StoppageMainModel stoppage = new StoppageMainModel();
-            dtmodel.iDisplayStart = dtmodel.iDisplayStart;
-            dtmodel.iDisplayLength = dtmodel.iDisplayStart + dtmodel.iDisplayLength;
-            stoppage = _reportsService.GetCombinedStoppageReport(dtmodel);
-            if (stoppage == null)
-            {
-                return NoContent();
-            }
+           
+           var stoppage = await _reportsService.GetCombinedStoppageReport(dtmodel);
 
             return Ok(new
             {
-                sEcho = dtmodel.sEcho,
-                iTotalRecords = stoppage.PageCount,
-                iTotalDisplayRecords = stoppage.PageCount,
-                aaData = stoppage.StoppageSubModel
+                data = stoppage.data,
+                count = stoppage.TotalCount
             });
 
         }
