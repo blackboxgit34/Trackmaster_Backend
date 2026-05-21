@@ -30,5 +30,26 @@ namespace Trackmaster_Model
             // ADD THIS
             public int TotalRecords { get; set; }
         }
+
+
+        public class GetFuelLevelsModel
+        {
+            public string BBID { get; set; }
+
+            public decimal CurrentFuelLevel { get; set; }
+
+            public decimal RemainingFuelLevel { get; set; }
+
+            public decimal TotalFuel { get; set; }
+
+            public string LastDateTime { get; set; }
+
+            public string DisconnectedData { get; set; }
+        }
+
+        public class FuelLevelRequestModel
+        {
+            public List<string> BBIDs { get; set; }
+        }
     }
 }

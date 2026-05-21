@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Trackmaster_Model.Reports;
 
 
 namespace Trackmaster_Model
@@ -80,6 +81,29 @@ namespace Trackmaster_Model
             public string fullPath { get; set; }
         }
 
+        // neha k 
+        public class SMSReport 
+        {
+            [DisplayName("Vehicle Name")]
+            public string VehicleName { get; set; }//           
+            public string MessageDate { get; set; }//           
+            public string MessageType { get; set; }//          
+            public string Mobile { get; set; }//         
+            public string MessageText { get; set; }//           
+            public string androidstatus { get; set; }//           
+            public string iosstatus { get; set; }//          
+            public string BBID { get; set; } //      
+            public int fmsVehicleId { get; set; } //           
+        }
+        public class SMSReportEx
+        {
+            public List<SMSReport> objSMSReport { get; set; }
+            public int pagecount { get; set; }
+        }
+
+        
+        
+        
         public class VehicleStatusResponse
         {
             public int ItemCount { get; set; }

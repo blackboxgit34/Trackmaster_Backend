@@ -30,5 +30,9 @@ namespace Trackmaster_Service.Service
         {
             return await _vehicleStatusRepository.GetPlaybackData(bbid, date);
         }
+        public async Task<List<GetFuelLevelsModel>> GetFuelLevels(List<string> bbids)
+        {
+            return await _vehicleStatusRepository.GetFuelLevels(bbids);
+        }
     }
 }
