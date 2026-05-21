@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Globalization;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 using System.Xml.Linq;
 using Trackmaster_Model;
 using Trackmaster_Repository.Repository;
+using Trackmaster_Service;
 using Trackmaster_Service.Interface;
 using Trackmaster_Service.Service;
 using static Trackmaster_Model.Reports;
@@ -140,6 +142,59 @@ namespace Trackmaster_Backend.Controllers
                 return BadRequest(ex.Message);
             }
         }
+        [HttpGet("GetMessageType")]
+        public async Task<IActionResult> GetMessageType()
+        {
+            try
+            {
+                var messageTypeData = await _reportsService.GetMessageType();
+                return Ok(new
+                {
+                    success = true,
+                    message = "message type data retrieved successfully",
+                    data = messageTypeData
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
+        
+     // neha k
+        [HttpGet("GetMessageReports")]
+        public async Task<IActionResult> GetMessageReports([FromQuery] DataTableRequestModel requestModel,string typeid,string messagetype)
+        {
+            try
+            {
+                SMSReportEx sms = await _reportsService.GetSentMessagesReport(requestModel,Convert.ToInt32(typeid),messagetype);
+                if (sms != null)
+                {
+                    return Ok(new
+                    {
+                        sEcho = requestModel.sEcho,
+                        iTotalRecords = sms.pagecount,
+                        iTotalDisplayRecords = sms.pagecount,
+                        aaData = sms.objSMSReport
+                    });
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "An error occurred while fetching message reports.",
+                    error = ex.Message
+                });
+            }
+        }
 
         [HttpGet("VehicleStatus")]
         public IActionResult VehicleStatus(int custId, int lower, int upper, string? search, DateTime start, DateTime end)
@@ -166,49 +221,19 @@ namespace Trackmaster_Backend.Controllers
         }
 
         [HttpGet("GetAllStoppageReport")]
-        public IActionResult GetAllStoppageReport([FromQuery] DataTableRequestModel dtmodel)
+        public async Task<IActionResult> GetAllStoppageReport([FromQuery] DataTableRequestModel dtmodel)
         {
-            StoppageMainModel stoppage = new StoppageMainModel();
-            dtmodel.iDisplayStart = dtmodel.iDisplayStart;
-            dtmodel.iDisplayLength = dtmodel.iDisplayStart + dtmodel.iDisplayLength;
-            stoppage = _reportsService.GetCombinedStoppageReport(dtmodel);
-            if (stoppage == null)
-            {
-                return NoContent();
-            }
+           
+           var stoppage = await _reportsService.GetCombinedStoppageReport(dtmodel);
 
             return Ok(new
             {
-                sEcho = dtmodel.sEcho,
-                iTotalRecords = stoppage.PageCount,
-                iTotalDisplayRecords = stoppage.PageCount,
-                aaData = stoppage.StoppageSubModel
+                data = stoppage.data,
+                count = stoppage.TotalCount
             });
 
         }
-        [HttpGet("GetMessageType")]
-        public async Task<IActionResult> GetMessageType()
-        {
-            try
-            {
-                var messageTypeData = await _reportsService.GetMessageType();
-                return Ok(new
-                {
-                    success = true,
-                    message = "message type data retrieved successfully",
-                    data = messageTypeData
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    success = false,
-                    message = "Internal Server Error",
-                    error = ex.Message
-                });
-            }
-        }
+        
 
     }
 }

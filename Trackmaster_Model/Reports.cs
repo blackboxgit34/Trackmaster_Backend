@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Trackmaster_Model.Reports;
 
 
 namespace Trackmaster_Model
@@ -80,6 +81,29 @@ namespace Trackmaster_Model
             public string fullPath { get; set; }
         }
 
+        // neha k 
+        public class SMSReport 
+        {
+            [DisplayName("Vehicle Name")]
+            public string VehicleName { get; set; }//           
+            public string MessageDate { get; set; }//           
+            public string MessageType { get; set; }//          
+            public string Mobile { get; set; }//         
+            public string MessageText { get; set; }//           
+            public string androidstatus { get; set; }//           
+            public string iosstatus { get; set; }//          
+            public string BBID { get; set; } //      
+            public int fmsVehicleId { get; set; } //           
+        }
+        public class SMSReportEx
+        {
+            public List<SMSReport> objSMSReport { get; set; }
+            public int pagecount { get; set; }
+        }
+
+        
+        
+        
         public class VehicleStatusResponse
         {
             public int ItemCount { get; set; }
@@ -144,45 +168,25 @@ namespace Trackmaster_Model
 
         public class StoppageSubModel
         {
-            [DisplayName("Vehicle Name")]
             public string VehicleName { get; set; }
-            [DisplayName("Driver Name")]
             public string DriverName { get; set; }
 
-            [DisplayName("Stoppage Count")]
             public int StoppageCount { get; set; }
-            [DisplayName("Total Stoppage Time (Days-hh-mm-ss)")]
             public string TotalStoppageTime { get; set; }
-           
             public string BBID { get; set; }
-           
-            public string Type { get; set; }
             public List<StoppageAnalysis> objStoppageReport { get; set; }
-
-
         }
         public class StoppageAnalysis
         {
-            [DisplayName("Start Date")]
-            public string StartDate { get; set; }
-            [DisplayName("Stop Date")]
-            public string StopDate { get; set; }
-            [DisplayName("Stop Location")]
-            public string StopLocation { get; set; }
-            [DisplayName("Duration(Days-hh-mm-ss)")]
+            public string StopDateAndTime { get; set; }
+            public string Location { get; set; }
             public string Duration { get; set; }
-            [DisplayName("Ignition")]
             public Boolean IgnitionStatus { get; set; }
-
-            [DisplayName("POI Location")]
-            public string poi { get; set; }
-            public string AddPoi { get; set; }
-            
-            public string StopLatitude { get; set; }
-            
-            public string StopLongitude { get; set; }
-           
-            public string VehicleName { get; set; }
+            //public string poi { get; set; }
+            //public string AddPoi { get; set; }
+            //public string StopLatitude { get; set; }
+            //public string StopLongitude { get; set; }
+            //public string VehicleName { get; set; }
            }
 
         public class ReportBase 

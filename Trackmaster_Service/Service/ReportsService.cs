@@ -47,19 +47,6 @@ namespace Trackmaster_Service.Service
         {
             return await _reportsRepository.AddUpdateEmployee(objEmp, imagePaths);
         }
-        public StoppageMainModel GetCombinedStoppageReport(DataTableRequestModel dtmodel)
-        {
-            return _reportsRepository.GetCombinedStoppageReport(dtmodel);
-        }
-
-        public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
-        {
-            return _reportsRepository.VehicleStatus(custId, lower, upper, search, start, end);
-        }
-        public async Task<(List<DistanceReportDataModel> data, int TotalCount)> GetDistanceReportData(DataTableRequestModel model)
-        {
-            return await _reportsRepository.GetDistanceReportData(model);
-        }
         public async Task<List<DropDownItems>> GetMessageType()
         {
             string cacheKey = "messageTypeList";
@@ -71,5 +58,27 @@ namespace Trackmaster_Service.Service
             _cache.Set(vehiclelist, TimeSpan.FromMinutes(10));
             return vehiclelist;
         }
+        public async Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype) // neha k 
+        {
+            return await _reportsRepository.GetSentMessagesReport(requestModel, typeid, messagetype);
+
+        }
+
+
+
+        public async Task<(List<StoppageSubModel> data, int TotalCount)> GetCombinedStoppageReport(DataTableRequestModel dtmodel)
+        {
+            return await _reportsRepository.GetCombinedStoppageReport(dtmodel);
+        }
+
+        public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        {
+            return _reportsRepository.VehicleStatus(custId, lower, upper, search, start, end);
+        }
+        public async Task<(List<DistanceReportDataModel> data, int TotalCount)> GetDistanceReportData(DataTableRequestModel model)
+        {
+            return await _reportsRepository.GetDistanceReportData(model);
+        }
+       
     }
 }
