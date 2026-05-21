@@ -195,7 +195,7 @@ namespace Trackmaster_Backend.Controllers
             }
         }
 
-        [HttpGet("vehicle-status")]
+        [HttpGet("VehicleStatus")]
         public IActionResult VehicleStatus(int custId, int lower, int upper, string? search, DateTime start, DateTime end)
         {
             var result = _reportsService.VehicleStatus(custId, lower, upper, search, start, end);
@@ -214,8 +214,8 @@ namespace Trackmaster_Backend.Controllers
 
             return Ok(new
             {
-                data = result,
-                count = result.Count()
+                data = result.data,
+                count = result.TotalCount
             });
         }
 

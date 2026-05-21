@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using Trackmaster_Model;
 using Trackmaster_Service;
 using Trackmaster_Service.Interface;
+using static Trackmaster_Model.VehicleStatusModel;
 namespace Trackmaster_Backend.Controllers
 {
     [Route("api/[controller]")]
@@ -51,7 +52,7 @@ namespace Trackmaster_Backend.Controllers
             }
         }
         [HttpGet("GetPlaybackData")]
-        public async Task<IActionResult> GetPlaybackData(string bbid, DateTime date, string downloadType=null)
+        public async Task<IActionResult> GetPlaybackData(string bbid, DateTime date, string downloadType = null)
         {
             try
             {
@@ -207,6 +208,29 @@ namespace Trackmaster_Backend.Controllers
                     success = false,
                     message = "Internal Server Error",
                     error = ex.Message
+                });
+            }
+        }
+
+
+        [HttpPost("GetFuelLevels")]
+        public async Task<IActionResult> GetFuelLevels([FromBody] FuelLevelRequestModel request)
+        {
+            try
+            {
+                var fuelLevels =await _vehiclestatusService.GetFuelLevels(request.BBIDs);
+                return Ok(new
+                {
+                    success = true,
+                    data = fuelLevels
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = ex.Message
                 });
             }
         }

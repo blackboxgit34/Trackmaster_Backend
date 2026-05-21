@@ -20,7 +20,6 @@ namespace Trackmaster_Service.Interface
         Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype); //neha k
         VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end);
         StoppageMainModel GetCombinedStoppageReport(DataTableRequestModel DataTableRequestModel);
-        Task<List<DistanceReportDataModel>> GetDistanceReportData(DataTableRequestModel model);
-        
+        Task<(List<DistanceReportDataModel> data, int TotalCount)> GetDistanceReportData(DataTableRequestModel model);
     }
 }

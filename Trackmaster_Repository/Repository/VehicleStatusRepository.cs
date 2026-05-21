@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -27,7 +28,6 @@ namespace Trackmaster_Repository.Repository
             return ((tableName.StartsWith("i", StringComparison.OrdinalIgnoreCase) || tableName.StartsWith("j", StringComparison.OrdinalIgnoreCase)) && tableName.Length > 5) ? _connectionString44 : _connectionString43;
         }
 
-
         public async Task<List<VehicleonMapList>> GetvehicleStatusList(string pagename, DataTableRequestModel model)
         {
             var list = new List<VehicleonMapList>();
@@ -42,15 +42,15 @@ namespace Trackmaster_Repository.Repository
                 // Paging Parameters
                 cmd.Parameters.AddWithValue("@lbound", model.iDisplayStart);
 
-                cmd.Parameters.AddWithValue("@ubound",model.iDisplayStart + model.iDisplayLength);
+                cmd.Parameters.AddWithValue("@ubound", model.iDisplayStart + model.iDisplayLength);
 
                 // Search Parameter
                 //cmd.Parameters.AddWithValue("@sSearch",model.sSearch);
-                cmd.Parameters.Add("@sSearch", SqlDbType.VarChar).Value =string.IsNullOrWhiteSpace(model.sSearch) || model.sSearch == "null"? DBNull.Value: model.sSearch;
+                cmd.Parameters.Add("@sSearch", SqlDbType.VarChar).Value = string.IsNullOrWhiteSpace(model.sSearch) || model.sSearch == "null" ? DBNull.Value : model.sSearch;
                 // Output Parameter
-                SqlParameter itemCountParam = new SqlParameter("@itemcount",SqlDbType.Int);
+                SqlParameter itemCountParam = new SqlParameter("@itemcount", SqlDbType.Int);
 
-                cmd.Parameters.AddWithValue("@StatusCode",model.Status ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@StatusCode", model.Status ?? (object)DBNull.Value);
                 itemCountParam.Direction = ParameterDirection.Output;
 
                 cmd.Parameters.Add(itemCountParam);
@@ -63,7 +63,7 @@ namespace Trackmaster_Repository.Repository
                     {
                         VehName = GetString(reader["vehname"]),
                         VehicleStatus = GetString(reader["statusCode"]),
-                        Type = GetString(reader["type"]), 
+                        Type = GetString(reader["type"]),
                         model = GetString(reader["model"]),
                         lat = GetFloat(reader["lat"]),
                         lng = GetFloat(reader["longi"]),
@@ -81,9 +81,7 @@ namespace Trackmaster_Repository.Repository
                 }
                 reader.Close();
 
-                totalCount = Convert.ToInt32(
-                    itemCountParam.Value
-                );
+                totalCount = itemCountParam.Value == DBNull.Value? 0: Convert.ToInt32(itemCountParam.Value);
 
                 if (list.Count > 0)
                 {
@@ -133,6 +131,65 @@ namespace Trackmaster_Repository.Repository
             catch (Exception ex)
             {
                 Console.WriteLine("Error: " + ex.Message);
+            }
+            return list;
+        }
+        public async Task<List<GetFuelLevelsModel>>GetFuelLevels(List<string> bbids)
+        {
+            List<GetFuelLevelsModel> list = new List<GetFuelLevelsModel>();
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd =new SqlCommand("GetCurrentFuelLevels",con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                DataTable dt = new DataTable();
+
+                dt.Columns.Add("BBID");
+
+                bbids.ForEach(x => dt.Rows.Add(x));
+
+                SqlParameter param =
+                    new SqlParameter
+                    {
+                        ParameterName = "@BBIDs",
+                        SqlDbType = SqlDbType.Structured,
+                        TypeName = "BBIDListType",
+                        Value = dt
+                    };
+
+                cmd.Parameters.Add(param);
+                await con.OpenAsync();
+                using var reader =
+                    await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    list.Add(new GetFuelLevelsModel
+                    {
+                        BBID =GetString(reader["BBID"]),
+
+                        CurrentFuelLevel =
+                            GetDecimal(
+                                reader["CurrentFuelLevel"]),
+
+                        RemainingFuelLevel =
+                            GetDecimal(
+                                reader["RemainingFuelLevel"]),
+
+                        TotalFuel =
+                            GetDecimal(
+                                reader["TotalFuel"]),
+
+                        LastDateTime =
+                            GetString(reader["LastDateTime"]),
+
+                        DisconnectedData =
+                            GetString(reader["DisconnectedData"])
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
             }
             return list;
         }
