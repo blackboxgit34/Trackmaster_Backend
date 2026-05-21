@@ -77,6 +77,8 @@ namespace Trackmaster_Repository.Repository
                         IgnitionStatus = GetString(reader["currignitionStatus"]),
                         vehBattery = GetInt(reader["vehicleBattery"]),
                         deviceBattery = GetInt(reader["deviceBattery"]),
+                        driverName = GetString(reader["DriverName"]),
+                        mob_no = GetString(reader["Mob_No"]),
                     });
                 }
                 reader.Close();
