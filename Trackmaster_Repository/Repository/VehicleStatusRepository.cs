@@ -136,7 +136,7 @@ namespace Trackmaster_Repository.Repository
                     .Take(5)
                     .ToList();
                 // Add top5 lat/long records again if needed
-                foreach (var item in top5)
+                foreach (var item in top5.OrderBy(x => x.datadate))
                 {
                     listlatLong.Add(new LatLongHistory
                     {
