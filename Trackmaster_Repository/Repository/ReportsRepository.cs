@@ -701,13 +701,11 @@ ORDER BY datadate ASC";
                 // ================= MAIN DATA =================
 
                 using (SqlConnection con = new SqlConnection(_connectionString43))
-                using (SqlCommand cmd = new SqlCommand("GetDistanceReportData", con))
+                using (SqlCommand cmd = new SqlCommand("GetVehiclesByCustIdAndSearch", con))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
 
                     cmd.Parameters.AddWithValue("@custId", model.CustId);
-                    cmd.Parameters.AddWithValue("@beginDate", model.beginDate);
-                    cmd.Parameters.AddWithValue("@endDate", model.endDate);
                     cmd.Parameters.AddWithValue("@iDisplayStart", model.iDisplayStart);
                     cmd.Parameters.AddWithValue("@iDisplayLength", model.iDisplayLength);
                     cmd.Parameters.AddWithValue("@sortColumn", model.sortColumn);
@@ -726,7 +724,6 @@ ORDER BY datadate ASC";
                         {
                             result.Add(new DistanceReportDataModel
                             {
-                                Date = GetDateTime(dr["Date"]),
                                 BBID = GetString(dr["BBID"]),
                                 VehName = GetString(dr["VehName"]),
                                 _distanceReportSubDataModel =
@@ -757,13 +754,8 @@ ORDER BY datadate";
 
                         using (SqlCommand cmd = new SqlCommand(query, con))
                         {
-                            DateTime startDate = item.Date.Date;
-                            DateTime endDate = item.Date.Date
-                                .AddDays(1)
-                                .AddSeconds(-1);
-
-                            cmd.Parameters.AddWithValue("@startdate", startDate);
-                            cmd.Parameters.AddWithValue("@enddate", endDate);
+                            cmd.Parameters.AddWithValue("@startdate", GetDateTime(model.beginDate));
+                            cmd.Parameters.AddWithValue("@enddate", GetDateTime(model.endDate));
 
                             using (SqlDataReader dr =
                                    await cmd.ExecuteReaderAsync())
@@ -846,9 +838,9 @@ ORDER BY datadate";
                                 item._distanceReportSubDataModel.Add(
                                     new DistanceReportSubDataModel
                                     {
-                                        StartTime = tripStartTime.Value.ToString("HH:mm"),
+                                        StartTime = tripStartTime.Value.ToString("MMM dd yyyy hh:mm tt"),
 
-                                        EndTime = tripEndTime.ToString("HH:mm"),
+                                        EndTime = tripEndTime.ToString("MMM dd yyyy hh:mm tt"),
 
                                         Duration = Math.Round(duration.TotalHours, 1).ToString("0.0"),
 
@@ -886,9 +878,9 @@ ORDER BY datadate";
                             item._distanceReportSubDataModel.Add(
                                 new DistanceReportSubDataModel
                                 {
-                                    StartTime = tripStartTime.Value.ToString("HH:mm"),
+                                    StartTime = tripStartTime.Value.ToString("MMM dd yyyy hh:mm tt"),
 
-                                    EndTime = tripEndTime.ToString("HH:mm"),
+                                    EndTime = tripEndTime.ToString("MMM dd yyyy hh:mm tt"),
 
                                     Duration = Math.Round(duration.TotalHours, 1).ToString("0.0"),
 
