@@ -56,7 +56,9 @@ namespace Trackmaster_Backend.Controllers
         {
             try
             {
-                var playbackData = await _vehiclestatusService.GetPlaybackData(bbid, date);
+                var data = await _vehiclestatusService.GetPlaybackData(bbid, date);
+                var playbackData = data.playbackData;
+                var latLongData = data.latLongData;
 
                 var movingData = new List<PlaybackDataModel>();
 
@@ -198,7 +200,8 @@ namespace Trackmaster_Backend.Controllers
                     success = true,
                     message = "Vehicle data retrieved successfully",
                     data = playbackData,
-                    movingData = movingData
+                    movingData = movingData,
+                    latLongData = latLongData
                 });
             }
             catch (Exception ex)

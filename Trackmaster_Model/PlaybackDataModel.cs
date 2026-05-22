@@ -16,4 +16,9 @@ namespace Trackmaster_Model
         public string acignition { get; set; }
         public decimal distance { get; set; }
     }
+    public class LatLongHistory
+    {
+        public decimal latitude { get; set; }
+        public decimal longitude { get; set; }
+    }
 }

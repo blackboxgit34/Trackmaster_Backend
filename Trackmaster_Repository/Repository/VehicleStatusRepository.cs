@@ -97,9 +97,10 @@ namespace Trackmaster_Repository.Repository
             }
             return list;
         }
-        public async Task<List<PlaybackDataModel>> GetPlaybackData(string bbid, DateTime date)
+        public async Task<(List<PlaybackDataModel> playbackData, List<LatLongHistory> latLongData)> GetPlaybackData(string bbid, DateTime date)
         {
             var list = new List<PlaybackDataModel>();
+            var listlatLong = new List<LatLongHistory>();
             try
             {
                 using var con = new SqlConnection(GetConnectionStringTableWise(bbid));
@@ -128,13 +129,27 @@ namespace Trackmaster_Repository.Repository
                         acignition = GetString(reader["acignition"]),
                         distance = GetDecimal(reader["distance"])
                     });
+
+                }
+                var top5 = list
+                    .OrderByDescending(x => x.datadate)
+                    .Take(5)
+                    .ToList();
+                // Add top5 lat/long records again if needed
+                foreach (var item in top5)
+                {
+                    listlatLong.Add(new LatLongHistory
+                    {
+                        latitude = item.latitude,
+                        longitude = item.longitude,
+                    });
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Error: " + ex.Message);
             }
-            return list;
+            return (list, listlatLong);
         }
         public async Task<List<GetFuelLevelsModel>>GetFuelLevels(List<string> bbids)
         {
