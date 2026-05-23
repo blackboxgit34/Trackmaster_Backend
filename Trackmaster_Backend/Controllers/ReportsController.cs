@@ -233,7 +233,16 @@ namespace Trackmaster_Backend.Controllers
             });
 
         }
-        
+        [HttpPost("GetMonthlyDistanceReportData")]
+        public async Task<IActionResult> GetMonthlyDistanceReportData([FromBody] DataTableRequestModel model)
+        {
+            var result = await _reportsService.GetMonthlyDistanceReportData(model);
 
+            return Ok(new
+            {
+                data = result.data,
+                count = result.TotalCount
+            });
+        }
     }
 }

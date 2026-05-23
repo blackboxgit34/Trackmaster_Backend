@@ -6,9 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
@@ -36,7 +38,7 @@ namespace Trackmaster_Repository.Repository
         {
             return ((tableName.StartsWith("i", StringComparison.OrdinalIgnoreCase) || tableName.StartsWith("j", StringComparison.OrdinalIgnoreCase)) && tableName.Length > 5) ? _connectionString44 : _connectionString43;
         }
-        
+
         public async Task<VehiclesReport> GetConductorInfo(DataTableRequestModel requestModel)
         {
             var modelObj = new VehiclesReport
@@ -1253,6 +1255,444 @@ ORDER BY datadate";
             }
             return (result, TotalCount);
         }
-     
+        public async Task<(List<DistanceMonthlyReportDataModel> data, int TotalCount)>
+            GetMonthlyDistanceReportData(DataTableRequestModel model)
+        {
+            var result = new List<DistanceMonthlyReportDataModel>();
+
+            int TotalCount = 0;
+
+            try
+            {
+                DateTime monthDate =
+                    DateTime.ParseExact(
+                        model.beginDate,
+                        "MMM yyyy",
+                        CultureInfo.InvariantCulture);
+
+                DateTime startDate =
+                    new DateTime(
+                        monthDate.Year,
+                        monthDate.Month,
+                        1);
+
+                DateTime endDate =
+                    startDate
+                    .AddMonths(1)
+                    .AddSeconds(-1);
+
+                int daysInMonth =
+                    DateTime.DaysInMonth(
+                        monthDate.Year,
+                        monthDate.Month);
+
+                // ================= MAIN VEHICLE DATA =================
+
+                using (SqlConnection con =
+                       new SqlConnection(_connectionString43))
+
+                using (SqlCommand cmd =
+                       new SqlCommand(
+                           "GetVehiclesByCustIdAndSearch",
+                           con))
+                {
+                    cmd.CommandType =
+                        CommandType.StoredProcedure;
+
+                    cmd.Parameters.AddWithValue(
+                        "@custId",
+                        model.CustId);
+
+                    cmd.Parameters.AddWithValue(
+                        "@iDisplayStart",
+                        model.iDisplayStart);
+
+                    cmd.Parameters.AddWithValue(
+                        "@iDisplayLength",
+                        model.iDisplayLength);
+
+                    cmd.Parameters.AddWithValue(
+                        "@sortColumn",
+                        model.sortColumn);
+
+                    cmd.Parameters.AddWithValue(
+                        "@sortDirection",
+                        model.sortDirection);
+
+                    cmd.Parameters.AddWithValue(
+                        "@sSearch",
+                        model.sSearch);
+
+                    SqlParameter totalCountParam =
+                        new SqlParameter(
+                            "@TotalCount",
+                            SqlDbType.Int);
+
+                    totalCountParam.Direction =
+                        ParameterDirection.Output;
+
+                    cmd.Parameters.Add(totalCountParam);
+
+                    await con.OpenAsync();
+
+                    using (SqlDataReader dr =
+                           await cmd.ExecuteReaderAsync())
+                    {
+                        while (await dr.ReadAsync())
+                        {
+                            result.Add(
+                                new DistanceMonthlyReportDataModel
+                                {
+                                    BBID =
+                                        GetString(dr["BBID"]),
+
+                                    VehName =
+                                        GetString(dr["VehName"]),
+
+                                    TotalDistance = "0.0",
+
+                                    TotalStoppage = "0 h 0 m",
+
+                                    _distanceMonthlyReportSubDataModels =
+                                        new List<DistanceMonthlyReportSubDataModel>()
+                                });
+                        }
+                    }
+
+                    TotalCount =
+                        Convert.ToInt32(totalCountParam.Value);
+                }
+
+                // ================= VEHICLE PARALLEL =================
+
+                var vehicleTasks =
+                    result.Select(async item =>
+                    {
+                        var deviceDetailList =
+                            new List<PlaybackDataModel>();
+
+                        using (SqlConnection con =
+                               new SqlConnection(
+                                   GetConnectionStringTableWise(item.BBID)))
+                        {
+                            await con.OpenAsync();
+
+                            string query = $@"
+SELECT speed,
+       datadate,
+       acignition,
+       distance,
+       loc
+FROM [{item.BBID}]
+WHERE datadate >= @startdate
+AND datadate <= @enddate
+ORDER BY datadate";
+
+                            using (SqlCommand cmd =
+                                   new SqlCommand(query, con))
+                            {
+                                cmd.Parameters.AddWithValue(
+                                    "@startdate",
+                                    startDate);
+
+                                cmd.Parameters.AddWithValue(
+                                    "@enddate",
+                                    endDate);
+
+                                using (SqlDataReader dr =
+                                       await cmd.ExecuteReaderAsync())
+                                {
+                                    while (await dr.ReadAsync())
+                                    {
+                                        deviceDetailList.Add(
+                                            new PlaybackDataModel
+                                            {
+                                                speed =
+                                                    GetInt(dr["speed"]),
+
+                                                datadate =
+                                                    GetDateTime(dr["datadate"]),
+
+                                                acignition =
+                                                    GetString(dr["acignition"]) == "1"
+                                                    ? "Off"
+                                                    : "On",
+
+                                                distance =
+                                                    GetDecimal(dr["distance"]),
+
+                                                location =
+                                                    GetString(dr["loc"])
+                                            });
+                                    }
+                                }
+                            }
+                        }
+
+                        // ================= DAY-WISE =================
+
+                        var dayTasks =
+                            Enumerable.Range(1, daysInMonth)
+                            .Select(async day =>
+                            {
+                                return await Task.Run(() =>
+                                {
+                                    DateTime currentDay =
+                                        new DateTime(
+                                            monthDate.Year,
+                                            monthDate.Month,
+                                            day);
+
+                                    var dayRecords =
+                                        deviceDetailList
+                                        .Where(x =>
+                                            x.datadate.Date ==
+                                            currentDay.Date)
+                                        .OrderBy(x => x.datadate)
+                                        .ToList();
+
+                                    // NO DATA
+                                    if (!dayRecords.Any())
+                                    {
+                                        return new DistanceMonthlyReportSubDataModel
+                                        {
+                                            Day = day,
+                                            Distance = "0.0",
+                                            Duration = "0.0"
+                                        };
+                                    }
+
+                                    bool flag = false;
+
+                                    decimal sdist = 0;
+                                    decimal edist = 0;
+
+                                    decimal totalDistance = 0;
+
+                                    double totalHours = 0;
+
+                                    DateTime? tripStartTime = null;
+
+                                    for (int i = 0; i < dayRecords.Count; i++)
+                                    {
+                                        var current =
+                                            dayRecords[i];
+
+                                        decimal speed =
+                                            current.speed;
+
+                                        // START
+                                        if (speed > 0 && !flag)
+                                        {
+                                            sdist =
+                                                (i == 0)
+                                                ? current.distance
+                                                : dayRecords[i - 1].distance;
+
+                                            edist =
+                                                current.distance;
+
+                                            tripStartTime =
+                                                current.datadate;
+
+                                            flag = true;
+                                        }
+
+                                        // CONTINUE
+                                        else if (speed > 0 && flag)
+                                        {
+                                            edist =
+                                                current.distance;
+                                        }
+
+                                        // STOP
+                                        else if (speed <= 0 && flag)
+                                        {
+                                            edist =
+                                                current.distance;
+
+                                            decimal tripDistance =
+                                                Math.Round(
+                                                    edist - sdist,
+                                                    1);
+
+                                            if (tripDistance > 0 &&
+                                                tripDistance < 500)
+                                            {
+                                                totalDistance +=
+                                                    tripDistance;
+
+                                                totalHours +=
+                                                    (
+                                                        current.datadate -
+                                                        tripStartTime.Value
+                                                    ).TotalHours;
+                                            }
+
+                                            flag = false;
+                                        }
+                                    }
+
+                                    // LAST RUNNING SESSION
+                                    if (flag)
+                                    {
+                                        decimal tripDistance =
+                                            Math.Round(
+                                                edist - sdist,
+                                                1);
+
+                                        if (tripDistance > 0 &&
+                                            tripDistance < 500)
+                                        {
+                                            totalDistance +=
+                                                tripDistance;
+
+                                            totalHours +=
+                                                (
+                                                    dayRecords.Last().datadate -
+                                                    tripStartTime.Value
+                                                ).TotalHours;
+                                        }
+                                    }
+
+                                    return new DistanceMonthlyReportSubDataModel
+                                    {
+                                        Day = day,
+
+                                        Distance =
+                                            totalDistance.ToString("0.0"),
+
+                                        Duration =
+                                            totalHours.ToString("0.0")
+                                    };
+                                });
+                            });
+
+                        var dayResults =
+                            await Task.WhenAll(dayTasks);
+
+                        item._distanceMonthlyReportSubDataModels =
+                            dayResults
+                            .OrderBy(x => x.Day)
+                            .ToList();
+
+                        // ================= TOTAL DISTANCE =================
+
+                        decimal totalVehicleDistance =
+                            dayResults.Sum(x =>
+                                decimal.TryParse(
+                                    x.Distance,
+                                    out decimal d)
+                                ? d
+                                : 0);
+
+                        item.TotalDistance =
+                            totalVehicleDistance.ToString("0.0");
+
+                        // ================= STOPPAGE =================
+
+                        var modelForFields =
+                            new DataTableRequestModel
+                            {
+                                CustId = model.CustId,
+
+                                iDisplayStart = 0,
+
+                                iDisplayLength = 1,
+
+                                sortColumn =
+                                    model.sortColumn,
+
+                                sortDirection =
+                                    model.sortDirection,
+
+                                sSearch =
+                                    item.BBID,
+
+                                beginDate =
+                                    startDate.ToString("yyyy-MM-dd"),
+
+                                endDate =
+                                    endDate.ToString("yyyy-MM-dd")
+                            };
+
+                        var stoppageResult =
+                            await GetCombinedStoppageReport(
+                                modelForFields);
+
+                        if (stoppageResult.data.Any())
+                        {
+                            string stoppage =
+                                stoppageResult
+                                .data
+                                .First()
+                                .TotalStoppageTime;
+
+                            TimeSpan totalDuration =
+                                TimeSpan.Zero;
+
+                            Match dayMatch =
+                                Regex.Match(
+                                    stoppage,
+                                    @"(\d+)\s*day");
+
+                            if (dayMatch.Success)
+                            {
+                                totalDuration +=
+                                    TimeSpan.FromDays(
+                                        Convert.ToInt32(
+                                            dayMatch.Groups[1].Value));
+                            }
+
+                            Match hourMatch =
+                                Regex.Match(
+                                    stoppage,
+                                    @"(\d+)\s*hour");
+
+                            if (hourMatch.Success)
+                            {
+                                totalDuration +=
+                                    TimeSpan.FromHours(
+                                        Convert.ToInt32(
+                                            hourMatch.Groups[1].Value));
+                            }
+
+                            Match minuteMatch =
+                                Regex.Match(
+                                    stoppage,
+                                    @"(\d+)\s*minute");
+
+                            if (minuteMatch.Success)
+                            {
+                                totalDuration +=
+                                    TimeSpan.FromMinutes(
+                                        Convert.ToInt32(
+                                            minuteMatch.Groups[1].Value));
+                            }
+
+                            int totalHours =
+                                (int)totalDuration.TotalHours;
+
+                            item.TotalStoppage =
+                                $"{totalHours} h {totalDuration.Minutes} m";
+                        }
+                        else
+                        {
+                            item.TotalStoppage =
+                                "0 h 0 m";
+                        }
+                    });
+
+                // ================= ALL VEHICLES =================
+
+                await Task.WhenAll(vehicleTasks);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            return (result, TotalCount);
+        }
     }
 }
