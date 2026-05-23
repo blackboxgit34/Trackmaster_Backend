@@ -1263,7 +1263,7 @@ ORDER BY datadate";
                                     model.sortDirection,
 
                                 sSearch =
-                                    item.VehName,
+                                    item.BBID,
 
                                 beginDate =
                                     startDate.ToString("yyyy-MM-dd"),
