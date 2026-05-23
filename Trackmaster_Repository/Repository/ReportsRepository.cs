@@ -470,11 +470,13 @@ namespace Trackmaster_Repository.Repository
                     cmd.CommandType = CommandType.StoredProcedure;
 
                     cmd.Parameters.AddWithValue("@custId", dtmodel.CustId);
-                    cmd.Parameters.AddWithValue("@LowerBand", dtmodel.iDisplayStart);
-                    cmd.Parameters.AddWithValue("@UpperBand", dtmodel.iDisplayLength);
-                    cmd.Parameters.AddWithValue("@searchText", dtmodel.sSearch);
+                    cmd.Parameters.AddWithValue("@iDisplayStart", dtmodel.iDisplayStart);
+                    cmd.Parameters.AddWithValue("@iDisplayLength", dtmodel.iDisplayLength);
+                    cmd.Parameters.AddWithValue("@sortColumn", dtmodel.sortColumn);
+                    cmd.Parameters.AddWithValue("@sortDirection", dtmodel.sortDirection);
+                    cmd.Parameters.AddWithValue("@sSearch", dtmodel.sSearch);
 
-                    SqlParameter totalCountParam = new SqlParameter("@ItemCount", SqlDbType.Int);
+                    SqlParameter totalCountParam = new SqlParameter("@TotalCount", SqlDbType.Int);
                     totalCountParam.Direction = ParameterDirection.Output;
                     cmd.Parameters.Add(totalCountParam);
 
