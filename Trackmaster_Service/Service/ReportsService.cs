@@ -79,6 +79,10 @@ namespace Trackmaster_Service.Service
         {
             return await _reportsRepository.GetDistanceReportData(model);
         }
+        public async Task<(List<DistanceMonthlyReportDataModel> data, int TotalCount)> GetMonthlyDistanceReportData(DataTableRequestModel model)
+        {
+            return await _reportsRepository.GetMonthlyDistanceReportData(model);
+        }
        
     }
 }
