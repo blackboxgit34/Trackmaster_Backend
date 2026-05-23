@@ -18,7 +18,7 @@ namespace Trackmaster_Repository.Interface
         Task<List<DropDownItems>> GetMessageType();
         Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype); // neha k
         VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end);
-        StoppageMainModel GetCombinedStoppageReport(DataTableRequestModel dtmodel);
+        Task<(List<StoppageSubModel> data, int TotalCount)> GetCombinedStoppageReport(DataTableRequestModel dtmodel);
         Task<(List<DistanceReportDataModel> data, int TotalCount)> GetDistanceReportData(DataTableRequestModel model);
     }
 }

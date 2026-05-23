@@ -168,45 +168,25 @@ namespace Trackmaster_Model
 
         public class StoppageSubModel
         {
-            [DisplayName("Vehicle Name")]
             public string VehicleName { get; set; }
-            [DisplayName("Driver Name")]
             public string DriverName { get; set; }
 
-            [DisplayName("Stoppage Count")]
             public int StoppageCount { get; set; }
-            [DisplayName("Total Stoppage Time (Days-hh-mm-ss)")]
             public string TotalStoppageTime { get; set; }
-           
             public string BBID { get; set; }
-           
-            public string Type { get; set; }
             public List<StoppageAnalysis> objStoppageReport { get; set; }
-
-
         }
         public class StoppageAnalysis
         {
-            [DisplayName("Start Date")]
-            public string StartDate { get; set; }
-            [DisplayName("Stop Date")]
-            public string StopDate { get; set; }
-            [DisplayName("Stop Location")]
-            public string StopLocation { get; set; }
-            [DisplayName("Duration(Days-hh-mm-ss)")]
+            public string StopDateAndTime { get; set; }
+            public string Location { get; set; }
             public string Duration { get; set; }
-            [DisplayName("Ignition")]
             public Boolean IgnitionStatus { get; set; }
-
-            [DisplayName("POI Location")]
-            public string poi { get; set; }
-            public string AddPoi { get; set; }
-            
-            public string StopLatitude { get; set; }
-            
-            public string StopLongitude { get; set; }
-           
-            public string VehicleName { get; set; }
+            //public string poi { get; set; }
+            //public string AddPoi { get; set; }
+            //public string StopLatitude { get; set; }
+            //public string StopLongitude { get; set; }
+            //public string VehicleName { get; set; }
            }
 
         public class ReportBase 

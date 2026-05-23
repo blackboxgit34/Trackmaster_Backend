@@ -65,9 +65,10 @@ namespace Trackmaster_Service.Service
         }
 
 
-        public StoppageMainModel GetCombinedStoppageReport(DataTableRequestModel dtmodel)
+
+        public async Task<(List<StoppageSubModel> data, int TotalCount)> GetCombinedStoppageReport(DataTableRequestModel dtmodel)
         {
-            return _reportsRepository.GetCombinedStoppageReport(dtmodel);
+            return await _reportsRepository.GetCombinedStoppageReport(dtmodel);
         }
 
         public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)

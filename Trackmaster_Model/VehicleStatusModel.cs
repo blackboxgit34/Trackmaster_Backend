@@ -29,6 +29,8 @@ namespace Trackmaster_Model
             public int deviceBattery { get; set; }
             // ADD THIS
             public int TotalRecords { get; set; }
+            public string driverName { get; set; }
+            public string mob_no { get; set; }
         }
 
 

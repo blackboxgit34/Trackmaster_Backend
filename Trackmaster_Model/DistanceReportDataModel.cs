@@ -8,7 +8,6 @@ namespace Trackmaster_Model
 {
     public class DistanceReportDataModel
     {
-        public DateTime Date { get; set; }
         public string BBID { get; set; }
         public string VehName { get; set; }
         public string Distance { get; set; }
