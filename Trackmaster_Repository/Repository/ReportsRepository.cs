@@ -304,7 +304,7 @@ namespace Trackmaster_Repository.Repository
             try
             {
                 using (SqlConnection con = new SqlConnection(_BlackboxMain_HITEC44))
-                using (SqlCommand cmd = new SqlCommand("GetSentSms", con))
+                using (SqlCommand cmd = new SqlCommand("GetSentSms_TM", con))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
 
@@ -319,8 +319,8 @@ namespace Trackmaster_Repository.Repository
                     cmd.Parameters.Add(itemCountParam);
 
                     cmd.Parameters.AddWithValue("@MsgType", string.IsNullOrEmpty(messagetype) ? 0 : Convert.ToInt32(messagetype));
-                    cmd.Parameters.AddWithValue("@FromDate", requestModel.beginDate);
-                    cmd.Parameters.AddWithValue("@ToDate", requestModel.endDate);
+                    cmd.Parameters.Add("@FromDate", SqlDbType.DateTime).Value =DateTime.Parse(requestModel.beginDate);
+                    cmd.Parameters.Add("@ToDate", SqlDbType.DateTime).Value = DateTime.Parse(requestModel.endDate);
                     cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
                     cmd.Parameters.AddWithValue("@type", typeid);
                     cmd.Parameters.AddWithValue("@searchText",
@@ -335,7 +335,7 @@ namespace Trackmaster_Repository.Repository
                         // Column indexes for better performance
                         int bbidIndex = dsVeh.GetOrdinal("BBID");
                         int fmsVehicleIdIndex = dsVeh.GetOrdinal("FMSVehicleId");
-                        //int vehicleNameIndex = dsVeh.GetOrdinal("VehicleName");
+                        int vehicleNameIndex = dsVeh.GetOrdinal("VehicleName");
                         int sendTimeIndex = dsVeh.GetOrdinal("SendTime");
                         int typeNameIndex = dsVeh.GetOrdinal("type_name");
                         int mobileIndex = dsVeh.GetOrdinal("Mobile");
@@ -349,7 +349,7 @@ namespace Trackmaster_Repository.Repository
                             {
                                 BBID = dsVeh.IsDBNull(bbidIndex) ? string.Empty : dsVeh.GetString(bbidIndex),
                                 fmsVehicleId = dsVeh.IsDBNull(fmsVehicleIdIndex) ? 0 : Convert.ToInt32(dsVeh[fmsVehicleIdIndex]),
-                                //VehicleName = dsVeh.IsDBNull(vehicleNameIndex) ? string.Empty : dsVeh.GetString(vehicleNameIndex),
+                                VehicleName = dsVeh.IsDBNull(vehicleNameIndex) ? string.Empty : dsVeh.GetString(vehicleNameIndex),
                                 MessageDate = dsVeh.IsDBNull(sendTimeIndex) ? string.Empty : Convert.ToString(dsVeh[sendTimeIndex]),
                                 MessageType = dsVeh.IsDBNull(typeNameIndex) ? string.Empty : dsVeh.GetString(typeNameIndex),
                                 Mobile = dsVeh.IsDBNull(mobileIndex) ? string.Empty : dsVeh.GetString(mobileIndex),
@@ -472,11 +472,13 @@ namespace Trackmaster_Repository.Repository
                     cmd.CommandType = CommandType.StoredProcedure;
 
                     cmd.Parameters.AddWithValue("@custId", dtmodel.CustId);
-                    cmd.Parameters.AddWithValue("@LowerBand", dtmodel.iDisplayStart);
-                    cmd.Parameters.AddWithValue("@UpperBand", dtmodel.iDisplayLength);
-                    cmd.Parameters.AddWithValue("@searchText", dtmodel.sSearch);
+                    cmd.Parameters.AddWithValue("@iDisplayStart", dtmodel.iDisplayStart);
+                    cmd.Parameters.AddWithValue("@iDisplayLength", dtmodel.iDisplayLength);
+                    cmd.Parameters.AddWithValue("@sortColumn", dtmodel.sortColumn);
+                    cmd.Parameters.AddWithValue("@sortDirection", dtmodel.sortDirection);
+                    cmd.Parameters.AddWithValue("@sSearch", dtmodel.sSearch);
 
-                    SqlParameter totalCountParam = new SqlParameter("@ItemCount", SqlDbType.Int);
+                    SqlParameter totalCountParam = new SqlParameter("@TotalCount", SqlDbType.Int);
                     totalCountParam.Direction = ParameterDirection.Output;
                     cmd.Parameters.Add(totalCountParam);
 
