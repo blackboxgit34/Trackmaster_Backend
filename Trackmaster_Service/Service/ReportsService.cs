@@ -58,9 +58,9 @@ namespace Trackmaster_Service.Service
             _cache.Set(vehiclelist, TimeSpan.FromMinutes(10));
             return vehiclelist;
         }
-        public async Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype) // neha k 
+        public async Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype, string vehicleNo) // neha k 
         {
-            return await _reportsRepository.GetSentMessagesReport(requestModel, typeid, messagetype);
+            return await _reportsRepository.GetSentMessagesReport(requestModel, typeid, messagetype, vehicleNo);
 
         }
 

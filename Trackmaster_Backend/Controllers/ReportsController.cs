@@ -22,10 +22,14 @@ namespace Trackmaster_Backend.Controllers
     {
         private readonly IReportsService _reportsService;
         private readonly IWebHostEnvironment _environment;
-        public ReportsController(IReportsService reportsService, IWebHostEnvironment environment)
+        private readonly ImportExportExcelService _importExportExcelService;
+        private readonly ImportExportPdfService _importExportPdfService;
+        public ReportsController(IReportsService reportsService, IWebHostEnvironment environment, ImportExportExcelService importExportExcelService, ImportExportPdfService importExportPdfService)
         {
             _reportsService = reportsService;
             _environment = environment;
+            _importExportExcelService = importExportExcelService;
+            _importExportPdfService = importExportPdfService;
         }
         /// <summary>
         /// Get crew report data
@@ -165,14 +169,38 @@ namespace Trackmaster_Backend.Controllers
                 });
             }
         }
-        
-     // neha k
+
+
         [HttpGet("GetMessageReports")]
-        public async Task<IActionResult> GetMessageReports([FromQuery] DataTableRequestModel requestModel,string typeid,string messagetype)
+        public async Task<IActionResult> GetMessageReports([FromQuery] DataTableRequestModel requestModel,string typeid,string messagetype,string vehicleNo,string downloadType = null)
         {
             try
             {
-                SMSReportEx sms = await _reportsService.GetSentMessagesReport(requestModel,Convert.ToInt32(typeid),messagetype);
+                SMSReportEx sms = await _reportsService.GetSentMessagesReport(requestModel,Convert.ToInt32(typeid),messagetype,vehicleNo);
+
+                // ================= EXCEL EXPORT =================
+
+                if (
+                    !String.IsNullOrEmpty(downloadType) &&
+                    downloadType.Equals("Excel")
+                )
+                {
+                    var reportName =$"SMSNotificationReport_{DateTime.Now:yyyyMMdd}.xlsx";
+                    var exportData =sms?.objSMSReport?.ToList();
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(exportData,reportName,null,null);
+                    return File(stream,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",reportName);
+                }
+                // ================= PDF EXPORT =================
+                if (
+                    !String.IsNullOrEmpty(downloadType) && downloadType.Equals("PDF")
+                )
+                {
+                    var reportName = $"SMSNotificationReport_{DateTime.Now:yyyyMMdd}.pdf";
+                    var exportData =sms?.objSMSReport?.ToList();
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(exportData,reportName,null,null);
+                    return File(stream,"application/pdf",reportName);
+                }
+                // ================= NORMAL RESPONSE =================
                 if (sms != null)
                 {
                     return Ok(new
@@ -183,16 +211,19 @@ namespace Trackmaster_Backend.Controllers
                         aaData = sms.objSMSReport
                     });
                 }
-
                 return NoContent();
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new
-                {
-                    message = "An error occurred while fetching message reports.",
-                    error = ex.Message
-                });
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new
+                    {
+                        message =
+                            "An error occurred while fetching message reports.",
+                        error = ex.Message
+                    }
+                );
             }
         }
 

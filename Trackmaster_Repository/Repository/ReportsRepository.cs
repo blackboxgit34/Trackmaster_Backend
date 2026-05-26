@@ -292,7 +292,7 @@ namespace Trackmaster_Repository.Repository
             }
             return list;
         }
-        public async Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype)
+        public async Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype,string vehicleNo)
         {
             SMSReportEx objSMSReportEx = new SMSReportEx
             {
@@ -305,29 +305,21 @@ namespace Trackmaster_Repository.Repository
                 using (SqlCommand cmd = new SqlCommand("GetSentSms_TM", con))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
-
                     cmd.Parameters.AddWithValue("@LowerBand", requestModel.iDisplayStart);
                     cmd.Parameters.AddWithValue("@UpperBand", requestModel.iDisplayLength);
-
                     SqlParameter itemCountParam = new SqlParameter("@ItemCount", SqlDbType.Int)
                     {
                         Direction = ParameterDirection.Output
                     };
-
                     cmd.Parameters.Add(itemCountParam);
-
                     cmd.Parameters.AddWithValue("@MsgType", string.IsNullOrEmpty(messagetype) ? 0 : Convert.ToInt32(messagetype));
                     cmd.Parameters.Add("@FromDate", SqlDbType.DateTime).Value =DateTime.Parse(requestModel.beginDate);
                     cmd.Parameters.Add("@ToDate", SqlDbType.DateTime).Value = DateTime.Parse(requestModel.endDate);
                     cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
                     cmd.Parameters.AddWithValue("@type", typeid);
-                    cmd.Parameters.AddWithValue("@searchText",
-                        string.IsNullOrWhiteSpace(requestModel.sSearch)
-                        ? DBNull.Value
-                        : requestModel.sSearch);
-
+                    cmd.Parameters.AddWithValue("@searchText",string.IsNullOrWhiteSpace(requestModel.sSearch)? DBNull.Value: requestModel.sSearch);
+                    cmd.Parameters.AddWithValue("@vehicleNo",string.IsNullOrWhiteSpace(vehicleNo)? DBNull.Value: vehicleNo);// neha k 
                     await con.OpenAsync();
-
                     using (SqlDataReader dsVeh = await cmd.ExecuteReaderAsync())
                     {
                         // Column indexes for better performance
