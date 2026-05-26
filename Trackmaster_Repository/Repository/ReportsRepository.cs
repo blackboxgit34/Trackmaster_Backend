@@ -6,9 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
@@ -36,7 +38,7 @@ namespace Trackmaster_Repository.Repository
         {
             return ((tableName.StartsWith("i", StringComparison.OrdinalIgnoreCase) || tableName.StartsWith("j", StringComparison.OrdinalIgnoreCase)) && tableName.Length > 5) ? _connectionString44 : _connectionString43;
         }
-        
+
         public async Task<VehiclesReport> GetConductorInfo(DataTableRequestModel requestModel)
         {
             var modelObj = new VehiclesReport
@@ -445,7 +447,7 @@ namespace Trackmaster_Repository.Repository
             return result;
         }
 
-
+    
         public async Task<(List<StoppageSubModel> data, int TotalCount)> GetCombinedStoppageReport(
             DataTableRequestModel dtmodel)
         {
@@ -462,11 +464,13 @@ namespace Trackmaster_Repository.Repository
                     cmd.CommandType = CommandType.StoredProcedure;
 
                     cmd.Parameters.AddWithValue("@custId", dtmodel.CustId);
-                    cmd.Parameters.AddWithValue("@LowerBand", dtmodel.iDisplayStart);
-                    cmd.Parameters.AddWithValue("@UpperBand", dtmodel.iDisplayLength);
-                    cmd.Parameters.AddWithValue("@searchText", dtmodel.sSearch);
+                    cmd.Parameters.AddWithValue("@iDisplayStart", dtmodel.iDisplayStart);
+                    cmd.Parameters.AddWithValue("@iDisplayLength", dtmodel.iDisplayLength);
+                    cmd.Parameters.AddWithValue("@sortColumn", dtmodel.sortColumn);
+                    cmd.Parameters.AddWithValue("@sortDirection", dtmodel.sortDirection);
+                    cmd.Parameters.AddWithValue("@sSearch", dtmodel.sSearch);
 
-                    SqlParameter totalCountParam = new SqlParameter("@ItemCount", SqlDbType.Int);
+                    SqlParameter totalCountParam = new SqlParameter("@TotalCount", SqlDbType.Int);
                     totalCountParam.Direction = ParameterDirection.Output;
                     cmd.Parameters.Add(totalCountParam);
 
@@ -553,6 +557,22 @@ ORDER BY datadate ASC";
                     }
 
                     bool flag = false;
+                    string interval =
+                dtmodel.Interval ?? "0-0";
+
+                    int intv1 = 0;
+                    int intv2 = 0;
+
+                    string[] words = interval.Split('-');
+
+                    if (words.Length > 0)
+                        intv1 =
+                            Convert.ToInt32(words[0]) * 60;
+
+                    if (words.Length > 1)
+                        intv2 =
+                            Convert.ToInt32(words[1]) * 60;
+
 
                     DateTime startd = DateTime.MinValue;
 
@@ -629,16 +649,59 @@ ORDER BY datadate ASC";
                             // skip zero duration stoppage
                             if (ts.TotalSeconds > 0)
                             {
-                                currentStop.Duration =
-                                    $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+                                if (ts.TotalSeconds > 0)
+                                {
+                                    bool shouldAdd = false;
 
-                                totalDuration += ts;
+                                    // 0-0 = old logic (show all)
+                                    if (intv1 == 0 && intv2 == 0)
+                                    {
+                                        shouldAdd = true;
+                                    }
 
-                                result[resultIndex]
-                                    .objStoppageReport
-                                    .Add(currentStop);
+                                    // 10-0 = greater than 10 minute
+                                    else if (intv1 > 0 && intv2 == 0)
+                                    {
+                                        if (ts.TotalSeconds >= intv1)
+                                        {
+                                            shouldAdd = true;
+                                        }
+                                    }
 
-                                result[resultIndex].StoppageCount++;
+                                    // 1-2 = between 1 and 2 minute
+                                    else
+                                    {
+                                        if (ts.TotalSeconds >= intv1 &&
+                                            ts.TotalSeconds <= intv2)
+                                        {
+                                            shouldAdd = true;
+                                        }
+                                    }
+
+                                    if (shouldAdd)
+                                    {
+                                        currentStop.Duration =
+                                            $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+
+                                        totalDuration += ts;
+
+                                        result[resultIndex]
+                                            .objStoppageReport
+                                            .Add(currentStop);
+
+                                        result[resultIndex].StoppageCount++;
+                                    }
+                                }
+                                //currentStop.Duration =
+                                //    $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+
+                                //totalDuration += ts;
+
+                                //result[resultIndex]
+                                //    .objStoppageReport
+                                //    .Add(currentStop);
+
+                                //result[resultIndex].StoppageCount++;
                             }
 
                             flag = false;
@@ -655,16 +718,59 @@ ORDER BY datadate ASC";
 
                         if (ts.TotalSeconds > 0)
                         {
-                            currentStop.Duration =
-                                $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+                            if (ts.TotalSeconds > 0)
+{
+    bool shouldAdd = false;
 
-                            totalDuration += ts;
+    // 0-0 = old logic (show all)
+    if (intv1 == 0 && intv2 == 0)
+    {
+        shouldAdd = true;
+    }
 
-                            result[resultIndex]
-                                .objStoppageReport
-                                .Add(currentStop);
+    // 10-0 = greater than 10 minute
+    else if (intv1 > 0 && intv2 == 0)
+    {
+        if (ts.TotalSeconds >= intv1)
+        {
+            shouldAdd = true;
+        }
+    }
 
-                            result[resultIndex].StoppageCount++;
+    // 1-2 = between 1 and 2 minute
+    else
+    {
+        if (ts.TotalSeconds >= intv1 &&
+            ts.TotalSeconds <= intv2)
+        {
+            shouldAdd = true;
+        }
+    }
+
+    if (shouldAdd)
+    {
+        currentStop.Duration =
+            $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+
+        totalDuration += ts;
+
+        result[resultIndex]
+            .objStoppageReport
+            .Add(currentStop);
+
+        result[resultIndex].StoppageCount++;
+    }
+}
+                            //currentStop.Duration =
+                            //    $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+
+                            //totalDuration += ts;
+
+                            //result[resultIndex]
+                            //    .objStoppageReport
+                            //    .Add(currentStop);
+
+                            //result[resultIndex].StoppageCount++;
                         }
                     }
 
@@ -683,6 +789,248 @@ ORDER BY datadate ASC";
             }
             return (result, TotalCount);
         }
+
+
+
+//        public async Task<(List<StoppageSubModel> data, int TotalCount)> GetCombinedStoppageReport(
+//            DataTableRequestModel dtmodel)
+//        {
+//            var result = new List<StoppageSubModel>();
+//            int TotalCount = 0;
+//            try
+//            {
+
+//                // ================= MAIN DATA =================
+
+//                using (SqlConnection con = new SqlConnection(_connectionString43))
+//                using (SqlCommand cmd = new SqlCommand("GetVehiclesByCustIdAndSearch", con))
+//                {
+//                    cmd.CommandType = CommandType.StoredProcedure;
+
+//                    cmd.Parameters.AddWithValue("@custId", dtmodel.CustId);
+//                    cmd.Parameters.AddWithValue("@iDisplayStart", dtmodel.iDisplayStart);
+//                    cmd.Parameters.AddWithValue("@iDisplayLength", dtmodel.iDisplayLength);
+//                    cmd.Parameters.AddWithValue("@sortColumn", dtmodel.sortColumn);
+//                    cmd.Parameters.AddWithValue("@sortDirection", dtmodel.sortDirection);
+//                    cmd.Parameters.AddWithValue("@sSearch", dtmodel.sSearch);
+
+//                    SqlParameter totalCountParam = new SqlParameter("@TotalCount", SqlDbType.Int);
+//                    totalCountParam.Direction = ParameterDirection.Output;
+//                    cmd.Parameters.Add(totalCountParam);
+
+//                    await con.OpenAsync();
+
+//                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+//                    {
+//                        while (await dr.ReadAsync())
+//                        {
+//                            result.Add(new StoppageSubModel
+//                            {
+//                                BBID = GetString(dr["BBID"]),
+//                                VehicleName = GetString(dr["VehName"]),
+//                                DriverName = GetString(dr["DriverName"]),
+//                                objStoppageReport =
+//                                    new List<StoppageAnalysis>()
+//                            });
+//                        }
+//                    }
+//                    TotalCount = Convert.ToInt32(totalCountParam.Value);
+//                }
+
+//                // ================= PARALLEL DEVICE TABLE CALLS =================
+//                var tasks = result.Select(async item =>
+//                {
+//                    var deviceDetailList = new List<PlaybackDataModel>();
+
+//                    using (SqlConnection con =
+//                           new SqlConnection(GetConnectionStringTableWise(item.BBID)))
+//                    {
+//                        await con.OpenAsync();
+
+//                        string query = $@"
+//SELECT speed,
+//       datadate,
+//       acignition,
+//       distance,
+//       loc
+//FROM [{item.BBID}]
+//WHERE datadate >= @startdate
+//AND datadate <= @enddate
+//ORDER BY datadate ASC";
+
+//                        using (SqlCommand cmd = new SqlCommand(query, con))
+//                        {
+//                            DateTime startDate = GetDateTime(dtmodel.beginDate);
+
+//                            DateTime endDate = GetDateTime(dtmodel.endDate)
+//                                .AddDays(1)
+//                                .AddSeconds(-1);
+
+//                            cmd.Parameters.Add("@startdate", SqlDbType.DateTime)
+//                                .Value = startDate;
+
+//                            cmd.Parameters.Add("@enddate", SqlDbType.DateTime)
+//                                .Value = endDate;
+
+//                            using (SqlDataReader dr =
+//                                   await cmd.ExecuteReaderAsync())
+//                            {
+//                                while (await dr.ReadAsync())
+//                                {
+//                                    deviceDetailList.Add(new PlaybackDataModel
+//                                    {
+//                                        speed = GetInt(dr["speed"]),
+
+//                                        datadate = GetDateTime(dr["datadate"]),
+
+//                                        // IMPORTANT:
+//                                        // 1 = OFF
+//                                        // 0 = ON
+//                                        acignition =
+//                                            GetString(dr["acignition"]) == "1"
+//                                            ? "Off"
+//                                            : "On",
+
+//                                        distance = GetDecimal(dr["distance"]),
+
+//                                        location = GetString(dr["loc"])
+//                                    });
+//                                }
+//                            }
+//                        }
+//                    }
+
+//                    bool flag = false;
+
+//                    DateTime startd = DateTime.MinValue;
+
+//                    DateTime endd = DateTime.MinValue;
+
+//                    TimeSpan totalDuration = TimeSpan.Zero;
+
+//                    StoppageAnalysis currentStop = null;
+
+//                    int resultIndex =
+//                        result.FindIndex(x => x.BBID == item.BBID);
+
+//                    for (int i = 0; i < deviceDetailList.Count; i++)
+//                    {
+//                        var data = deviceDetailList[i];
+
+//                        bool ignitionOff = data.acignition == "Off";
+
+//                        bool ignitionOn = data.acignition == "On";
+
+//                        // =========================================
+//                        // START STOPPAGE
+//                        // SAME AS ORIGINAL CODE
+//                        // =========================================
+
+//                        if (ignitionOff && flag == false)
+//                        {
+//                            currentStop = new StoppageAnalysis
+//                            {
+//                                StopDateAndTime =
+//                                    data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
+
+//                                Location = data.location,
+
+//                                IgnitionStatus = false,
+
+//                                Duration = "0 minute(s) 0 second(s)"
+//                            };
+
+//                            startd = data.datadate;
+
+//                            endd = data.datadate;
+
+//                            flag = true;
+//                        }
+
+//                        // =========================================
+//                        // CONTINUE STOPPAGE
+//                        // UPDATE END TIME
+//                        // =========================================
+
+//                        else if (ignitionOff && flag == true)
+//                        {
+//                            endd = data.datadate;
+//                        }
+
+//                        // =========================================
+//                        // CLOSE STOPPAGE
+//                        // ONLY WHEN IGNITION ON
+//                        // =========================================
+
+//                        else if (ignitionOn && flag == true)
+//                        {
+//                            // EXACT OLD LOGIC
+
+//                            if (endd < data.datadate)
+//                            {
+//                                endd = data.datadate;
+//                            }
+
+//                            TimeSpan ts = endd.Subtract(startd);
+
+//                            // IMPORTANT:
+//                            // skip zero duration stoppage
+//                            if (ts.TotalSeconds > 0)
+//                            {
+//                                currentStop.Duration =
+//                                    $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+
+//                                totalDuration += ts;
+
+//                                result[resultIndex]
+//                                    .objStoppageReport
+//                                    .Add(currentStop);
+
+//                                result[resultIndex].StoppageCount++;
+//                            }
+
+//                            flag = false;
+//                        }
+//                    }
+
+//                    // =========================================
+//                    // HANDLE LAST RECORD
+//                    // =========================================
+
+//                    if (flag && currentStop != null)
+//                    {
+//                        TimeSpan ts = endd.Subtract(startd);
+
+//                        if (ts.TotalSeconds > 0)
+//                        {
+//                            currentStop.Duration =
+//                                $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+
+//                            totalDuration += ts;
+
+//                            result[resultIndex]
+//                                .objStoppageReport
+//                                .Add(currentStop);
+
+//                            result[resultIndex].StoppageCount++;
+//                        }
+//                    }
+
+//                    result[resultIndex].TotalStoppageTime =
+//                        $"{totalDuration.Days} day(s) " +
+//                        $"{totalDuration.Hours} hour(s) " +
+//                        $"{totalDuration.Minutes} minute(s) " +
+//                        $"{totalDuration.Seconds} second(s)";
+//                });
+
+//                await Task.WhenAll(tasks);
+//            }
+//            catch (Exception ex)
+//            {
+//                Console.WriteLine("Error: " + ex.Message);
+//            }
+//            return (result, TotalCount);
+//        }
         public async Task<(List<DistanceReportDataModel> data, int TotalCount)> GetDistanceReportData(DataTableRequestModel model)
         {
             var result = new List<DistanceReportDataModel>();
@@ -899,6 +1247,426 @@ ORDER BY datadate";
             }
             return (result, TotalCount);
         }
-     
+        public async Task<(List<DistanceMonthlyReportDataModel> data, int TotalCount)> GetMonthlyDistanceReportData(DataTableRequestModel model)
+        {
+            var result = new List<DistanceMonthlyReportDataModel>();
+
+            int TotalCount = 0;
+
+            try
+            {
+                DateTime monthDate =
+                    DateTime.ParseExact(
+                        model.beginDate,
+                        "MMMM yyyy",
+                        CultureInfo.InvariantCulture);
+
+                DateTime startDate =
+                    new DateTime(
+                        monthDate.Year,
+                        monthDate.Month,
+                        1);
+
+                DateTime endDate =
+                    startDate
+                    .AddMonths(1)
+                    .AddSeconds(-1);
+
+                int daysInMonth =
+                    DateTime.DaysInMonth(
+                        monthDate.Year,
+                        monthDate.Month);
+
+                // ================= MAIN VEHICLE DATA =================
+
+                using (SqlConnection con =
+                       new SqlConnection(_connectionString43))
+
+                using (SqlCommand cmd =
+                       new SqlCommand(
+                           "GetVehiclesByCustIdAndSearch",
+                           con))
+                {
+                    cmd.CommandType =
+                        CommandType.StoredProcedure;
+
+                    cmd.Parameters.AddWithValue(
+                        "@custId",
+                        model.CustId);
+
+                    cmd.Parameters.AddWithValue(
+                        "@iDisplayStart",
+                        model.iDisplayStart);
+
+                    cmd.Parameters.AddWithValue(
+                        "@iDisplayLength",
+                        model.iDisplayLength);
+
+                    cmd.Parameters.AddWithValue(
+                        "@sortColumn",
+                        model.sortColumn);
+
+                    cmd.Parameters.AddWithValue(
+                        "@sortDirection",
+                        model.sortDirection);
+
+                    cmd.Parameters.AddWithValue(
+                        "@sSearch",
+                        model.sSearch);
+
+                    SqlParameter totalCountParam =
+                        new SqlParameter(
+                            "@TotalCount",
+                            SqlDbType.Int);
+
+                    totalCountParam.Direction =
+                        ParameterDirection.Output;
+
+                    cmd.Parameters.Add(totalCountParam);
+
+                    await con.OpenAsync();
+
+                    using (SqlDataReader dr =
+                           await cmd.ExecuteReaderAsync())
+                    {
+                        while (await dr.ReadAsync())
+                        {
+                            result.Add(
+                                new DistanceMonthlyReportDataModel
+                                {
+                                    BBID =
+                                        GetString(dr["BBID"]),
+
+                                    VehName =
+                                        GetString(dr["VehName"]),
+
+                                    TotalDistance = "0.0",
+
+                                    TotalStoppage = "0.0",
+
+                                    _distanceMonthlyReportSubDataModels =
+                                        new List<DistanceMonthlyReportSubDataModel>()
+                                });
+                        }
+                    }
+
+                    TotalCount =
+                        Convert.ToInt32(totalCountParam.Value);
+                }
+
+                // ================= VEHICLE PARALLEL =================
+
+                var vehicleTasks =
+                    result.Select(async item =>
+                    {
+                        var deviceDetailList =
+                            new List<PlaybackDataModel>();
+
+                        using (SqlConnection con =
+                               new SqlConnection(
+                                   GetConnectionStringTableWise(item.BBID)))
+                        {
+                            await con.OpenAsync();
+
+                            string query = $@"
+SELECT speed,
+       datadate,
+       acignition,
+       distance,
+       loc
+FROM [{item.BBID}]
+WHERE datadate >= @startdate
+AND datadate <= @enddate
+ORDER BY datadate";
+
+                            using (SqlCommand cmd =
+                                   new SqlCommand(query, con))
+                            {
+                                cmd.Parameters.AddWithValue(
+                                    "@startdate",
+                                    startDate);
+
+                                cmd.Parameters.AddWithValue(
+                                    "@enddate",
+                                    endDate);
+
+                                using (SqlDataReader dr =
+                                       await cmd.ExecuteReaderAsync())
+                                {
+                                    while (await dr.ReadAsync())
+                                    {
+                                        deviceDetailList.Add(
+                                            new PlaybackDataModel
+                                            {
+                                                speed =
+                                                    GetInt(dr["speed"]),
+
+                                                datadate =
+                                                    GetDateTime(dr["datadate"]),
+
+                                                acignition =
+                                                    GetString(dr["acignition"]) == "1"
+                                                    ? "Off"
+                                                    : "On",
+
+                                                distance =
+                                                    GetDecimal(dr["distance"]),
+
+                                                location =
+                                                    GetString(dr["loc"])
+                                            });
+                                    }
+                                }
+                            }
+                        }
+
+                        // ================= DAY-WISE =================
+
+                        var dayTasks =
+                            Enumerable.Range(1, daysInMonth)
+                            .Select(async day =>
+                            {
+                                return await Task.Run(() =>
+                                {
+                                    DateTime currentDay =
+                                        new DateTime(
+                                            monthDate.Year,
+                                            monthDate.Month,
+                                            day);
+
+                                    var dayRecords =
+                                        deviceDetailList
+                                        .Where(x =>
+                                            x.datadate.Date ==
+                                            currentDay.Date)
+                                        .OrderBy(x => x.datadate)
+                                        .ToList();
+
+                                    // NO DATA
+                                    if (!dayRecords.Any())
+                                    {
+                                        return new DistanceMonthlyReportSubDataModel
+                                        {
+                                            Day = day,
+                                            Distance = "0.0",
+                                            Duration = "0.0"
+                                        };
+                                    }
+
+                                    // ================= DISTANCE LOGIC =================
+
+                                    bool moveFlag = false;
+
+                                    decimal sdist = 0;
+                                    decimal edist = 0;
+
+                                    decimal totalDistance = 0;
+
+                                    for (int i = 0; i < dayRecords.Count; i++)
+                                    {
+                                        var current =
+                                            dayRecords[i];
+
+                                        decimal speed =
+                                            current.speed;
+
+                                        // START
+                                        if (speed > 0 && !moveFlag)
+                                        {
+                                            sdist =
+                                                (i == 0)
+                                                ? current.distance
+                                                : dayRecords[i - 1].distance;
+
+                                            edist =
+                                                current.distance;
+
+                                            moveFlag = true;
+                                        }
+
+                                        // CONTINUE
+                                        else if (speed > 0 && moveFlag)
+                                        {
+                                            edist =
+                                                current.distance;
+                                        }
+
+                                        // STOP
+                                        else if (speed <= 0 && moveFlag)
+                                        {
+                                            edist =
+                                                current.distance;
+
+                                            decimal tripDistance =
+                                                Math.Round(
+                                                    edist - sdist,
+                                                    1);
+
+                                            if (tripDistance > 0 &&
+                                                tripDistance < 500)
+                                            {
+                                                totalDistance +=
+                                                    tripDistance;
+                                            }
+
+                                            moveFlag = false;
+                                        }
+                                    }
+
+                                    // LAST RUNNING SESSION
+                                    if (moveFlag)
+                                    {
+                                        decimal tripDistance =
+                                            Math.Round(
+                                                edist - sdist,
+                                                1);
+
+                                        if (tripDistance > 0 &&
+                                            tripDistance < 500)
+                                        {
+                                            totalDistance +=
+                                                tripDistance;
+                                        }
+                                    }
+
+                                    // ================= STOPPAGE LOGIC =================
+
+                                    bool stopFlag = false;
+
+                                    DateTime stopStart =
+                                        DateTime.MinValue;
+
+                                    DateTime stopEnd =
+                                        DateTime.MinValue;
+
+                                    TimeSpan totalStoppage =
+                                        TimeSpan.Zero;
+
+                                    for (int i = 0; i < dayRecords.Count; i++)
+                                    {
+                                        var data =
+                                            dayRecords[i];
+
+                                        bool ignitionOff =
+                                            data.acignition == "Off";
+
+                                        bool ignitionOn =
+                                            data.acignition == "On";
+
+                                        // START STOPPAGE
+                                        if (ignitionOff && !stopFlag)
+                                        {
+                                            stopStart =
+                                                data.datadate;
+
+                                            stopEnd =
+                                                data.datadate;
+
+                                            stopFlag = true;
+                                        }
+
+                                        // CONTINUE STOPPAGE
+                                        else if (ignitionOff && stopFlag)
+                                        {
+                                            stopEnd =
+                                                data.datadate;
+                                        }
+
+                                        // END STOPPAGE
+                                        else if (ignitionOn && stopFlag)
+                                        {
+                                            if (stopEnd < data.datadate)
+                                            {
+                                                stopEnd =
+                                                    data.datadate;
+                                            }
+
+                                            TimeSpan ts =
+                                                stopEnd.Subtract(stopStart);
+
+                                            if (ts.TotalSeconds > 0)
+                                            {
+                                                totalStoppage += ts;
+                                            }
+
+                                            stopFlag = false;
+                                        }
+                                    }
+
+                                    // HANDLE LAST STOPPAGE
+                                    if (stopFlag)
+                                    {
+                                        TimeSpan ts =
+                                            stopEnd.Subtract(stopStart);
+
+                                        if (ts.TotalSeconds > 0)
+                                        {
+                                            totalStoppage += ts;
+                                        }
+                                    }
+
+                                    return new DistanceMonthlyReportSubDataModel
+                                    {
+                                        Day = day,
+
+                                        Distance =
+                                            totalDistance.ToString("0.0"),
+
+                                        Duration =
+                                            totalStoppage.TotalHours.ToString("0.0")
+                                    };
+                                });
+                            });
+
+                        var dayResults =
+                            await Task.WhenAll(dayTasks);
+
+                        item._distanceMonthlyReportSubDataModels =
+                            dayResults
+                            .OrderBy(x => x.Day)
+                            .ToList();
+
+                        // ================= TOTAL DISTANCE =================
+
+                        decimal totalVehicleDistance =
+                            dayResults.Sum(x =>
+                                decimal.TryParse(
+                                    x.Distance,
+                                    out decimal d)
+                                ? d
+                                : 0);
+
+                        item.TotalDistance =
+                            totalVehicleDistance.ToString("0.0");
+
+                        // ================= TOTAL STOPPAGE =================
+
+                        double totalVehicleStoppage =
+                            dayResults.Sum(x =>
+                                double.TryParse(
+                                    x.Duration,
+                                    out double d)
+                                ? d
+                                : 0);
+
+                        item.TotalStoppage =
+                            totalVehicleStoppage.ToString("0.0");
+
+                        item.TotalStoppage =
+                            totalVehicleStoppage.ToString("0.0");
+                    });
+
+                // ================= ALL VEHICLES =================
+
+                await Task.WhenAll(vehicleTasks);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            return (result, TotalCount);
+        }
+
     }
 }

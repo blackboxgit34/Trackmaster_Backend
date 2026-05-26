@@ -29,7 +29,7 @@ namespace Trackmaster_Repository.Repository
         }
 
         public async Task<List<VehicleonMapList>> GetvehicleStatusList(string pagename, DataTableRequestModel model)
-        {
+         {
             var list = new List<VehicleonMapList>();
             int totalCount = 0;
             try
@@ -41,20 +41,15 @@ namespace Trackmaster_Repository.Repository
                 cmd.Parameters.AddWithValue("@pageName", pagename);
                 // Paging Parameters
                 cmd.Parameters.AddWithValue("@lbound", model.iDisplayStart);
-
                 cmd.Parameters.AddWithValue("@ubound", model.iDisplayStart + model.iDisplayLength);
-
-                // Search Parameter
-                //cmd.Parameters.AddWithValue("@sSearch",model.sSearch);
+                cmd.Parameters.AddWithValue("@sortColumn", model.sortColumn);
+                cmd.Parameters.AddWithValue("@sortDirection", model.sortDirection);
                 cmd.Parameters.Add("@sSearch", SqlDbType.VarChar).Value = string.IsNullOrWhiteSpace(model.sSearch) || model.sSearch == "null" ? DBNull.Value : model.sSearch;
                 // Output Parameter
                 SqlParameter itemCountParam = new SqlParameter("@itemcount", SqlDbType.Int);
-
                 cmd.Parameters.AddWithValue("@StatusCode", model.Status ?? (object)DBNull.Value);
                 itemCountParam.Direction = ParameterDirection.Output;
-
                 cmd.Parameters.Add(itemCountParam);
-
                 await con.OpenAsync();
                 using var reader = await cmd.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
