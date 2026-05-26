@@ -11,7 +11,6 @@ using Trackmaster_Model;
 using Trackmaster_Repository.Repository;
 using Trackmaster_Service;
 using Trackmaster_Service.Interface;
-using Trackmaster_Service.Service;
 using static Trackmaster_Model.Reports;
 
 namespace Trackmaster_Backend.Controllers
