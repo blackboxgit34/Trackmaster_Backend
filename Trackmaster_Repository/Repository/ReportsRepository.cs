@@ -1255,8 +1255,7 @@ ORDER BY datadate";
             }
             return (result, TotalCount);
         }
-        public async Task<(List<DistanceMonthlyReportDataModel> data, int TotalCount)>
-            GetMonthlyDistanceReportData(DataTableRequestModel model)
+        public async Task<(List<DistanceMonthlyReportDataModel> data, int TotalCount)> GetMonthlyDistanceReportData(DataTableRequestModel model)
         {
             var result = new List<DistanceMonthlyReportDataModel>();
 
@@ -1267,7 +1266,7 @@ ORDER BY datadate";
                 DateTime monthDate =
                     DateTime.ParseExact(
                         model.beginDate,
-                        "MMM yyyy",
+                        "MMMM yyyy",
                         CultureInfo.InvariantCulture);
 
                 DateTime startDate =
@@ -1351,7 +1350,7 @@ ORDER BY datadate";
 
                                     TotalDistance = "0.0",
 
-                                    TotalStoppage = "0 h 0 m",
+                                    TotalStoppage = "0.0",
 
                                     _distanceMonthlyReportSubDataModels =
                                         new List<DistanceMonthlyReportSubDataModel>()
@@ -1462,16 +1461,14 @@ ORDER BY datadate";
                                         };
                                     }
 
-                                    bool flag = false;
+                                    // ================= DISTANCE LOGIC =================
+
+                                    bool moveFlag = false;
 
                                     decimal sdist = 0;
                                     decimal edist = 0;
 
                                     decimal totalDistance = 0;
-
-                                    double totalHours = 0;
-
-                                    DateTime? tripStartTime = null;
 
                                     for (int i = 0; i < dayRecords.Count; i++)
                                     {
@@ -1482,7 +1479,7 @@ ORDER BY datadate";
                                             current.speed;
 
                                         // START
-                                        if (speed > 0 && !flag)
+                                        if (speed > 0 && !moveFlag)
                                         {
                                             sdist =
                                                 (i == 0)
@@ -1492,21 +1489,18 @@ ORDER BY datadate";
                                             edist =
                                                 current.distance;
 
-                                            tripStartTime =
-                                                current.datadate;
-
-                                            flag = true;
+                                            moveFlag = true;
                                         }
 
                                         // CONTINUE
-                                        else if (speed > 0 && flag)
+                                        else if (speed > 0 && moveFlag)
                                         {
                                             edist =
                                                 current.distance;
                                         }
 
                                         // STOP
-                                        else if (speed <= 0 && flag)
+                                        else if (speed <= 0 && moveFlag)
                                         {
                                             edist =
                                                 current.distance;
@@ -1521,20 +1515,14 @@ ORDER BY datadate";
                                             {
                                                 totalDistance +=
                                                     tripDistance;
-
-                                                totalHours +=
-                                                    (
-                                                        current.datadate -
-                                                        tripStartTime.Value
-                                                    ).TotalHours;
                                             }
 
-                                            flag = false;
+                                            moveFlag = false;
                                         }
                                     }
 
                                     // LAST RUNNING SESSION
-                                    if (flag)
+                                    if (moveFlag)
                                     {
                                         decimal tripDistance =
                                             Math.Round(
@@ -1546,12 +1534,82 @@ ORDER BY datadate";
                                         {
                                             totalDistance +=
                                                 tripDistance;
+                                        }
+                                    }
 
-                                            totalHours +=
-                                                (
-                                                    dayRecords.Last().datadate -
-                                                    tripStartTime.Value
-                                                ).TotalHours;
+                                    // ================= STOPPAGE LOGIC =================
+
+                                    bool stopFlag = false;
+
+                                    DateTime stopStart =
+                                        DateTime.MinValue;
+
+                                    DateTime stopEnd =
+                                        DateTime.MinValue;
+
+                                    TimeSpan totalStoppage =
+                                        TimeSpan.Zero;
+
+                                    for (int i = 0; i < dayRecords.Count; i++)
+                                    {
+                                        var data =
+                                            dayRecords[i];
+
+                                        bool ignitionOff =
+                                            data.acignition == "Off";
+
+                                        bool ignitionOn =
+                                            data.acignition == "On";
+
+                                        // START STOPPAGE
+                                        if (ignitionOff && !stopFlag)
+                                        {
+                                            stopStart =
+                                                data.datadate;
+
+                                            stopEnd =
+                                                data.datadate;
+
+                                            stopFlag = true;
+                                        }
+
+                                        // CONTINUE STOPPAGE
+                                        else if (ignitionOff && stopFlag)
+                                        {
+                                            stopEnd =
+                                                data.datadate;
+                                        }
+
+                                        // END STOPPAGE
+                                        else if (ignitionOn && stopFlag)
+                                        {
+                                            if (stopEnd < data.datadate)
+                                            {
+                                                stopEnd =
+                                                    data.datadate;
+                                            }
+
+                                            TimeSpan ts =
+                                                stopEnd.Subtract(stopStart);
+
+                                            if (ts.TotalSeconds > 0)
+                                            {
+                                                totalStoppage += ts;
+                                            }
+
+                                            stopFlag = false;
+                                        }
+                                    }
+
+                                    // HANDLE LAST STOPPAGE
+                                    if (stopFlag)
+                                    {
+                                        TimeSpan ts =
+                                            stopEnd.Subtract(stopStart);
+
+                                        if (ts.TotalSeconds > 0)
+                                        {
+                                            totalStoppage += ts;
                                         }
                                     }
 
@@ -1563,7 +1621,7 @@ ORDER BY datadate";
                                             totalDistance.ToString("0.0"),
 
                                         Duration =
-                                            totalHours.ToString("0.0")
+                                            totalStoppage.TotalHours.ToString("0.0")
                                     };
                                 });
                             });
@@ -1589,98 +1647,21 @@ ORDER BY datadate";
                         item.TotalDistance =
                             totalVehicleDistance.ToString("0.0");
 
-                        // ================= STOPPAGE =================
+                        // ================= TOTAL STOPPAGE =================
 
-                        var modelForFields =
-                            new DataTableRequestModel
-                            {
-                                CustId = model.CustId,
+                        double totalVehicleStoppage =
+                            dayResults.Sum(x =>
+                                double.TryParse(
+                                    x.Duration,
+                                    out double d)
+                                ? d
+                                : 0);
 
-                                iDisplayStart = 0,
+                        item.TotalStoppage =
+                            totalVehicleStoppage.ToString("0.0");
 
-                                iDisplayLength = 1,
-
-                                sortColumn =
-                                    model.sortColumn,
-
-                                sortDirection =
-                                    model.sortDirection,
-
-                                sSearch =
-                                    item.BBID,
-
-                                beginDate =
-                                    startDate.ToString("yyyy-MM-dd"),
-
-                                endDate =
-                                    endDate.ToString("yyyy-MM-dd")
-                            };
-
-                        var stoppageResult =
-                            await GetCombinedStoppageReport(
-                                modelForFields);
-
-                        if (stoppageResult.data.Any())
-                        {
-                            string stoppage =
-                                stoppageResult
-                                .data
-                                .First()
-                                .TotalStoppageTime;
-
-                            TimeSpan totalDuration =
-                                TimeSpan.Zero;
-
-                            Match dayMatch =
-                                Regex.Match(
-                                    stoppage,
-                                    @"(\d+)\s*day");
-
-                            if (dayMatch.Success)
-                            {
-                                totalDuration +=
-                                    TimeSpan.FromDays(
-                                        Convert.ToInt32(
-                                            dayMatch.Groups[1].Value));
-                            }
-
-                            Match hourMatch =
-                                Regex.Match(
-                                    stoppage,
-                                    @"(\d+)\s*hour");
-
-                            if (hourMatch.Success)
-                            {
-                                totalDuration +=
-                                    TimeSpan.FromHours(
-                                        Convert.ToInt32(
-                                            hourMatch.Groups[1].Value));
-                            }
-
-                            Match minuteMatch =
-                                Regex.Match(
-                                    stoppage,
-                                    @"(\d+)\s*minute");
-
-                            if (minuteMatch.Success)
-                            {
-                                totalDuration +=
-                                    TimeSpan.FromMinutes(
-                                        Convert.ToInt32(
-                                            minuteMatch.Groups[1].Value));
-                            }
-
-                            int totalHours =
-                                (int)totalDuration.TotalHours;
-
-                            item.TotalStoppage =
-                                $"{totalHours} h {totalDuration.Minutes} m";
-                        }
-                        else
-                        {
-                            item.TotalStoppage =
-                                "0 h 0 m";
-                        }
+                        item.TotalStoppage =
+                            totalVehicleStoppage.ToString("0.0");
                     });
 
                 // ================= ALL VEHICLES =================
@@ -1694,5 +1675,6 @@ ORDER BY datadate";
 
             return (result, TotalCount);
         }
+
     }
 }
