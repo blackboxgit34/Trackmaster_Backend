@@ -28,6 +28,9 @@ builder.Services.AddSingleton<IVehicleStatusRepository, VehicleStatusRepository>
 //-------------------Registration of repositories------------------------//
 builder.Services.AddSingleton<ImportExportExcelService>();
 
+// PDF SERVICE neha k
+builder.Services.AddSingleton<ImportExportPdfService>();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",

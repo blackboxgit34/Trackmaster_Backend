@@ -19,7 +19,7 @@ namespace Trackmaster_Service.Interface
         Task<List<DropDownItems>> GetCityList(int stateid);
         Task<string> AddUpdateEmployee(Employee objEmp, string imagePaths = "");
         Task<List<DropDownItems>> GetMessageType();
-        Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype); //neha k
+        Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype, string vehicleNo); //neha k
         Task<VehicleStatusResponse> VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end);
         Task<VehicleStatusResponse> BatteryDisconnection(int custId, int lower, int upper, string search, DateTime start, DateTime end);
         Task<(List<StoppageSubModel> data, int TotalCount)> GetCombinedStoppageReport(DataTableRequestModel DataTableRequestModel);
