@@ -58,9 +58,9 @@ namespace Trackmaster_Service.Service
             _cache.Set(vehiclelist, TimeSpan.FromMinutes(10));
             return vehiclelist;
         }
-        public async Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype) // neha k 
+        public async Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype, string vehicleNo) // neha k 
         {
-            return await _reportsRepository.GetSentMessagesReport(requestModel, typeid, messagetype);
+            return await _reportsRepository.GetSentMessagesReport(requestModel, typeid, messagetype, vehicleNo);
 
         }
 
@@ -70,15 +70,29 @@ namespace Trackmaster_Service.Service
         {
             return await _reportsRepository.GetCombinedStoppageReport(dtmodel);
         }
-
-        public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        public async Task<(List<IdlingMainModel> data, int TotalCount)> GetIdlingStatusReport(DataTableRequestModel dtmodel)
         {
-            return _reportsRepository.VehicleStatus(custId, lower, upper, search, start, end);
+            return await _reportsRepository.GetIdlingStatusReport(dtmodel);
+        }
+
+        public async Task<VehicleStatusResponse> VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        {
+            return await _reportsRepository.VehicleStatus(custId, lower, upper, search, start, end);
+        }
+
+        public async Task<VehicleStatusResponse> BatteryDisconnection(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        {
+            return await _reportsRepository.BatteryDisconnection(custId, lower, upper, search, start, end);
         }
         public async Task<(List<DistanceReportDataModel> data, int TotalCount)> GetDistanceReportData(DataTableRequestModel model)
         {
             return await _reportsRepository.GetDistanceReportData(model);
         }
+        public async Task<(List<DistanceMonthlyReportDataModel> data, int TotalCount)> GetMonthlyDistanceReportData(DataTableRequestModel model)
+        {
+            return await _reportsRepository.GetMonthlyDistanceReportData(model);
+        }
+       
         #region Neha Vaid
         public async Task<OverSpeedModel> getSpeedReport(string mode, DataTableRequestModel requestModel)
         {

@@ -11,7 +11,6 @@ using Trackmaster_Model;
 using Trackmaster_Repository.Repository;
 using Trackmaster_Service;
 using Trackmaster_Service.Interface;
-using Trackmaster_Service.Service;
 using static Trackmaster_Model.Reports;
 using static Trackmaster_Service.ImportExportExcelService;
 
@@ -23,10 +22,14 @@ namespace Trackmaster_Backend.Controllers
     {
         private readonly IReportsService _reportsService;
         private readonly IWebHostEnvironment _environment;
-        public ReportsController(IReportsService reportsService, IWebHostEnvironment environment)
+        private readonly ImportExportExcelService _importExportExcelService;
+        private readonly ImportExportPdfService _importExportPdfService;
+        public ReportsController(IReportsService reportsService, IWebHostEnvironment environment, ImportExportExcelService importExportExcelService, ImportExportPdfService importExportPdfService)
         {
             _reportsService = reportsService;
             _environment = environment;
+            _importExportExcelService = importExportExcelService;
+            _importExportPdfService = importExportPdfService;
         }
         /// <summary>
         /// Get crew report data
@@ -166,14 +169,38 @@ namespace Trackmaster_Backend.Controllers
                 });
             }
         }
-        
-     // neha k
+
+
         [HttpGet("GetMessageReports")]
-        public async Task<IActionResult> GetMessageReports([FromQuery] DataTableRequestModel requestModel,string typeid,string messagetype)
+        public async Task<IActionResult> GetMessageReports([FromQuery] DataTableRequestModel requestModel,string typeid,string messagetype,string vehicleNo,string downloadType = null)
         {
             try
             {
-                SMSReportEx sms = await _reportsService.GetSentMessagesReport(requestModel,Convert.ToInt32(typeid),messagetype);
+                SMSReportEx sms = await _reportsService.GetSentMessagesReport(requestModel,Convert.ToInt32(typeid),messagetype,vehicleNo);
+
+                // ================= EXCEL EXPORT =================
+
+                if (
+                    !String.IsNullOrEmpty(downloadType) &&
+                    downloadType.Equals("Excel")
+                )
+                {
+                    var reportName =$"SMSNotificationReport_{DateTime.Now:yyyyMMdd}.xlsx";
+                    var exportData =sms?.objSMSReport?.ToList();
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(exportData,reportName,null,null);
+                    return File(stream,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",reportName);
+                }
+                // ================= PDF EXPORT =================
+                if (
+                    !String.IsNullOrEmpty(downloadType) && downloadType.Equals("PDF")
+                )
+                {
+                    var reportName = $"SMSNotificationReport_{DateTime.Now:yyyyMMdd}.pdf";
+                    var exportData =sms?.objSMSReport?.ToList();
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(exportData,reportName,null,null);
+                    return File(stream,"application/pdf",reportName);
+                }
+                // ================= NORMAL RESPONSE =================
                 if (sms != null)
                 {
                     return Ok(new
@@ -184,23 +211,38 @@ namespace Trackmaster_Backend.Controllers
                         aaData = sms.objSMSReport
                     });
                 }
-
                 return NoContent();
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new
-                {
-                    message = "An error occurred while fetching message reports.",
-                    error = ex.Message
-                });
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new
+                    {
+                        message =
+                            "An error occurred while fetching message reports.",
+                        error = ex.Message
+                    }
+                );
             }
         }
 
         [HttpGet("VehicleStatus")]
-        public IActionResult VehicleStatus(int custId, int lower, int upper, string? search, DateTime start, DateTime end)
+        public async Task<IActionResult> VehicleStatus(int custId, int lower, int upper, string? search, DateTime start, DateTime end)
         {
-            var result = _reportsService.VehicleStatus(custId, lower, upper, search, start, end);
+            var result = await _reportsService.VehicleStatus(custId, lower, upper, search, start, end);
+
+            return Ok(new
+            {
+                data = result.VehicleData,
+                count = result.ItemCount
+            });
+        }
+
+        [HttpGet("BatteryDisconnection")]
+        public async Task<IActionResult> BatteryDisconnection(int custId, int lower, int upper, string? search, DateTime start, DateTime end)
+        {
+            var result = await _reportsService.BatteryDisconnection(custId, lower, upper, search, start, end);
 
             return Ok(new
             {
@@ -223,7 +265,7 @@ namespace Trackmaster_Backend.Controllers
 
         [HttpGet("GetAllStoppageReport")]
         public async Task<IActionResult> GetAllStoppageReport([FromQuery] DataTableRequestModel dtmodel)
-        {
+         {
            
            var stoppage = await _reportsService.GetCombinedStoppageReport(dtmodel);
 
@@ -235,11 +277,36 @@ namespace Trackmaster_Backend.Controllers
 
         }
 
+        [HttpGet("GetIdlingStatusReport")]
+        public async Task<IActionResult> GetIdlingStatusReport([FromQuery] DataTableRequestModel dtmodel)
+        {
+
+            var stoppage = await _reportsService.GetIdlingStatusReport(dtmodel);
+
+            return Ok(new
+            {
+                data = stoppage.data,
+                count = stoppage.TotalCount
+            });
+
+        }
+
+        [HttpPost("GetMonthlyDistanceReportData")]
+        public async Task<IActionResult> GetMonthlyDistanceReportData([FromBody] DataTableRequestModel model)
+        {
+            var result = await _reportsService.GetMonthlyDistanceReportData(model);
+
+            return Ok(new
+            {
+                data = result.data,
+                count = result.TotalCount
+            });
+        }
         #region Neha Vaid
         [HttpGet("getSpeedReport")]
         public async Task<IActionResult> getSpeedReport(string mode, [FromQuery] DataTableRequestModel requestModel)
         {
-            
+
             try
             {
                 var speedData = await _reportsService.getSpeedReport(mode, requestModel);
