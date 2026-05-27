@@ -20,7 +20,11 @@ namespace Trackmaster_Repository.Interface
         Task<VehicleStatusResponse> VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end);
         Task<VehicleStatusResponse> BatteryDisconnection(int custId, int lower, int upper, string search, DateTime start, DateTime end);
         Task<(List<StoppageSubModel> data, int TotalCount)> GetCombinedStoppageReport(DataTableRequestModel dtmodel);
+        Task<(List<IdlingMainModel> data, int TotalCount)> GetIdlingStatusReport(DataTableRequestModel dtmodel);
         Task<(List<DistanceReportDataModel> data, int TotalCount)> GetDistanceReportData(DataTableRequestModel model);
+        #region Neha Vaid
+        Task<OverSpeedModel> getSpeedReport(string mode, DataTableRequestModel requestModel);
+        #endregion
         Task<(List<DistanceMonthlyReportDataModel> data, int TotalCount)> GetMonthlyDistanceReportData(DataTableRequestModel model);
     }
 }

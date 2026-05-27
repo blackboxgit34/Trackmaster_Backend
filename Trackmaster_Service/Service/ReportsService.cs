@@ -70,6 +70,10 @@ namespace Trackmaster_Service.Service
         {
             return await _reportsRepository.GetCombinedStoppageReport(dtmodel);
         }
+        public async Task<(List<IdlingMainModel> data, int TotalCount)> GetIdlingStatusReport(DataTableRequestModel dtmodel)
+        {
+            return await _reportsRepository.GetIdlingStatusReport(dtmodel);
+        }
 
         public async Task<VehicleStatusResponse> VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
         {
@@ -89,5 +93,11 @@ namespace Trackmaster_Service.Service
             return await _reportsRepository.GetMonthlyDistanceReportData(model);
         }
        
+        #region Neha Vaid
+        public async Task<OverSpeedModel> getSpeedReport(string mode, DataTableRequestModel requestModel)
+        {
+            return await _reportsRepository.getSpeedReport(mode, requestModel);
+        }
+        #endregion
     }
 }

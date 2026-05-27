@@ -1,8 +1,11 @@
 ﻿using HMSCL.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using OfficeOpenXml;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -16,6 +19,7 @@ using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
 using static Trackmaster_Model.Reports; //added model
 using static Trackmaster_Repository.DataTypeHelper;
+using static Trackmaster_Repository.SqlHelper;
 
 namespace Trackmaster_Repository.Repository
 {
@@ -510,7 +514,8 @@ namespace Trackmaster_Repository.Repository
                                 Batterycon = GetDateTime(dr["enddate"]),
                                 startloc = GetString(dr["sloc"]),
                                 Endloc = GetString(dr["eloc"]),
-                                Duration = GetDateTime(dr["duration"])
+                                Duration = GetDateTime(dr["duration"]),
+                                Status = GetString(dr["Status"])
                             });
                         }
                     }
@@ -730,6 +735,13 @@ ORDER BY datadate ASC";
                                     {
                                         shouldAdd = true;
                                     }
+                                   else if (intv1 == 0 && intv2 > 0)
+                                    {
+                                        if (ts.TotalSeconds <= intv2)
+                                        {
+                                            shouldAdd = true;
+                                        }
+                                    }
 
                                     // 10-0 = greater than 10 minute
                                     else if (intv1 > 0 && intv2 == 0)
@@ -799,9 +811,15 @@ ORDER BY datadate ASC";
     {
         shouldAdd = true;
     }
-
-    // 10-0 = greater than 10 minute
-    else if (intv1 > 0 && intv2 == 0)
+ else if (intv1 == 0 && intv2 > 0)
+{
+ if (ts.TotalSeconds <= intv2)
+ {
+    shouldAdd = true;
+  }
+  }
+ // 10-0 = greater than 10 minute
+ else if (intv1 > 0 && intv2 == 0)
     {
         if (ts.TotalSeconds >= intv1)
         {
@@ -864,245 +882,592 @@ ORDER BY datadate ASC";
 
 
 
-//        public async Task<(List<StoppageSubModel> data, int TotalCount)> GetCombinedStoppageReport(
-//            DataTableRequestModel dtmodel)
-//        {
-//            var result = new List<StoppageSubModel>();
-//            int TotalCount = 0;
-//            try
-//            {
 
-//                // ================= MAIN DATA =================
 
-//                using (SqlConnection con = new SqlConnection(_connectionString43))
-//                using (SqlCommand cmd = new SqlCommand("GetVehiclesByCustIdAndSearch", con))
-//                {
-//                    cmd.CommandType = CommandType.StoredProcedure;
+        public async Task<(List<IdlingMainModel> data, int TotalCount)> GetIdlingStatusReport(
+           DataTableRequestModel dtmodel)
+        {
+            var result = new List<IdlingMainModel>();
+            int TotalCount = 0;
+            try
+            {
 
-//                    cmd.Parameters.AddWithValue("@custId", dtmodel.CustId);
-//                    cmd.Parameters.AddWithValue("@iDisplayStart", dtmodel.iDisplayStart);
-//                    cmd.Parameters.AddWithValue("@iDisplayLength", dtmodel.iDisplayLength);
-//                    cmd.Parameters.AddWithValue("@sortColumn", dtmodel.sortColumn);
-//                    cmd.Parameters.AddWithValue("@sortDirection", dtmodel.sortDirection);
-//                    cmd.Parameters.AddWithValue("@sSearch", dtmodel.sSearch);
+                // ================= MAIN DATA =================
 
-//                    SqlParameter totalCountParam = new SqlParameter("@TotalCount", SqlDbType.Int);
-//                    totalCountParam.Direction = ParameterDirection.Output;
-//                    cmd.Parameters.Add(totalCountParam);
+                using (SqlConnection con = new SqlConnection(_connectionString43))
+                using (SqlCommand cmd = new SqlCommand("GetVehiclesByCustIdAndSearch", con))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
 
-//                    await con.OpenAsync();
+                    cmd.Parameters.AddWithValue("@custId", dtmodel.CustId);
+                    cmd.Parameters.AddWithValue("@iDisplayStart", dtmodel.iDisplayStart);
+                    cmd.Parameters.AddWithValue("@iDisplayLength", dtmodel.iDisplayLength);
+                    cmd.Parameters.AddWithValue("@sortColumn", dtmodel.sortColumn);
+                    cmd.Parameters.AddWithValue("@sortDirection", dtmodel.sortDirection);
+                    cmd.Parameters.AddWithValue("@sSearch", dtmodel.sSearch);
 
-//                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
-//                    {
-//                        while (await dr.ReadAsync())
-//                        {
-//                            result.Add(new StoppageSubModel
-//                            {
-//                                BBID = GetString(dr["BBID"]),
-//                                VehicleName = GetString(dr["VehName"]),
-//                                DriverName = GetString(dr["DriverName"]),
-//                                objStoppageReport =
-//                                    new List<StoppageAnalysis>()
-//                            });
-//                        }
-//                    }
-//                    TotalCount = Convert.ToInt32(totalCountParam.Value);
-//                }
+                    SqlParameter totalCountParam = new SqlParameter("@TotalCount", SqlDbType.Int);
+                    totalCountParam.Direction = ParameterDirection.Output;
+                    cmd.Parameters.Add(totalCountParam);
 
-//                // ================= PARALLEL DEVICE TABLE CALLS =================
-//                var tasks = result.Select(async item =>
-//                {
-//                    var deviceDetailList = new List<PlaybackDataModel>();
+                    await con.OpenAsync();
 
-//                    using (SqlConnection con =
-//                           new SqlConnection(GetConnectionStringTableWise(item.BBID)))
-//                    {
-//                        await con.OpenAsync();
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await dr.ReadAsync())
+                        {
+                            result.Add(new IdlingMainModel
+                            {
+                                BBID = GetString(dr["BBID"]),
+                                VehicleName = GetString(dr["VehName"]),
+                                DriverName = GetString(dr["DriverName"]),
+                                IdlingSubStatuslist =
+                                    new List<IdlingSubStatus>()
+                            });
+                        }
+                    }
+                    TotalCount = Convert.ToInt32(totalCountParam.Value);
+                }
 
-//                        string query = $@"
-//SELECT speed,
-//       datadate,
-//       acignition,
-//       distance,
-//       loc
-//FROM [{item.BBID}]
-//WHERE datadate >= @startdate
-//AND datadate <= @enddate
-//ORDER BY datadate ASC";
+                // ================= PARALLEL DEVICE TABLE CALLS =================
+                var tasks = result.Select(async item =>
+                {
+                    var deviceDetailList = new List<PlaybackDataModel>();
 
-//                        using (SqlCommand cmd = new SqlCommand(query, con))
-//                        {
-//                            DateTime startDate = GetDateTime(dtmodel.beginDate);
+                    using (SqlConnection con =
+                           new SqlConnection(GetConnectionStringTableWise(item.BBID)))
+                    {
+                        await con.OpenAsync();
 
-//                            DateTime endDate = GetDateTime(dtmodel.endDate)
-//                                .AddDays(1)
-//                                .AddSeconds(-1);
+                        string query = $@"
+SELECT speed,
+       datadate,
+       acignition,
+       distance,
+       loc
+FROM [{item.BBID}]
+WHERE datadate >= @startdate
+AND datadate <= @enddate
+ORDER BY datadate ASC";
 
-//                            cmd.Parameters.Add("@startdate", SqlDbType.DateTime)
-//                                .Value = startDate;
+                        using (SqlCommand cmd = new SqlCommand(query, con))
+                        {
+                            DateTime startDate = GetDateTime(dtmodel.beginDate);
 
-//                            cmd.Parameters.Add("@enddate", SqlDbType.DateTime)
-//                                .Value = endDate;
+                            DateTime endDate = GetDateTime(dtmodel.endDate)
+                                .AddDays(1)
+                                .AddSeconds(-1);
 
-//                            using (SqlDataReader dr =
-//                                   await cmd.ExecuteReaderAsync())
-//                            {
-//                                while (await dr.ReadAsync())
-//                                {
-//                                    deviceDetailList.Add(new PlaybackDataModel
-//                                    {
-//                                        speed = GetInt(dr["speed"]),
+                            cmd.Parameters.Add("@startdate", SqlDbType.DateTime)
+                                .Value = startDate;
 
-//                                        datadate = GetDateTime(dr["datadate"]),
+                            cmd.Parameters.Add("@enddate", SqlDbType.DateTime)
+                                .Value = endDate;
 
-//                                        // IMPORTANT:
-//                                        // 1 = OFF
-//                                        // 0 = ON
-//                                        acignition =
-//                                            GetString(dr["acignition"]) == "1"
-//                                            ? "Off"
-//                                            : "On",
+                            using (SqlDataReader dr =
+                                   await cmd.ExecuteReaderAsync())
+                            {
+                                while (await dr.ReadAsync())
+                                {
+                                    deviceDetailList.Add(new PlaybackDataModel
+                                    {
+                                        speed = GetInt(dr["speed"]),
 
-//                                        distance = GetDecimal(dr["distance"]),
+                                        datadate = GetDateTime(dr["datadate"]),
 
-//                                        location = GetString(dr["loc"])
-//                                    });
-//                                }
-//                            }
-//                        }
-//                    }
+                                        // IMPORTANT:
+                                        // 1 = OFF
+                                        // 0 = ON
+                                        acignition =
+                                            GetString(dr["acignition"]) == "1"
+                                            ? "Off"
+                                            : "On",
 
-//                    bool flag = false;
+                                        distance = GetDecimal(dr["distance"]),
 
-//                    DateTime startd = DateTime.MinValue;
+                                        location = GetString(dr["loc"])
+                                    });
+                                }
+                            }
+                        }
+                    }
 
-//                    DateTime endd = DateTime.MinValue;
+                    bool flag = false;
+                    string interval =
+                dtmodel.Interval ?? "0-0";
 
-//                    TimeSpan totalDuration = TimeSpan.Zero;
+                    int intv1 = 0;
+                    int intv2 = 0;
 
-//                    StoppageAnalysis currentStop = null;
+                    string[] words = interval.Split('-');
 
-//                    int resultIndex =
-//                        result.FindIndex(x => x.BBID == item.BBID);
+                    if (words.Length > 0)
+                        intv1 =
+                            Convert.ToInt32(words[0]) * 60;
 
-//                    for (int i = 0; i < deviceDetailList.Count; i++)
-//                    {
-//                        var data = deviceDetailList[i];
+                    if (words.Length > 1)
+                        intv2 =
+                            Convert.ToInt32(words[1]) * 60;
 
-//                        bool ignitionOff = data.acignition == "Off";
 
-//                        bool ignitionOn = data.acignition == "On";
+                    DateTime startd = DateTime.MinValue;
 
-//                        // =========================================
-//                        // START STOPPAGE
-//                        // SAME AS ORIGINAL CODE
-//                        // =========================================
+                    DateTime endd = DateTime.MinValue;
 
-//                        if (ignitionOff && flag == false)
-//                        {
-//                            currentStop = new StoppageAnalysis
-//                            {
-//                                StopDateAndTime =
-//                                    data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
+                    TimeSpan totalDuration = TimeSpan.Zero;
 
-//                                Location = data.location,
+                    IdlingSubStatus currentStop = null;
 
-//                                IgnitionStatus = false,
+                    int resultIndex =
+                        result.FindIndex(x => x.BBID == item.BBID);
 
-//                                Duration = "0 minute(s) 0 second(s)"
-//                            };
+                    for (int i = 0; i < deviceDetailList.Count; i++)
+                    {
+                        var data = deviceDetailList[i];
 
-//                            startd = data.datadate;
+                        bool ignitionOff = data.acignition == "Off";
 
-//                            endd = data.datadate;
+                        bool ignitionOn = data.acignition == "On";
 
-//                            flag = true;
-//                        }
+                        // =========================================
+                        // START STOPPAGE
+                        // SAME AS ORIGINAL CODE
+                        // =========================================
 
-//                        // =========================================
-//                        // CONTINUE STOPPAGE
-//                        // UPDATE END TIME
-//                        // =========================================
+                        if (ignitionOn && flag == false)
+                        {
+                            currentStop = new IdlingSubStatus
+                            {
+                                StartDate=
+                                    data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
+                                StopDate =
+                                    data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
 
-//                        else if (ignitionOff && flag == true)
-//                        {
-//                            endd = data.datadate;
-//                        }
+                                Location = data.location,
 
-//                        // =========================================
-//                        // CLOSE STOPPAGE
-//                        // ONLY WHEN IGNITION ON
-//                        // =========================================
+                                IgnitionStatus = false,
 
-//                        else if (ignitionOn && flag == true)
-//                        {
-//                            // EXACT OLD LOGIC
+                                Duration = "0 minute(s) 0 second(s)"
+                            };
 
-//                            if (endd < data.datadate)
-//                            {
-//                                endd = data.datadate;
-//                            }
+                            startd = data.datadate;
 
-//                            TimeSpan ts = endd.Subtract(startd);
+                            endd = data.datadate;
 
-//                            // IMPORTANT:
-//                            // skip zero duration stoppage
-//                            if (ts.TotalSeconds > 0)
-//                            {
-//                                currentStop.Duration =
-//                                    $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+                            flag = true;
+                        }
 
-//                                totalDuration += ts;
+                        // =========================================
+                        // CONTINUE STOPPAGE
+                        // UPDATE END TIME
+                        // =========================================
 
-//                                result[resultIndex]
-//                                    .objStoppageReport
-//                                    .Add(currentStop);
+                        else if (ignitionOn && flag == true)
+                        {
+                            endd = data.datadate;
+                        }
 
-//                                result[resultIndex].StoppageCount++;
-//                            }
+                        // =========================================
+                        // CLOSE STOPPAGE
+                        // ONLY WHEN IGNITION ON
+                        // =========================================
 
-//                            flag = false;
-//                        }
-//                    }
+                        else if (ignitionOff && flag == true)
+                        {
+                            // EXACT OLD LOGIC
 
-//                    // =========================================
-//                    // HANDLE LAST RECORD
-//                    // =========================================
+                            if (endd < data.datadate)
+                            {
+                                endd = data.datadate;
+                            }
 
-//                    if (flag && currentStop != null)
-//                    {
-//                        TimeSpan ts = endd.Subtract(startd);
+                            TimeSpan ts = endd.Subtract(startd);
 
-//                        if (ts.TotalSeconds > 0)
-//                        {
-//                            currentStop.Duration =
-//                                $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+                            // IMPORTANT:
+                            // skip zero duration stoppage
+                            if (ts.TotalSeconds > 0)
+                            {
+                                if (ts.TotalSeconds > 0)
+                                {
+                                    bool shouldAdd = false;
 
-//                            totalDuration += ts;
+                                    // 0-0 = old logic (show all)
+                                    if (intv1 == 0 && intv2 == 0)
+                                    {
+                                        shouldAdd = true;
+                                    }
 
-//                            result[resultIndex]
-//                                .objStoppageReport
-//                                .Add(currentStop);
+                                    // 10-0 = greater than 10 minute
+                                    else if (intv1 > 0 && intv2 == 0)
+                                    {
+                                        if (ts.TotalSeconds >= intv1)
+                                        {
+                                            shouldAdd = true;
+                                        }
+                                    }
 
-//                            result[resultIndex].StoppageCount++;
-//                        }
-//                    }
+                                    // 1-2 = between 1 and 2 minute
+                                    else
+                                    {
+                                        if (ts.TotalSeconds >= intv1 &&
+                                            ts.TotalSeconds <= intv2)
+                                        {
+                                            shouldAdd = true;
+                                        }
+                                    }
 
-//                    result[resultIndex].TotalStoppageTime =
-//                        $"{totalDuration.Days} day(s) " +
-//                        $"{totalDuration.Hours} hour(s) " +
-//                        $"{totalDuration.Minutes} minute(s) " +
-//                        $"{totalDuration.Seconds} second(s)";
-//                });
+                                    if (shouldAdd)
+                                    {
+                                        currentStop.Duration =
+                                            $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
 
-//                await Task.WhenAll(tasks);
-//            }
-//            catch (Exception ex)
-//            {
-//                Console.WriteLine("Error: " + ex.Message);
-//            }
-//            return (result, TotalCount);
-//        }
+                                        totalDuration += ts;
+
+                                        result[resultIndex]
+                                            .IdlingSubStatuslist
+                                            .Add(currentStop);
+
+                                        result[resultIndex].IdlingCount++;
+                                    }
+                                }
+                                //currentStop.Duration =
+                                //    $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+
+                                //totalDuration += ts;
+
+                                //result[resultIndex]
+                                //    .objStoppageReport
+                                //    .Add(currentStop);
+
+                                //result[resultIndex].StoppageCount++;
+                            }
+
+                            flag = false;
+                        }
+                    }
+
+                    // =========================================
+                    // HANDLE LAST RECORD
+                    // =========================================
+
+                    if (flag && currentStop != null)
+                    {
+                        TimeSpan ts = endd.Subtract(startd);
+
+                        if (ts.TotalSeconds > 0)
+                        {
+                            if (ts.TotalSeconds > 0)
+                            {
+                                bool shouldAdd = false;
+
+                                // 0-0 = old logic (show all)
+                                if (intv1 == 0 && intv2 == 0)
+                                {
+                                    shouldAdd = true;
+                                }
+
+                                // 10-0 = greater than 10 minute
+                                else if (intv1 > 0 && intv2 == 0)
+                                {
+                                    if (ts.TotalSeconds >= intv1)
+                                    {
+                                        shouldAdd = true;
+                                    }
+                                }
+
+                                // 1-2 = between 1 and 2 minute
+                                else
+                                {
+                                    if (ts.TotalSeconds >= intv1 &&
+                                        ts.TotalSeconds <= intv2)
+                                    {
+                                        shouldAdd = true;
+                                    }
+                                }
+
+                                if (shouldAdd)
+                                {
+                                    currentStop.Duration =
+                                        $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+
+                                    totalDuration += ts;
+
+                                    result[resultIndex]
+                                        .IdlingSubStatuslist
+                                        .Add(currentStop);
+
+                                    result[resultIndex].IdlingCount++;
+                                }
+                            }
+                            //currentStop.Duration =
+                            //    $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+
+                            //totalDuration += ts;
+
+                            //result[resultIndex]
+                            //    .objStoppageReport
+                            //    .Add(currentStop);
+
+                            //result[resultIndex].StoppageCount++;
+                        }
+                    }
+
+                    result[resultIndex].TotalIdlingHours =
+                        $"{totalDuration.Days} day(s) " +
+                        $"{totalDuration.Hours} hour(s) " +
+                        $"{totalDuration.Minutes} minute(s) " +
+                        $"{totalDuration.Seconds} second(s)";
+                });
+
+                await Task.WhenAll(tasks);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+            return (result, TotalCount);
+        }
+
+
+        //        public async Task<(List<StoppageSubModel> data, int TotalCount)> GetCombinedStoppageReport(
+        //            DataTableRequestModel dtmodel)
+        //        {
+        //            var result = new List<StoppageSubModel>();
+        //            int TotalCount = 0;
+        //            try
+        //            {
+
+        //                // ================= MAIN DATA =================
+
+        //                using (SqlConnection con = new SqlConnection(_connectionString43))
+        //                using (SqlCommand cmd = new SqlCommand("GetVehiclesByCustIdAndSearch", con))
+        //                {
+        //                    cmd.CommandType = CommandType.StoredProcedure;
+
+        //                    cmd.Parameters.AddWithValue("@custId", dtmodel.CustId);
+        //                    cmd.Parameters.AddWithValue("@iDisplayStart", dtmodel.iDisplayStart);
+        //                    cmd.Parameters.AddWithValue("@iDisplayLength", dtmodel.iDisplayLength);
+        //                    cmd.Parameters.AddWithValue("@sortColumn", dtmodel.sortColumn);
+        //                    cmd.Parameters.AddWithValue("@sortDirection", dtmodel.sortDirection);
+        //                    cmd.Parameters.AddWithValue("@sSearch", dtmodel.sSearch);
+
+        //                    SqlParameter totalCountParam = new SqlParameter("@TotalCount", SqlDbType.Int);
+        //                    totalCountParam.Direction = ParameterDirection.Output;
+        //                    cmd.Parameters.Add(totalCountParam);
+
+        //                    await con.OpenAsync();
+
+        //                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+        //                    {
+        //                        while (await dr.ReadAsync())
+        //                        {
+        //                            result.Add(new StoppageSubModel
+        //                            {
+        //                                BBID = GetString(dr["BBID"]),
+        //                                VehicleName = GetString(dr["VehName"]),
+        //                                DriverName = GetString(dr["DriverName"]),
+        //                                objStoppageReport =
+        //                                    new List<StoppageAnalysis>()
+        //                            });
+        //                        }
+        //                    }
+        //                    TotalCount = Convert.ToInt32(totalCountParam.Value);
+        //                }
+
+        //                // ================= PARALLEL DEVICE TABLE CALLS =================
+        //                var tasks = result.Select(async item =>
+        //                {
+        //                    var deviceDetailList = new List<PlaybackDataModel>();
+
+        //                    using (SqlConnection con =
+        //                           new SqlConnection(GetConnectionStringTableWise(item.BBID)))
+        //                    {
+        //                        await con.OpenAsync();
+
+        //                        string query = $@"
+        //SELECT speed,
+        //       datadate,
+        //       acignition,
+        //       distance,
+        //       loc
+        //FROM [{item.BBID}]
+        //WHERE datadate >= @startdate
+        //AND datadate <= @enddate
+        //ORDER BY datadate ASC";
+
+        //                        using (SqlCommand cmd = new SqlCommand(query, con))
+        //                        {
+        //                            DateTime startDate = GetDateTime(dtmodel.beginDate);
+
+        //                            DateTime endDate = GetDateTime(dtmodel.endDate)
+        //                                .AddDays(1)
+        //                                .AddSeconds(-1);
+
+        //                            cmd.Parameters.Add("@startdate", SqlDbType.DateTime)
+        //                                .Value = startDate;
+
+        //                            cmd.Parameters.Add("@enddate", SqlDbType.DateTime)
+        //                                .Value = endDate;
+
+        //                            using (SqlDataReader dr =
+        //                                   await cmd.ExecuteReaderAsync())
+        //                            {
+        //                                while (await dr.ReadAsync())
+        //                                {
+        //                                    deviceDetailList.Add(new PlaybackDataModel
+        //                                    {
+        //                                        speed = GetInt(dr["speed"]),
+
+        //                                        datadate = GetDateTime(dr["datadate"]),
+
+        //                                        // IMPORTANT:
+        //                                        // 1 = OFF
+        //                                        // 0 = ON
+        //                                        acignition =
+        //                                            GetString(dr["acignition"]) == "1"
+        //                                            ? "Off"
+        //                                            : "On",
+
+        //                                        distance = GetDecimal(dr["distance"]),
+
+        //                                        location = GetString(dr["loc"])
+        //                                    });
+        //                                }
+        //                            }
+        //                        }
+        //                    }
+
+        //                    bool flag = false;
+
+        //                    DateTime startd = DateTime.MinValue;
+
+        //                    DateTime endd = DateTime.MinValue;
+
+        //                    TimeSpan totalDuration = TimeSpan.Zero;
+
+        //                    StoppageAnalysis currentStop = null;
+
+        //                    int resultIndex =
+        //                        result.FindIndex(x => x.BBID == item.BBID);
+
+        //                    for (int i = 0; i < deviceDetailList.Count; i++)
+        //                    {
+        //                        var data = deviceDetailList[i];
+
+        //                        bool ignitionOff = data.acignition == "Off";
+
+        //                        bool ignitionOn = data.acignition == "On";
+
+        //                        // =========================================
+        //                        // START STOPPAGE
+        //                        // SAME AS ORIGINAL CODE
+        //                        // =========================================
+
+        //                        if (ignitionOff && flag == false)
+        //                        {
+        //                            currentStop = new StoppageAnalysis
+        //                            {
+        //                                StopDateAndTime =
+        //                                    data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
+
+        //                                Location = data.location,
+
+        //                                IgnitionStatus = false,
+
+        //                                Duration = "0 minute(s) 0 second(s)"
+        //                            };
+
+        //                            startd = data.datadate;
+
+        //                            endd = data.datadate;
+
+        //                            flag = true;
+        //                        }
+
+        //                        // =========================================
+        //                        // CONTINUE STOPPAGE
+        //                        // UPDATE END TIME
+        //                        // =========================================
+
+        //                        else if (ignitionOff && flag == true)
+        //                        {
+        //                            endd = data.datadate;
+        //                        }
+
+        //                        // =========================================
+        //                        // CLOSE STOPPAGE
+        //                        // ONLY WHEN IGNITION ON
+        //                        // =========================================
+
+        //                        else if (ignitionOn && flag == true)
+        //                        {
+        //                            // EXACT OLD LOGIC
+
+        //                            if (endd < data.datadate)
+        //                            {
+        //                                endd = data.datadate;
+        //                            }
+
+        //                            TimeSpan ts = endd.Subtract(startd);
+
+        //                            // IMPORTANT:
+        //                            // skip zero duration stoppage
+        //                            if (ts.TotalSeconds > 0)
+        //                            {
+        //                                currentStop.Duration =
+        //                                    $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+
+        //                                totalDuration += ts;
+
+        //                                result[resultIndex]
+        //                                    .objStoppageReport
+        //                                    .Add(currentStop);
+
+        //                                result[resultIndex].StoppageCount++;
+        //                            }
+
+        //                            flag = false;
+        //                        }
+        //                    }
+
+        //                    // =========================================
+        //                    // HANDLE LAST RECORD
+        //                    // =========================================
+
+        //                    if (flag && currentStop != null)
+        //                    {
+        //                        TimeSpan ts = endd.Subtract(startd);
+
+        //                        if (ts.TotalSeconds > 0)
+        //                        {
+        //                            currentStop.Duration =
+        //                                $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+
+        //                            totalDuration += ts;
+
+        //                            result[resultIndex]
+        //                                .objStoppageReport
+        //                                .Add(currentStop);
+
+        //                            result[resultIndex].StoppageCount++;
+        //                        }
+        //                    }
+
+        //                    result[resultIndex].TotalStoppageTime =
+        //                        $"{totalDuration.Days} day(s) " +
+        //                        $"{totalDuration.Hours} hour(s) " +
+        //                        $"{totalDuration.Minutes} minute(s) " +
+        //                        $"{totalDuration.Seconds} second(s)";
+        //                });
+
+        //                await Task.WhenAll(tasks);
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                Console.WriteLine("Error: " + ex.Message);
+        //            }
+        //            return (result, TotalCount);
+        //        }
         public async Task<(List<DistanceReportDataModel> data, int TotalCount)> GetDistanceReportData(DataTableRequestModel model)
         {
             var result = new List<DistanceReportDataModel>();
@@ -1740,5 +2105,143 @@ ORDER BY datadate";
             return (result, TotalCount);
         }
 
+
+        #region Neha Vaid  
+        public async Task<OverSpeedModel> getSpeedReport(string mode, DataTableRequestModel requestModel)
+        {
+            var model = new OverSpeedModel();
+            model.OSmainLst = new List<overSpeedMain>();
+            
+            try
+            {
+                using (SqlConnection con = new SqlConnection(_connectionString43))
+                using (SqlCommand cmd = new SqlCommand("NewTMVehicleStatus", con))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@LowerBand", requestModel.iDisplayStart);
+                    cmd.Parameters.AddWithValue("@UpperBand", requestModel.iDisplayLength);
+                    cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
+                    cmd.Parameters.AddWithValue("@searchText", requestModel.sSearch);
+
+                    SqlParameter outParam = new SqlParameter("@ItemCount", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+                    cmd.Parameters.Add(outParam);
+                    await con.OpenAsync();
+                    
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await dr.ReadAsync())
+                        {
+                            model.OSmainLst.Add(new overSpeedMain
+                            {
+                                bbid = GetString(dr["BBID"]),
+                                vehName = GetString(dr["VehName"]),
+                                driverName = GetString(dr["DriverName"]),
+                                overSpeedVal = GetInt(dr["overspeed"]),
+                                OSsublst = new List<OverSpeedAnalysis>()
+                            });
+
+                        }
+                        
+                    }
+                    model.PageCount = Convert.ToInt32(outParam.Value);
+                }
+                foreach (var item in model.OSmainLst)
+                {
+                    var speedSublist = new List<OverSpeedAnalysis>();
+                    using (SqlConnection con = new SqlConnection(GetConnectionStringTableWise(item.bbid)))
+                    {
+                        await con.OpenAsync();
+
+                        string maxSpeedQuery = @"SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; SELECT MAX(Speed) FROM " + item.bbid + @" WHERE datadate >= @BeginDate AND datadate <= @EndDate AND acignition = 0";
+                        using (SqlCommand cmd = new SqlCommand(maxSpeedQuery, con))
+                        {
+                            cmd.Parameters.AddWithValue("@BeginDate", requestModel.beginDate);
+                            cmd.Parameters.AddWithValue("@EndDate", requestModel.endDate);
+
+                            var result = await cmd.ExecuteScalarAsync();
+                            item.maxSpeed = result != DBNull.Value && result != null? Convert.ToInt32(result): 0;
+                        }
+                        var dyn = 3;
+                        if (mode == "over")// this condition depends upon report type i.e overspeed or speed analysis.
+                        {
+                            dyn = 1;
+                        }
+                        int OverCount = 0;
+                        DateTime previousDateTime = DateTime.MinValue;
+                        TimeSpan overspeedDuration = new TimeSpan(0, 0, 0);
+                        SqlParameter[] parameters =
+                        {
+                            new SqlParameter("@beginDate", requestModel.beginDate),
+                            new SqlParameter("@endDate", requestModel.endDate),
+                            new SqlParameter("@bBid", item.bbid),
+                            new SqlParameter("@mode", "over")
+                        };
+
+                        DataSet ds = SqlHelper.ExecuteDataset(con, CommandType.StoredProcedure,"SpeedAnalysisTM",parameters);
+                        if (ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+                        {
+                            DataTable dt = ds.Tables[0];
+
+                            for (int i = 0; i < dt.Rows.Count; i = i + dyn)
+                            {
+                                DataRow row = dt.Rows[i];
+
+                                OverSpeedAnalysis sublistObj = new OverSpeedAnalysis
+                                {
+                                    speed = GetInt(row["Speed"]),
+                                    dateTime = GetDateTime(row["datadate"]),
+                                    location = GetString(row["Location"]),
+                                    latitude = GetFloat(row["latitude"]),
+                                    longitude = GetFloat(row["longitude"])
+                                };
+
+                                speedSublist.Add(sublistObj);
+
+                                if (requestModel.CustId != 6387)
+                                    OverCount++;
+                                else if (sublistObj.speed >= item.overSpeedVal)
+                                    OverCount++;
+
+                                if (!previousDateTime.Equals(DateTime.MinValue))
+                                {
+                                    TimeSpan ts = sublistObj.dateTime.Subtract(previousDateTime);
+
+                                    if (ts.Days == 0 && ts.Hours == 0 && ts.Minutes < 1)
+                                    {
+                                        overspeedDuration = overspeedDuration.Add(ts);
+                                    }
+                                }
+
+                                previousDateTime = sublistObj.dateTime;
+                            }
+
+                            item.overspeedCount = OverCount;
+
+                            item.overSpeedDuration =
+                                overspeedDuration.Hours + " Hour(s) " +
+                                overspeedDuration.Minutes + " Minute(s) " +
+                                overspeedDuration.Seconds + " Second(s)";
+                        }
+                        else
+                        {
+                            item.overSpeedDuration = "0 Hour(s) 0 Minute(s) 0 Second(s)";
+                        }
+
+                        item.OSsublst = speedSublist;
+
+                    }
+                    
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.Message);
+            }
+            return model;
+        }
+        #endregion
     }
 }

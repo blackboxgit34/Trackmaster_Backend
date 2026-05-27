@@ -164,6 +164,44 @@ namespace Trackmaster_Model
             //public string VehicleName { get; set; }
            }
 
+
+      
+        public class IdlingMainModel
+        {
+            public string BBID { get; set; }          
+            public int IdlingCount { get; set; }          
+            public int TotalIdlingTime { get; set; }          
+            public string VehicleName { get; set; }           
+            public string DriverName { get; set; }           
+            public string IgnitionOnOffCounter { get; set; }          
+            public string TotalIdlingHours { get; set; }
+
+            
+
+            public int custid { get; set; }
+           
+
+            public List<IdlingSubStatus> IdlingSubStatuslist { get; set; }
+        }
+        public class IdlingSubStatus
+        {
+            public Boolean IgnitionStatus { get; set; }
+            public string StartDate { get; set; }           
+            public string StopDate { get; set; }           
+            public string IgnitionOnTime { get; set; }           
+            public string IgnitionOffTime { get; set; }          
+            public string VehicleStatus { get; set; }
+            public string Location { get; set; }
+            public string Duration { get; set; }
+            [DisplayName("POI Location")]
+            public string poi { get; set; }
+
+           
+            public string AddPoi { get; set; }
+
+         
+        }
+
         public class ReportBase 
         {
             public string DriverName { get; set; }
@@ -180,5 +218,32 @@ namespace Trackmaster_Model
             public string ReportDate { get; set; }
             public string TotalStoppageTime { get; set; }
         }
+        #region Neha Vaid
+        public class OverSpeedModel
+        {
+            public int PageCount { get; set; }
+            public List<overSpeedMain> OSmainLst { get; set; }
+        }
+        public class overSpeedMain
+        {
+            public string bbid { get; set; }
+            public string vehName { get; set; }
+            public string driverName { get; set; }
+            public int overspeedCount { get; set; }
+            public int maxSpeed { get; set; }
+            public int avgSpeed { get; set; }
+            public int overSpeedVal { get; set; }
+            public string overSpeedDuration { get; set; }
+            public List<OverSpeedAnalysis> OSsublst { get; set; }
+        }
+        public class OverSpeedAnalysis
+        {
+            public DateTime dateTime { get; set; }
+            public string location { get; set; }
+            public int speed { get; set; }
+            public float latitude { get; set; }
+            public float longitude { get; set; }
+        }
+        #endregion
     }
 }
