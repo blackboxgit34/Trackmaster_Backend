@@ -305,6 +305,19 @@ namespace Trackmaster_Backend.Controllers
         {
             var result = await _reportsService.GetMonthlyDistanceReportData(model);
 
+            if (model.DownloadType == "Excel")
+            {
+                var reportName = $"MonthlyDistanceReport_{model.CustId}.xlsx";
+                var stream = await _importExportExcelService.ExportToExcelFlatList(result.data, reportName, null, null);
+                return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
+            }
+            if (model.DownloadType == "Pdf")
+            {
+                var reportName = $"MonthlyDistanceReport_{model.CustId}.pdf";
+                var stream = await _importExportPdfService.ExportToPdfFlatList(result.data, reportName, null, null);
+                return File(stream, "application/pdf", reportName);
+            }
+
             return Ok(new
             {
                 data = result.data,
