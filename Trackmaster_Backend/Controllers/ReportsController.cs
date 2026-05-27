@@ -13,6 +13,7 @@ using Trackmaster_Service;
 using Trackmaster_Service.Interface;
 using Trackmaster_Service.Service;
 using static Trackmaster_Model.Reports;
+using static Trackmaster_Service.ImportExportExcelService;
 
 namespace Trackmaster_Backend.Controllers
 {
@@ -233,7 +234,38 @@ namespace Trackmaster_Backend.Controllers
             });
 
         }
-        
 
+        #region Neha Vaid
+        [HttpGet("getSpeedReport")]
+        public async Task<IActionResult> getSpeedReport(string mode, [FromQuery] DataTableRequestModel requestModel)
+        {
+            
+            try
+            {
+                var speedData = await _reportsService.getSpeedReport(mode, requestModel);
+                if (speedData != null)
+                {
+                    return Ok(new
+                    {
+                        sEcho = requestModel.sEcho,
+                        iTotalRecords = speedData.PageCount,
+                        iTotalDisplayRecords = speedData.PageCount,
+                        aaData = speedData
+                    });
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "An error occurred while fetching speed data.",
+                    error = ex.Message
+                });
+            }
+        }
+
+        #endregion
     }
 }

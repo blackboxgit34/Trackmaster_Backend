@@ -205,5 +205,32 @@ namespace Trackmaster_Model
             public string ReportDate { get; set; }
             public string TotalStoppageTime { get; set; }
         }
+        #region Neha Vaid
+        public class OverSpeedModel
+        {
+            public int PageCount { get; set; }
+            public List<overSpeedMain> OSmainLst { get; set; }
+        }
+        public class overSpeedMain
+        {
+            public string bbid { get; set; }
+            public string vehName { get; set; }
+            public string driverName { get; set; }
+            public int overspeedCount { get; set; }
+            public int maxSpeed { get; set; }
+            public int avgSpeed { get; set; }
+            public int overSpeedVal { get; set; }
+            public string overSpeedDuration { get; set; }
+            public List<OverSpeedAnalysis> OSsublst { get; set; }
+        }
+        public class OverSpeedAnalysis
+        {
+            public DateTime dateTime { get; set; }
+            public string location { get; set; }
+            public int speed { get; set; }
+            public float latitude { get; set; }
+            public float longitude { get; set; }
+        }
+        #endregion
     }
 }

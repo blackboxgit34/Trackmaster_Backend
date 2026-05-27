@@ -79,6 +79,11 @@ namespace Trackmaster_Service.Service
         {
             return await _reportsRepository.GetDistanceReportData(model);
         }
-       
+        #region Neha Vaid
+        public async Task<OverSpeedModel> getSpeedReport(string mode, DataTableRequestModel requestModel)
+        {
+            return await _reportsRepository.getSpeedReport(mode, requestModel);
+        }
+        #endregion
     }
 }

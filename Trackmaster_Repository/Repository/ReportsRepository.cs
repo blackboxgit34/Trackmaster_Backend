@@ -1,8 +1,11 @@
 ﻿using HMSCL.Models;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using OfficeOpenXml;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -14,6 +17,7 @@ using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
 using static Trackmaster_Model.Reports; //added model
 using static Trackmaster_Repository.DataTypeHelper;
+using static Trackmaster_Repository.SqlHelper;
 
 namespace Trackmaster_Repository.Repository
 {
@@ -452,8 +456,6 @@ namespace Trackmaster_Repository.Repository
 
             return result;
         }
-
-
         public async Task<(List<StoppageSubModel> data, int TotalCount)> GetCombinedStoppageReport(
             DataTableRequestModel dtmodel)
         {
@@ -907,6 +909,142 @@ ORDER BY datadate";
             }
             return (result, TotalCount);
         }
-     
+        #region Neha Vaid  
+        public async Task<OverSpeedModel> getSpeedReport(string mode, DataTableRequestModel requestModel)
+        {
+            var model = new OverSpeedModel();
+            model.OSmainLst = new List<overSpeedMain>();
+            
+            try
+            {
+                using (SqlConnection con = new SqlConnection(_connectionString43))
+                using (SqlCommand cmd = new SqlCommand("NewTMVehicleStatus", con))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@LowerBand", requestModel.iDisplayStart);
+                    cmd.Parameters.AddWithValue("@UpperBand", requestModel.iDisplayLength);
+                    cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
+                    cmd.Parameters.AddWithValue("@searchText", requestModel.sSearch);
+
+                    SqlParameter outParam = new SqlParameter("@ItemCount", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+                    cmd.Parameters.Add(outParam);
+                    await con.OpenAsync();
+                    
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await dr.ReadAsync())
+                        {
+                            model.OSmainLst.Add(new overSpeedMain
+                            {
+                                bbid = GetString(dr["BBID"]),
+                                vehName = GetString(dr["VehName"]),
+                                driverName = GetString(dr["DriverName"]),
+                                overSpeedVal = GetInt(dr["overspeed"]),
+                                OSsublst = new List<OverSpeedAnalysis>()
+                            });
+
+                        }
+                        
+                    }
+                    model.PageCount = Convert.ToInt32(outParam.Value);
+                }
+                foreach (var item in model.OSmainLst)
+                {
+                    var speedSublist = new List<OverSpeedAnalysis>();
+                    using (SqlConnection con = new SqlConnection(GetConnectionStringTableWise(item.bbid)))
+                    {
+                        await con.OpenAsync();
+
+                        string maxSpeedQuery = @"SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; SELECT MAX(Speed) FROM " + item.bbid + @" WHERE datadate >= @BeginDate AND datadate <= @EndDate AND acignition = 0";
+                        using (SqlCommand cmd = new SqlCommand(maxSpeedQuery, con))
+                        {
+                            cmd.Parameters.AddWithValue("@BeginDate", requestModel.beginDate);
+                            cmd.Parameters.AddWithValue("@EndDate", requestModel.endDate);
+
+                            var result = await cmd.ExecuteScalarAsync();
+                            item.maxSpeed = result != DBNull.Value && result != null? Convert.ToInt32(result): 0;
+                        }
+                        var dyn = 3;
+                        if (mode == "over")// this condition depends upon report type i.e overspeed or speed analysis.
+                        {
+                            dyn = 1;
+                        }
+                        int OverCount = 0;
+                        DateTime previousDateTime = DateTime.MinValue;
+                        TimeSpan overspeedDuration = new TimeSpan(0, 0, 0);
+                        SqlParameter[] parameters =
+                        {
+                            new SqlParameter("@beginDate", requestModel.beginDate),
+                            new SqlParameter("@endDate", requestModel.endDate),
+                            new SqlParameter("@bBid", item.bbid),
+                            new SqlParameter("@mode", "over")
+                        };
+
+                        DataSet ds = SqlHelper.ExecuteDataset(con, CommandType.StoredProcedure,"SpeedAnalysisTM",parameters);
+                        if (ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
+                        {
+                            DataTable dt = ds.Tables[0];
+
+                            for (int i = 0; i < dt.Rows.Count; i = i + dyn)
+                            {
+                                DataRow row = dt.Rows[i];
+
+                                OverSpeedAnalysis sublistObj = new OverSpeedAnalysis
+                                {
+                                    speed = GetInt(row["Speed"]),
+                                    dateTime = GetDateTime(row["datadate"]),
+                                    location = GetString(row["Location"]),
+                                    latitude = GetFloat(row["latitude"]),
+                                    longitude = GetFloat(row["longitude"])
+                                };
+
+                                speedSublist.Add(sublistObj);
+
+                                if (requestModel.CustId != 6387)
+                                    OverCount++;
+                                else if (sublistObj.speed >= item.overSpeedVal)
+                                    OverCount++;
+
+                                if (!previousDateTime.Equals(DateTime.MinValue))
+                                {
+                                    TimeSpan ts = sublistObj.dateTime.Subtract(previousDateTime);
+
+                                    if (ts.Days == 0 && ts.Hours == 0 && ts.Minutes < 1)
+                                    {
+                                        overspeedDuration = overspeedDuration.Add(ts);
+                                    }
+                                }
+
+                                previousDateTime = sublistObj.dateTime;
+                            }
+
+                            item.overspeedCount = OverCount;
+
+                            item.overSpeedDuration =
+                                overspeedDuration.Hours + " Hour(s) " +
+                                overspeedDuration.Minutes + " Minute(s) " +
+                                overspeedDuration.Seconds + " Second(s)";
+                        }
+                        else
+                        {
+                            item.overSpeedDuration = "0 Hour(s) 0 Minute(s) 0 Second(s)";
+                        }
+
+                        item.OSsublst = speedSublist;
+
+                    }
+                    
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Write(ex.Message);
+            }
+            return model;
+        }
+        #endregion
     }
 }
