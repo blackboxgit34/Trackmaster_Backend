@@ -197,9 +197,21 @@ namespace Trackmaster_Backend.Controllers
         }
 
         [HttpGet("VehicleStatus")]
-        public IActionResult VehicleStatus(int custId, int lower, int upper, string? search, DateTime start, DateTime end)
+        public async Task<IActionResult> VehicleStatus(int custId, int lower, int upper, string? search, DateTime start, DateTime end)
         {
-            var result = _reportsService.VehicleStatus(custId, lower, upper, search, start, end);
+            var result = await _reportsService.VehicleStatus(custId, lower, upper, search, start, end);
+
+            return Ok(new
+            {
+                data = result.VehicleData,
+                count = result.ItemCount
+            });
+        }
+
+        [HttpGet("BatteryDisconnection")]
+        public async Task<IActionResult> BatteryDisconnection(int custId, int lower, int upper, string? search, DateTime start, DateTime end)
+        {
+            var result = await _reportsService.BatteryDisconnection(custId, lower, upper, search, start, end);
 
             return Ok(new
             {

@@ -71,9 +71,14 @@ namespace Trackmaster_Service.Service
             return await _reportsRepository.GetCombinedStoppageReport(dtmodel);
         }
 
-        public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        public async Task<VehicleStatusResponse> VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
         {
-            return _reportsRepository.VehicleStatus(custId, lower, upper, search, start, end);
+            return await _reportsRepository.VehicleStatus(custId, lower, upper, search, start, end);
+        }
+
+        public async Task<VehicleStatusResponse> BatteryDisconnection(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        {
+            return await _reportsRepository.BatteryDisconnection(custId, lower, upper, search, start, end);
         }
         public async Task<(List<DistanceReportDataModel> data, int TotalCount)> GetDistanceReportData(DataTableRequestModel model)
         {

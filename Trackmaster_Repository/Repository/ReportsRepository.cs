@@ -380,7 +380,7 @@ namespace Trackmaster_Repository.Repository
 
             return objSMSReportEx;
         }
-        public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        public async Task<VehicleStatusResponse> VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
         {
             var result = new VehicleStatusResponse();
             result.VehicleData = new List<VehicleStatusDto>();
@@ -401,11 +401,11 @@ namespace Trackmaster_Repository.Repository
                 };
                 cmd.Parameters.Add(outParam);
 
-                con.Open();
+                await con.OpenAsync();
 
-                using (SqlDataReader dr = cmd.ExecuteReader())
+                using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                 {
-                    while (dr.Read())
+                    while (await dr.ReadAsync())
                     {
                         result.VehicleData.Add(new VehicleStatusDto
                         {
@@ -434,11 +434,11 @@ namespace Trackmaster_Repository.Repository
                     cmd.Parameters.AddWithValue("@beginDate", start);
                     cmd.Parameters.AddWithValue("@EndDate", end);
 
-                    con.Open();
+                    await con.OpenAsync();
 
-                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                     {
-                        while (dr.Read())
+                        while (await dr.ReadAsync())
                         {
                             item.Logs.Add(new SpeedLogDto
                             {
@@ -455,7 +455,79 @@ namespace Trackmaster_Repository.Repository
             return result;
         }
 
-    
+        public async Task<VehicleStatusResponse> BatteryDisconnection(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        {
+            var result = new VehicleStatusResponse();
+            result.VehicleData = new List<VehicleStatusDto>();
+
+            using (SqlConnection con = new SqlConnection(_connectionString43))
+            using (SqlCommand cmd = new SqlCommand("NewTMVehicleStatus", con))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@custId", custId);
+                cmd.Parameters.AddWithValue("@LowerBand", lower);
+                cmd.Parameters.AddWithValue("@UpperBand", upper);
+                cmd.Parameters.AddWithValue("@searchText", (object)search ?? DBNull.Value);
+
+                SqlParameter outParam = new SqlParameter("@ItemCount", SqlDbType.Int)
+                {
+                    Direction = ParameterDirection.Output
+                };
+                cmd.Parameters.Add(outParam);
+
+                await con.OpenAsync();
+
+                using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                {
+                    while (await dr.ReadAsync())
+                    {
+                        result.VehicleData.Add(new VehicleStatusDto
+                        {
+                            RowNo = GetInt(dr["RowNo"]),
+                            BBID = GetString(dr["BBID"]),
+                            VehName = GetString(dr["vehname"]),
+                            Logs = new List<SpeedLogDto>()
+                        });
+                    }
+                }
+
+                result.ItemCount = Convert.ToInt32(outParam.Value);
+            }
+
+            foreach (var item in result.VehicleData)
+            {
+                using (SqlConnection con = new SqlConnection(_connectionString43))
+                using (SqlCommand cmd = new SqlCommand("GetBatteryDisconnectionTM", con))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.AddWithValue("@TableName", item.BBID);
+                    cmd.Parameters.AddWithValue("@beginDate", start);
+                    cmd.Parameters.AddWithValue("@EndDate", end);
+
+                    await con.OpenAsync();
+
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await dr.ReadAsync())
+                        {
+                            item.Logs.Add(new SpeedLogDto
+                            {
+                                Batterydisc = GetDateTime(dr["startdate"]),
+                                Batterycon = GetDateTime(dr["enddate"]),
+                                startloc = GetString(dr["sloc"]),
+                                Endloc = GetString(dr["eloc"]),
+                                Duration = GetDateTime(dr["duration"])
+                            });
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
         public async Task<(List<StoppageSubModel> data, int TotalCount)> GetCombinedStoppageReport(
             DataTableRequestModel dtmodel)
         {

@@ -123,41 +123,16 @@ namespace Trackmaster_Model
 
         public class SpeedLogDto
         {
-            public DateTime Time { get; set; }
+            public DateTime? Time { get; set; }
             public string Speed { get; set; }
             public string Location { get; set; }
             public string Status { get; set; }
-            [DisplayName("Hire Date")]
-            public string HireDate { get; set; }//
-            [DisplayName("Employee CTC")]
-            public double EmployeeCTC { get; set; }//
-            [DisplayName("Qualification")]
-            public string Qualification { get; set; }//
-            [DisplayName("Experience")]
-            public string Experience { get; set; }//
-            [DisplayName("Emergency Contact Info")]
-            public string EmergencyContactInfo { get; set; }//
-            
-            [DisplayName("ETMNo")]
-            public string ETMNo { get; set; }//
-            public int contractDuration { get; set; }//
-            public int Custid { get; set; }//
-            public string EmployeeID { get; set; } //
-            public string OfficePhone { get; set; }//
-            public string EmployeeTypeId { get; set; }//
-            public string ImagePath { get; set; }//
-            public string ImageFileName { get; set; }
-            public string DrivingLicenseNo { get; set; }//
-            public string LicenseExpiryDate { get; set; }//
-            public string DriverCertifications { get; set; }//
-            public string Remarks { get; set; }//
-            public string TechnicianCertifications { get; set; }//
-            public string AttachmentsPath { get; set; }//
-            public string AttachmentsFileName { get; set; }
-            public string IdProof { get; set; }//
-            public string RoleResponisbility { get; set; }//
+            public DateTime? Batterydisc { get; set; }
+            public DateTime? Batterycon { get; set; }
+            public string startloc { get; set; }
+            public string Endloc { get; set; }
+            public DateTime? Duration { get; set; }
         }
-
 
         public class StoppageMainModel
         {
