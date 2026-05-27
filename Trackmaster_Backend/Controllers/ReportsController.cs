@@ -222,7 +222,7 @@ namespace Trackmaster_Backend.Controllers
 
         [HttpGet("GetAllStoppageReport")]
         public async Task<IActionResult> GetAllStoppageReport([FromQuery] DataTableRequestModel dtmodel)
-        {
+         {
            
            var stoppage = await _reportsService.GetCombinedStoppageReport(dtmodel);
 
@@ -233,6 +233,21 @@ namespace Trackmaster_Backend.Controllers
             });
 
         }
+
+        [HttpGet("GetIdlingStatusReport")]
+        public async Task<IActionResult> GetIdlingStatusReport([FromQuery] DataTableRequestModel dtmodel)
+        {
+
+            var stoppage = await _reportsService.GetIdlingStatusReport(dtmodel);
+
+            return Ok(new
+            {
+                data = stoppage.data,
+                count = stoppage.TotalCount
+            });
+
+        }
+
         [HttpPost("GetMonthlyDistanceReportData")]
         public async Task<IActionResult> GetMonthlyDistanceReportData([FromBody] DataTableRequestModel model)
         {

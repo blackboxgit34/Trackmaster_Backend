@@ -70,6 +70,10 @@ namespace Trackmaster_Service.Service
         {
             return await _reportsRepository.GetCombinedStoppageReport(dtmodel);
         }
+        public async Task<(List<IdlingMainModel> data, int TotalCount)> GetIdlingStatusReport(DataTableRequestModel dtmodel)
+        {
+            return await _reportsRepository.GetIdlingStatusReport(dtmodel);
+        }
 
         public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
         {
