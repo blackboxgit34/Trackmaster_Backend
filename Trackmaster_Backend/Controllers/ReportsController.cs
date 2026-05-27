@@ -12,6 +12,7 @@ using Trackmaster_Repository.Repository;
 using Trackmaster_Service;
 using Trackmaster_Service.Interface;
 using static Trackmaster_Model.Reports;
+using static Trackmaster_Service.ImportExportExcelService;
 
 namespace Trackmaster_Backend.Controllers
 {
@@ -264,7 +265,7 @@ namespace Trackmaster_Backend.Controllers
 
         [HttpGet("GetAllStoppageReport")]
         public async Task<IActionResult> GetAllStoppageReport([FromQuery] DataTableRequestModel dtmodel)
-        {
+         {
            
            var stoppage = await _reportsService.GetCombinedStoppageReport(dtmodel);
 
@@ -275,6 +276,21 @@ namespace Trackmaster_Backend.Controllers
             });
 
         }
+
+        [HttpGet("GetIdlingStatusReport")]
+        public async Task<IActionResult> GetIdlingStatusReport([FromQuery] DataTableRequestModel dtmodel)
+        {
+
+            var stoppage = await _reportsService.GetIdlingStatusReport(dtmodel);
+
+            return Ok(new
+            {
+                data = stoppage.data,
+                count = stoppage.TotalCount
+            });
+
+        }
+
         [HttpPost("GetMonthlyDistanceReportData")]
         public async Task<IActionResult> GetMonthlyDistanceReportData([FromBody] DataTableRequestModel model)
         {
@@ -286,5 +302,37 @@ namespace Trackmaster_Backend.Controllers
                 count = result.TotalCount
             });
         }
+        #region Neha Vaid
+        [HttpGet("getSpeedReport")]
+        public async Task<IActionResult> getSpeedReport(string mode, [FromQuery] DataTableRequestModel requestModel)
+        {
+
+            try
+            {
+                var speedData = await _reportsService.getSpeedReport(mode, requestModel);
+                if (speedData != null)
+                {
+                    return Ok(new
+                    {
+                        sEcho = requestModel.sEcho,
+                        iTotalRecords = speedData.PageCount,
+                        iTotalDisplayRecords = speedData.PageCount,
+                        aaData = speedData
+                    });
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "An error occurred while fetching speed data.",
+                    error = ex.Message
+                });
+            }
+        }
+
+        #endregion
     }
 }
