@@ -2105,8 +2105,6 @@ ORDER BY datadate";
         }
 
 
-    }
-}
         #region Neha Vaid  
         public async Task<OverSpeedModel> getSpeedReport(string mode, DataTableRequestModel requestModel)
         {
