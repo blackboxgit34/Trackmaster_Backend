@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Pqc.Crypto.Lms;
 using System;
 using System.Globalization;
 using System.Net;
@@ -11,6 +12,7 @@ using Trackmaster_Model;
 using Trackmaster_Repository.Repository;
 using Trackmaster_Service;
 using Trackmaster_Service.Interface;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using static Trackmaster_Model.Reports;
 
 namespace Trackmaster_Backend.Controllers
@@ -61,7 +63,7 @@ namespace Trackmaster_Backend.Controllers
         /// Get Designation list
         /// </summary>
         /// <returns></returns>
-        [HttpGet ("GetDesignationTypeCrew")]
+        [HttpGet("GetDesignationTypeCrew")]
         public async Task<IActionResult> GetDesignationTypeCrew()
         {
             List<DropDownItems> empTypeList = await _reportsService.GetDesignationTypeCrew();
@@ -83,12 +85,12 @@ namespace Trackmaster_Backend.Controllers
         {
             List<DropDownItems> cityList = await _reportsService.GetCityList(stateid);
             var cityData = cityList;
-            return Ok(new { cityData = cityList }); 
+            return Ok(new { cityData = cityList });
         }
 
 
         [HttpPost("AddUpdateEmployee")]
-        public async Task<IActionResult >AddUpdateEmployee([FromForm] Employee objEmp)
+        public async Task<IActionResult> AddUpdateEmployee([FromForm] Employee objEmp)
         {
             try
             {
@@ -171,33 +173,28 @@ namespace Trackmaster_Backend.Controllers
 
 
         [HttpGet("GetMessageReports")]
-        public async Task<IActionResult> GetMessageReports([FromQuery] DataTableRequestModel requestModel,string typeid,string messagetype,string vehicleNo,string downloadType = null)
+        public async Task<IActionResult> GetMessageReports([FromQuery] DataTableRequestModel requestModel, string typeid, string messagetype, string vehicleNo, string downloadType = null)
         {
             try
             {
-                SMSReportEx sms = await _reportsService.GetSentMessagesReport(requestModel,Convert.ToInt32(typeid),messagetype,vehicleNo);
+                SMSReportEx sms = await _reportsService.GetSentMessagesReport(requestModel, Convert.ToInt32(typeid), messagetype, vehicleNo);
 
                 // ================= EXCEL EXPORT =================
 
-                if (
-                    !String.IsNullOrEmpty(downloadType) &&
-                    downloadType.Equals("Excel")
-                )
+                if (downloadType == "Excel")
                 {
-                    var reportName =$"SMSNotificationReport_{DateTime.Now:yyyyMMdd}.xlsx";
-                    var exportData =sms?.objSMSReport?.ToList();
-                    var stream = await _importExportExcelService.ExportToExcelFlatList(exportData,reportName,null,null);
-                    return File(stream,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",reportName);
+                    var reportName = $"SMSNotificationReport_{DateTime.Now:yyyyMMdd}.xlsx";
+                    var exportData = sms?.objSMSReport?.ToList();
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(exportData, reportName, null, null);
+                    return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
                 }
                 // ================= PDF EXPORT =================
-                if (
-                    !String.IsNullOrEmpty(downloadType) && downloadType.Equals("PDF")
-                )
+                else if (downloadType == "PDF")
                 {
                     var reportName = $"SMSNotificationReport_{DateTime.Now:yyyyMMdd}.pdf";
-                    var exportData =sms?.objSMSReport?.ToList();
-                    var stream = await _importExportPdfService.ExportToPdfFlatList(exportData,reportName,null,null);
-                    return File(stream,"application/pdf",reportName);
+                    var exportData = sms?.objSMSReport?.ToList();
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(exportData, reportName, null, null);
+                    return File(stream, "application/pdf", reportName);
                 }
                 // ================= NORMAL RESPONSE =================
                 if (sms != null)
@@ -255,6 +252,18 @@ namespace Trackmaster_Backend.Controllers
         {
             var result = await _reportsService.GetDistanceReportData(model);
 
+            if (model.DownloadType == "Excel")
+            {
+                var reportName = $"DistanceReport_{model.CustId}.xlsx";
+                var stream = await _importExportExcelService.ExportToExcelFlatList(result.data, reportName, null, null);
+                return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
+            }
+            if (model.DownloadType == "Pdf")
+            {
+                var reportName = $"DistanceReport_{model.CustId}.pdf";
+                var stream = await _importExportPdfService.ExportToPdfFlatList(result.data, reportName, null, null);
+                return File(stream, "application/pdf", reportName);
+            }
             return Ok(new
             {
                 data = result.data,
@@ -265,8 +274,8 @@ namespace Trackmaster_Backend.Controllers
         [HttpGet("GetAllStoppageReport")]
         public async Task<IActionResult> GetAllStoppageReport([FromQuery] DataTableRequestModel dtmodel)
         {
-           
-           var stoppage = await _reportsService.GetCombinedStoppageReport(dtmodel);
+
+            var stoppage = await _reportsService.GetCombinedStoppageReport(dtmodel);
 
             return Ok(new
             {
