@@ -123,41 +123,16 @@ namespace Trackmaster_Model
 
         public class SpeedLogDto
         {
-            public DateTime Time { get; set; }
+            public DateTime? Time { get; set; }
             public string Speed { get; set; }
             public string Location { get; set; }
             public string Status { get; set; }
-            [DisplayName("Hire Date")]
-            public string HireDate { get; set; }//
-            [DisplayName("Employee CTC")]
-            public double EmployeeCTC { get; set; }//
-            [DisplayName("Qualification")]
-            public string Qualification { get; set; }//
-            [DisplayName("Experience")]
-            public string Experience { get; set; }//
-            [DisplayName("Emergency Contact Info")]
-            public string EmergencyContactInfo { get; set; }//
-            
-            [DisplayName("ETMNo")]
-            public string ETMNo { get; set; }//
-            public int contractDuration { get; set; }//
-            public int Custid { get; set; }//
-            public string EmployeeID { get; set; } //
-            public string OfficePhone { get; set; }//
-            public string EmployeeTypeId { get; set; }//
-            public string ImagePath { get; set; }//
-            public string ImageFileName { get; set; }
-            public string DrivingLicenseNo { get; set; }//
-            public string LicenseExpiryDate { get; set; }//
-            public string DriverCertifications { get; set; }//
-            public string Remarks { get; set; }//
-            public string TechnicianCertifications { get; set; }//
-            public string AttachmentsPath { get; set; }//
-            public string AttachmentsFileName { get; set; }
-            public string IdProof { get; set; }//
-            public string RoleResponisbility { get; set; }//
+            public DateTime? Batterydisc { get; set; }
+            public DateTime? Batterycon { get; set; }
+            public string startloc { get; set; }
+            public string Endloc { get; set; }
+            public DateTime? Duration { get; set; }
         }
-
 
         public class StoppageMainModel
         {
@@ -189,6 +164,44 @@ namespace Trackmaster_Model
             //public string VehicleName { get; set; }
            }
 
+
+      
+        public class IdlingMainModel
+        {
+            public string BBID { get; set; }          
+            public int IdlingCount { get; set; }          
+            public int TotalIdlingTime { get; set; }          
+            public string VehicleName { get; set; }           
+            public string DriverName { get; set; }           
+            public string IgnitionOnOffCounter { get; set; }          
+            public string TotalIdlingHours { get; set; }
+
+            
+
+            public int custid { get; set; }
+           
+
+            public List<IdlingSubStatus> IdlingSubStatuslist { get; set; }
+        }
+        public class IdlingSubStatus
+        {
+            public Boolean IgnitionStatus { get; set; }
+            public string StartDate { get; set; }           
+            public string StopDate { get; set; }           
+            public string IgnitionOnTime { get; set; }           
+            public string IgnitionOffTime { get; set; }          
+            public string VehicleStatus { get; set; }
+            public string Location { get; set; }
+            public string Duration { get; set; }
+            [DisplayName("POI Location")]
+            public string poi { get; set; }
+
+           
+            public string AddPoi { get; set; }
+
+         
+        }
+
         public class ReportBase 
         {
             public string DriverName { get; set; }
@@ -205,6 +218,33 @@ namespace Trackmaster_Model
             public string ReportDate { get; set; }
             public string TotalStoppageTime { get; set; }
         }
+        #region Neha Vaid
+        public class OverSpeedModel
+        {
+            public int PageCount { get; set; }
+            public List<overSpeedMain> OSmainLst { get; set; }
+        }
+        public class overSpeedMain
+        {
+            public string bbid { get; set; }
+            public string vehName { get; set; }
+            public string driverName { get; set; }
+            public int overspeedCount { get; set; }
+            public int maxSpeed { get; set; }
+            public int avgSpeed { get; set; }
+            public int overSpeedVal { get; set; }
+            public string overSpeedDuration { get; set; }
+            public List<OverSpeedAnalysis> OSsublst { get; set; }
+        }
+        public class OverSpeedAnalysis
+        {
+            public DateTime dateTime { get; set; }
+            public string location { get; set; }
+            public int speed { get; set; }
+            public float latitude { get; set; }
+            public float longitude { get; set; }
+        }
+        #endregion
         public class EntryExitReport
         {
             public List<POIEntryExitModelExt> vehicleList { get; set; }
