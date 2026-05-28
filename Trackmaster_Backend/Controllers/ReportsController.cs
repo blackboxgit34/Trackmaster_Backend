@@ -354,8 +354,7 @@ namespace Trackmaster_Backend.Controllers
                 });
             }
         }
-        }
-
+        #endregion
         [HttpGet("GetEntryExitReport")]
         public async Task<IActionResult> GetEntryExitReport([FromQuery] DataTableRequestModel model, [FromQuery] string bbid = "")
         {

@@ -2245,41 +2245,38 @@ ORDER BY datadate";
             return model;
         }
         #endregion
-    }
-}
-
 
         public async Task<EntryExitReport> GetListofEntryExit(DataTableRequestModel requestModel, string bbid)
         {
             EntryExitReport modelObj = new EntryExitReport();
-            modelObj.vehicleList =new List<POIEntryExitModelExt>();
-           string type = null;
+            modelObj.vehicleList = new List<POIEntryExitModelExt>();
+            string type = null;
             try
             {
                 DataTable dataT = new DataTable();
-                using (SqlConnection con =new SqlConnection(_connectionString43))
-                using (SqlCommand cmd =new SqlCommand("New_getpoidetailsforbbid", con))
+                using (SqlConnection con = new SqlConnection(_connectionString43))
+                using (SqlCommand cmd = new SqlCommand("New_getpoidetailsforbbid", con))
                 {
-                    cmd.CommandType =CommandType.StoredProcedure;
+                    cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@LowerBand", requestModel.iDisplayStart);
                     cmd.Parameters.AddWithValue("@UpperBand", requestModel.iDisplayStart + requestModel.iDisplayLength);
 
-                    cmd.Parameters.Add("@ItemCount",SqlDbType.Int).Direction =ParameterDirection.Output;
+                    cmd.Parameters.Add("@ItemCount", SqlDbType.Int).Direction = ParameterDirection.Output;
 
                     cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
 
-                    cmd.Parameters.AddWithValue("@BBID",string.IsNullOrWhiteSpace(bbid) ? (object)DBNull.Value: bbid);
+                    cmd.Parameters.AddWithValue("@BBID", string.IsNullOrWhiteSpace(bbid) ? (object)DBNull.Value : bbid);
 
 
                     cmd.Parameters.Add("@searchText", SqlDbType.VarChar).Value = string.IsNullOrWhiteSpace(requestModel.sSearch) || requestModel.sSearch == "null" ? DBNull.Value : requestModel.sSearch;
 
                     //cmd.Parameters.AddWithValue("@command", "A");
 
-                    cmd.Parameters.AddWithValue("@Type",(object)type ??DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Type", (object)type ?? DBNull.Value);
 
-                    cmd.Parameters.AddWithValue("@From",requestModel.beginDate);
+                    cmd.Parameters.AddWithValue("@From", requestModel.beginDate);
 
-                    cmd.Parameters.AddWithValue( "@To",requestModel.endDate);
+                    cmd.Parameters.AddWithValue("@To", requestModel.endDate);
 
                     await con.OpenAsync();
                     using (SqlDataReader dr =
@@ -2287,21 +2284,21 @@ ORDER BY datadate";
                     {
                         dataT.Load(dr);
                     }
-                    modelObj.PageCount =Convert.ToInt32( cmd.Parameters["@ItemCount"].Value);
+                    modelObj.PageCount = Convert.ToInt32(cmd.Parameters["@ItemCount"].Value);
                 }
 
-                var tasks =dataT.AsEnumerable()
+                var tasks = dataT.AsEnumerable()
                     .Select(async row =>
-                    { 
-                        POIEntryExitModelExt obj =new POIEntryExitModelExt();
+                    {
+                        POIEntryExitModelExt obj = new POIEntryExitModelExt();
 
-                        obj.Bbid = row["bbid"]?.ToString()?? "";
+                        obj.Bbid = row["bbid"]?.ToString() ?? "";
 
-                        obj.VehName =row["VehName"]?.ToString()?? "";
+                        obj.VehName = row["VehName"]?.ToString() ?? "";
 
-                        obj.driverName =row["DriverName"]?.ToString() ?? "";
+                        obj.driverName = row["DriverName"]?.ToString() ?? "";
 
-                        obj.poisCoveredList =new List<POIEntryExitModel>();
+                        obj.poisCoveredList = new List<POIEntryExitModel>();
 
                         using (SqlConnection con = new SqlConnection(_defaultConnectionOrange44))
 
@@ -2309,7 +2306,7 @@ ORDER BY datadate";
                         {
                             cmd.CommandType = CommandType.StoredProcedure;
 
-                            cmd.Parameters.AddWithValue( "@From", requestModel.beginDate);
+                            cmd.Parameters.AddWithValue("@From", requestModel.beginDate);
 
                             cmd.Parameters.AddWithValue("@To", requestModel.endDate);
 
@@ -2319,13 +2316,13 @@ ORDER BY datadate";
 
                             await con.OpenAsync();
 
-                            using (SqlDataReader dr =await cmd.ExecuteReaderAsync())
+                            using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                             {
-                                DataTable dt =new DataTable();
+                                DataTable dt = new DataTable();
                                 dt.Load(dr);
-                                for (int i = 0;i < dt.Rows.Count; i++)
+                                for (int i = 0; i < dt.Rows.Count; i++)
                                 {
-                                    POIEntryExitModel item = AddData(requestModel.CustId,dt,i,obj.VehName, Convert.ToInt32(requestModel.Interval));
+                                    POIEntryExitModel item = AddData(requestModel.CustId, dt, i, obj.VehName, Convert.ToInt32(requestModel.Interval));
                                     if (item != null)
                                     {
                                         obj.poisCoveredList.Add(item);
@@ -2333,7 +2330,7 @@ ORDER BY datadate";
                                 }
                             }
                         }
-                        obj.poisCovered =obj.poisCoveredList.Count;
+                        obj.poisCovered = obj.poisCoveredList.Count;
                         return obj;
                     });
 
@@ -2407,7 +2404,7 @@ ORDER BY datadate";
 
                 con.Open();
 
-                poiEntryExitModelObj.Vehname =Convert.ToString(cmd.ExecuteScalar());
+                poiEntryExitModelObj.Vehname = Convert.ToString(cmd.ExecuteScalar());
             }
             poiEntryExitModelObj.OutTime = Convert.IsDBNull(dt.Rows[i]["OutTime"]) ? string.Empty : dt.Rows[i]["OutTime"].ToString();
             var responseEndDate = StartStopTemp(bbidnew, Convert.ToString(poiEntryExitModelObj.OutTime));
@@ -2416,7 +2413,7 @@ ORDER BY datadate";
                 responseEndDate = "99";
             }
             poiEntryExitModelObj.EndtTempTime = responseEndDate == "99" ? "0" : responseEndDate;
-            string Stoppagetime = "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED select stoppagetime from ht_cust_latlong whERE  id='" + poiEntryExitModelObj.POIID + "' ";        
+            string Stoppagetime = "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED select stoppagetime from ht_cust_latlong whERE  id='" + poiEntryExitModelObj.POIID + "' ";
             using (SqlConnection con = new SqlConnection(_connectionString43))
             using (SqlCommand cmd = new SqlCommand(Stoppagetime, con))
             {
