@@ -205,5 +205,40 @@ namespace Trackmaster_Model
             public string ReportDate { get; set; }
             public string TotalStoppageTime { get; set; }
         }
+        public class EntryExitReport
+        {
+            public List<POIEntryExitModelExt> vehicleList { get; set; }
+            public int PageCount { get; set; }
+        }
+
+        public class POIEntryExitModelExt
+        {
+            public String VehName { get; set; }
+            public String driverName { get; set; }
+            public int poisCovered { get; set; }
+            public String Bbid { get; set; }
+
+            public int Totalpois { get; set; }
+
+            public List<POIEntryExitModel> poisCoveredList { get; set; }
+        }
+
+        public class POIEntryExitModel
+        {
+            public string color { get; set; }
+            public String POIName { get; set; }
+            public string Intime { get; set; }
+            public string OutTime { get; set; }
+            public string duration { get; set; }
+            public int POIID { get; set; }
+            public string Bbid { get; set; }
+            public double POILat { get; set; }
+            public double POILong { get; set; }
+            public string IsActive { get; set; }
+            public string StartTempTime { get; set; }
+            public string Vehname { get; set; }
+            public string EndtTempTime { get; set; }
+        }
+
     }
 }

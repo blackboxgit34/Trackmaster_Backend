@@ -233,7 +233,17 @@ namespace Trackmaster_Backend.Controllers
             });
 
         }
-        
 
+        [HttpGet("GetEntryExitReport")]
+        public async Task<IActionResult> GetEntryExitReport([FromQuery] DataTableRequestModel model, [FromQuery] string bbid = "")
+        {
+            var stoppage = await _reportsService.GetListofEntryExit(model, bbid);
+
+            return Ok(new
+            {
+                data = stoppage.vehicleList,
+                count = stoppage.PageCount
+            });
+        }
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -24,6 +25,7 @@ namespace Trackmaster_Repository.Repository
         private readonly string _FMSConString43;
         private readonly string _connectionString44;
         private readonly string _BlackboxMain_HITEC44; // neha k
+        private readonly string _defaultConnectionOrange44; 
         public ReportsRepository(IConfiguration configuration)
         {
 
@@ -31,12 +33,13 @@ namespace Trackmaster_Repository.Repository
             _FMSConString43 = configuration.GetConnectionString("FMSConString43");
             _connectionString44 = configuration.GetConnectionString("DefaultConnection44");
             _BlackboxMain_HITEC44 = configuration.GetConnectionString("BlackboxMain_HITEC44");
+            _defaultConnectionOrange44 = configuration.GetConnectionString("DefaultConnectionOrange44");
         }
         public string GetConnectionStringTableWise(string tableName)
         {
             return ((tableName.StartsWith("i", StringComparison.OrdinalIgnoreCase) || tableName.StartsWith("j", StringComparison.OrdinalIgnoreCase)) && tableName.Length > 5) ? _connectionString44 : _connectionString43;
         }
-        
+
         public async Task<VehiclesReport> GetConductorInfo(DataTableRequestModel requestModel)
         {
             var modelObj = new VehiclesReport
@@ -317,7 +320,7 @@ namespace Trackmaster_Repository.Repository
                     cmd.Parameters.Add(itemCountParam);
 
                     cmd.Parameters.AddWithValue("@MsgType", string.IsNullOrEmpty(messagetype) ? 0 : Convert.ToInt32(messagetype));
-                    cmd.Parameters.Add("@FromDate", SqlDbType.DateTime).Value =DateTime.Parse(requestModel.beginDate);
+                    cmd.Parameters.Add("@FromDate", SqlDbType.DateTime).Value = DateTime.Parse(requestModel.beginDate);
                     cmd.Parameters.Add("@ToDate", SqlDbType.DateTime).Value = DateTime.Parse(requestModel.endDate);
                     cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
                     cmd.Parameters.AddWithValue("@type", typeid);
@@ -907,6 +910,225 @@ ORDER BY datadate";
             }
             return (result, TotalCount);
         }
-     
+
+
+        public async Task<EntryExitReport> GetListofEntryExit(DataTableRequestModel requestModel, string bbid)
+        {
+            EntryExitReport modelObj = new EntryExitReport();
+            modelObj.vehicleList =new List<POIEntryExitModelExt>();
+           string type = null;
+            try
+            {
+                DataTable dataT = new DataTable();
+                using (SqlConnection con =new SqlConnection(_connectionString43))
+                using (SqlCommand cmd =new SqlCommand("New_getpoidetailsforbbid", con))
+                {
+                    cmd.CommandType =CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@LowerBand", requestModel.iDisplayStart);
+                    cmd.Parameters.AddWithValue("@UpperBand", requestModel.iDisplayStart + requestModel.iDisplayLength);
+
+                    cmd.Parameters.Add("@ItemCount",SqlDbType.Int).Direction =ParameterDirection.Output;
+
+                    cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
+
+                    cmd.Parameters.AddWithValue("@BBID",string.IsNullOrWhiteSpace(bbid) ? (object)DBNull.Value: bbid);
+
+
+                    cmd.Parameters.Add("@searchText", SqlDbType.VarChar).Value = string.IsNullOrWhiteSpace(requestModel.sSearch) || requestModel.sSearch == "null" ? DBNull.Value : requestModel.sSearch;
+
+                    //cmd.Parameters.AddWithValue("@command", "A");
+
+                    cmd.Parameters.AddWithValue("@Type",(object)type ??DBNull.Value);
+
+                    cmd.Parameters.AddWithValue("@From",requestModel.beginDate);
+
+                    cmd.Parameters.AddWithValue( "@To",requestModel.endDate);
+
+                    await con.OpenAsync();
+                    using (SqlDataReader dr =
+                        await cmd.ExecuteReaderAsync())
+                    {
+                        dataT.Load(dr);
+                    }
+                    modelObj.PageCount =Convert.ToInt32( cmd.Parameters["@ItemCount"].Value);
+                }
+
+                var tasks =dataT.AsEnumerable()
+                    .Select(async row =>
+                    { 
+                        POIEntryExitModelExt obj =new POIEntryExitModelExt();
+
+                        obj.Bbid = row["bbid"]?.ToString()?? "";
+
+                        obj.VehName =row["VehName"]?.ToString()?? "";
+
+                        obj.driverName =row["DriverName"]?.ToString() ?? "";
+
+                        obj.poisCoveredList =new List<POIEntryExitModel>();
+
+                        using (SqlConnection con = new SqlConnection(_defaultConnectionOrange44))
+
+                        using (SqlCommand cmd = new SqlCommand("[dbo].[GetPOIDetailsEntryExiy]", con))
+                        {
+                            cmd.CommandType = CommandType.StoredProcedure;
+
+                            cmd.Parameters.AddWithValue( "@From", requestModel.beginDate);
+
+                            cmd.Parameters.AddWithValue("@To", requestModel.endDate);
+
+                            cmd.Parameters.AddWithValue("@Custid", requestModel.CustId);
+
+                            cmd.Parameters.AddWithValue("@BBid", obj.Bbid);
+
+                            await con.OpenAsync();
+
+                            using (SqlDataReader dr =await cmd.ExecuteReaderAsync())
+                            {
+                                DataTable dt =new DataTable();
+                                dt.Load(dr);
+                                for (int i = 0;i < dt.Rows.Count; i++)
+                                {
+                                    POIEntryExitModel item = AddData(requestModel.CustId,dt,i,obj.VehName, Convert.ToInt32(requestModel.Interval));
+                                    if (item != null)
+                                    {
+                                        obj.poisCoveredList.Add(item);
+                                    }
+                                }
+                            }
+                        }
+                        obj.poisCovered =obj.poisCoveredList.Count;
+                        return obj;
+                    });
+
+                modelObj.vehicleList = (await Task.WhenAll(tasks)).ToList();
+            }
+            catch (Exception ex)
+            {
+                modelObj.vehicleList =
+                    new List<POIEntryExitModelExt>();
+            }
+
+            return modelObj;
+        }
+
+        private POIEntryExitModel AddData(int custid, DataTable dt, int i, string vehName, int seconds)
+        {
+            POIEntryExitModel poiEntryExitModelObj = new POIEntryExitModel();
+            poiEntryExitModelObj.POIID = Convert.IsDBNull(dt.Rows[i]["POIId"]) ? 0 : Convert.ToInt32(dt.Rows[i]["POIId"]);
+            poiEntryExitModelObj.POIName = Convert.IsDBNull(dt.Rows[i]["POIName"]) ? string.Empty : Convert.ToString(dt.Rows[i]["POIName"]);
+            poiEntryExitModelObj.Bbid = Convert.IsDBNull(dt.Rows[i]["BBID"]) ? string.Empty : Convert.ToString(dt.Rows[i]["BBID"]);
+            string status = "~/resources/images/legends/stop.png";
+
+            string statusid = string.Empty;
+            string stptime = "";
+
+            string statusquery = "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED select [id],[lat],[longi],[custid],[RetailerId],[Bbid],[details],[StandardDistance],[POIUpdate],[AddedOn],[State],[IsAssign],[AdminId],[IsActive],[StoppageTime],[Direction],[POIStatus] FROM HT_CUST_LATLONG WHERE ID='" + poiEntryExitModelObj.POIID + "' ";
+
+            using (SqlConnection con = new SqlConnection(_connectionString43))
+            using (SqlCommand cmd = new SqlCommand(statusquery, con))
+            {
+                cmd.CommandType = CommandType.Text;
+
+                con.Open();
+
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                {
+                    while (dr.Read())
+                    {
+                        statusid = Convert.IsDBNull(dr["POIStatus"]) ? string.Empty : dr["POIStatus"].ToString();
+                        poiEntryExitModelObj.POILat = Convert.IsDBNull(dr["lat"]) ? 0 : Convert.ToDouble(dr["lat"]);
+                        poiEntryExitModelObj.POILong = Convert.IsDBNull(dr["longi"]) ? 0 : Convert.ToDouble(dr["longi"]);
+                    }
+                }
+            }
+            poiEntryExitModelObj.POIName = "<a href='javascript:' onclick=showMapWindow('" + poiEntryExitModelObj.Bbid.Replace(" ", "&nbsp;") + "','" + vehName.Replace(" ", "&nbsp;") + "','" + poiEntryExitModelObj.POILat.ToString().Replace(" ", "&nbsp;") + "','" + poiEntryExitModelObj.POILong.ToString().Replace(" ", "&nbsp;") + "','" + poiEntryExitModelObj.POIName.Replace(" ", "&nbsp;") + "','" + status + "');>" + poiEntryExitModelObj.POIName + "</a>";
+
+            if (custid == 6627)
+            {
+                if (statusid == "True")
+
+                    poiEntryExitModelObj.IsActive = "<font color='green'>Active</font>";
+                else
+                    poiEntryExitModelObj.IsActive = "<font color='red'>Inactive</font>";
+            }
+
+            poiEntryExitModelObj.Intime = Convert.IsDBNull(dt.Rows[i]["InTime"]) ? string.Empty : dt.Rows[i]["InTime"].ToString();
+
+            string bbidnew = Convert.IsDBNull(dt.Rows[i]["BBID"]) ? string.Empty : dt.Rows[i]["BBID"].ToString();
+            var responseStartDate = StartStopTemp(bbidnew, Convert.ToString(poiEntryExitModelObj.Intime));
+            if (responseStartDate == "-100")
+            {
+                responseStartDate = "99";
+            }
+            poiEntryExitModelObj.StartTempTime = responseStartDate == "99" ? "0" : responseStartDate;
+
+            string query1 = "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED select VehName from ht_Main where BBID='" + bbidnew + "' ";
+            using (SqlConnection con = new SqlConnection(_connectionString43))
+            using (SqlCommand cmd = new SqlCommand(query1, con))
+            {
+                cmd.CommandType = CommandType.Text;
+
+                con.Open();
+
+                poiEntryExitModelObj.Vehname =Convert.ToString(cmd.ExecuteScalar());
+            }
+            poiEntryExitModelObj.OutTime = Convert.IsDBNull(dt.Rows[i]["OutTime"]) ? string.Empty : dt.Rows[i]["OutTime"].ToString();
+            var responseEndDate = StartStopTemp(bbidnew, Convert.ToString(poiEntryExitModelObj.OutTime));
+            if (responseEndDate == "-100")
+            {
+                responseEndDate = "99";
+            }
+            poiEntryExitModelObj.EndtTempTime = responseEndDate == "99" ? "0" : responseEndDate;
+            string Stoppagetime = "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED select stoppagetime from ht_cust_latlong whERE  id='" + poiEntryExitModelObj.POIID + "' ";        
+            using (SqlConnection con = new SqlConnection(_connectionString43))
+            using (SqlCommand cmd = new SqlCommand(Stoppagetime, con))
+            {
+                cmd.CommandType = CommandType.Text;
+
+                con.Open();
+
+                stptime = Convert.ToString(cmd.ExecuteScalar());
+            }
+            var d = Convert.IsDBNull(dt.Rows[i]["Duration"]) ? 0 : Convert.ToInt32(dt.Rows[i]["Duration"]);
+            var timecheck = d / 60;
+            var ts = new TimeSpan(0, 0, d);
+            if (Convert.ToInt32(d) > 180)
+            {
+                poiEntryExitModelObj.duration = "<font color='red'>" + string.Format("{0} Day(s) {1} Hour(s) {2} Minute(s) {3} Second(s)", ts.Days, ts.Hours, ts.Minutes, ts.Seconds) + "</font>";
+            }
+            else
+            {
+                poiEntryExitModelObj.duration = string.Format("{0} Day(s) {1} Hour(s) {2} Minute(s) {3} Second(s)", ts.Days, ts.Hours, ts.Minutes, ts.Seconds);
+            }
+            if (d >= seconds)
+            {
+                return poiEntryExitModelObj;
+            }
+
+            else
+            {
+                return null;
+            }
+        }
+
+        private string StartStopTemp(string vehId, string date)
+        {
+            string responseTemp = "";
+            if (!string.IsNullOrEmpty(date))
+            {
+                var startDate = Convert.ToDateTime(date);
+                var strcmd4 = "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; select temp2 from " + vehId + " where vehbatvoltage > 8 and datadate ='" + startDate + "'  order by datadate desc";
+                using (SqlConnection con = new SqlConnection(GetConnectionStringTableWise(vehId)))
+                using (SqlCommand cmd = new SqlCommand(strcmd4, con))
+                {
+                    cmd.CommandType = CommandType.Text;
+
+                    con.Open();
+
+                    responseTemp = Convert.ToString(cmd.ExecuteScalar());
+                }
+            }
+            return responseTemp;
+        }
     }
 }

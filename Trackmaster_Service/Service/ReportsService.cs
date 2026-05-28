@@ -79,6 +79,11 @@ namespace Trackmaster_Service.Service
         {
             return await _reportsRepository.GetDistanceReportData(model);
         }
-       
+
+
+        public async Task<EntryExitReport> GetListofEntryExit(DataTableRequestModel requestModel, string bbid)
+        {
+            return await _reportsRepository.GetListofEntryExit(requestModel, bbid);
+        }
     }
 }
