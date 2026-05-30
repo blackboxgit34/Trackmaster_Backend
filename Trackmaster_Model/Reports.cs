@@ -100,10 +100,35 @@ namespace Trackmaster_Model
             public List<SMSReport> objSMSReport { get; set; }
             public int pagecount { get; set; }
         }
+       
+        //neha  k 
+        public class IgnitionStatus
+        {
+            public string IgnitionOnTime { get; set; }
+            public string IgnitionOffTime { get; set; }
+            public string SLocation { get; set; }
+            public string ELocation { get; set; }
+            public string Duration { get; set; }
+        }
+        public class IgnitionStatusEx
+        {
+            public string VehicleName { get; set; }
+            public string DriverName { get; set; }
+            public string IgnitionOnOffCounter { get; set; }
+            public string TotalIgnitionTime { get; set; }
+            public int custid { get; set; }
+            public string bbid { get; set; }
+            public List<IgnitionStatus> objIgnitionStatusReport { get; set; }
+        }
 
-        
-        
-        
+        public class ConsolidatedIgnitionModel
+        {
+            public int PageCount { get; set; }
+            public List<IgnitionStatusEx> ConsolidatedIgnitionList { get; set; }
+        }
+
+
+
         public class VehicleStatusResponse
         {
             public int ItemCount { get; set; }

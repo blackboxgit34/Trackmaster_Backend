@@ -225,6 +225,43 @@ namespace Trackmaster_Backend.Controllers
                 );
             }
         }
+        // neha k
+        [HttpGet("GetConsolidatedIgnitionStatus")]
+        public async Task<IActionResult> GetConsolidatedIgnitionStatus([FromQuery] DataTableRequestModel requestModel,string bbid,string reportName)
+        {
+            try
+            {
+                int lowerBound = requestModel.iDisplayStart;
+                int upperBound = requestModel.iDisplayStart + requestModel.iDisplayLength;
+
+                if (upperBound == 0)
+                    upperBound = 20;
+
+                ConsolidatedIgnitionModel consIgnition =
+                    await _reportsService.GetConsolidatedIgnitionStatus(requestModel,bbid,reportName);
+
+                if (consIgnition == null ||
+                    consIgnition.ConsolidatedIgnitionList == null)
+                {
+                    return NoContent();
+                }
+
+                return Ok(new
+                {
+                    sEcho = requestModel.sEcho,
+                    iTotalRecords = consIgnition.PageCount,
+                    iTotalDisplayRecords = consIgnition.PageCount,
+                    aaData = consIgnition.ConsolidatedIgnitionList
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = ex.Message
+                });
+            }
+        }
 
         [HttpGet("VehicleStatus")]
         public IActionResult VehicleStatus(int custId, int lower, int upper, string? search, DateTime start, DateTime end)

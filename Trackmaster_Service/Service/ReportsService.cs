@@ -63,7 +63,11 @@ namespace Trackmaster_Service.Service
             return await _reportsRepository.GetSentMessagesReport(requestModel, typeid, messagetype, vehicleNo);
 
         }
+        public async Task<ConsolidatedIgnitionModel> GetConsolidatedIgnitionStatus(DataTableRequestModel requestModel, string bbid, string reportName) // neha k 
+        {
+            return await _reportsRepository.GetConsolidatedIgnitionStatus(requestModel, bbid,reportName);
 
+        }
 
 
         public async Task<(List<StoppageSubModel> data, int TotalCount)> GetCombinedStoppageReport(DataTableRequestModel dtmodel)
