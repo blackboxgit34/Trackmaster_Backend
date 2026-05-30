@@ -30,7 +30,7 @@ namespace Trackmaster_Repository.Repository
         private readonly string _FMSConString43;
         private readonly string _connectionString44;
         private readonly string _BlackboxMain_HITEC44; // neha k
-        private readonly string _defaultConnectionOrange44; 
+        private readonly string _defaultConnectionOrange44;
         public ReportsRepository(IConfiguration configuration)
         {
 
@@ -300,7 +300,7 @@ namespace Trackmaster_Repository.Repository
             }
             return list;
         }
-        public async Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype,string vehicleNo)
+        public async Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype, string vehicleNo)
         {
             SMSReportEx objSMSReportEx = new SMSReportEx
             {
@@ -325,8 +325,8 @@ namespace Trackmaster_Repository.Repository
                     cmd.Parameters.Add("@ToDate", SqlDbType.DateTime).Value = DateTime.Parse(requestModel.endDate);
                     cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
                     cmd.Parameters.AddWithValue("@type", typeid);
-                    cmd.Parameters.AddWithValue("@searchText",string.IsNullOrWhiteSpace(requestModel.sSearch)? DBNull.Value: requestModel.sSearch);
-                    cmd.Parameters.AddWithValue("@vehicleNo",string.IsNullOrWhiteSpace(vehicleNo)? DBNull.Value: vehicleNo);// neha k 
+                    cmd.Parameters.AddWithValue("@searchText", string.IsNullOrWhiteSpace(requestModel.sSearch) ? DBNull.Value : requestModel.sSearch);
+                    cmd.Parameters.AddWithValue("@vehicleNo", string.IsNullOrWhiteSpace(vehicleNo) ? DBNull.Value : vehicleNo);// neha k 
                     await con.OpenAsync();
                     using (SqlDataReader dsVeh = await cmd.ExecuteReaderAsync())
                     {
@@ -737,7 +737,7 @@ ORDER BY datadate ASC";
                                     {
                                         shouldAdd = true;
                                     }
-                                   else if (intv1 == 0 && intv2 > 0)
+                                    else if (intv1 == 0 && intv2 > 0)
                                     {
                                         if (ts.TotalSeconds <= intv2)
                                         {
@@ -805,54 +805,54 @@ ORDER BY datadate ASC";
                         if (ts.TotalSeconds > 0)
                         {
                             if (ts.TotalSeconds > 0)
-{
-    bool shouldAdd = false;
+                            {
+                                bool shouldAdd = false;
 
-    // 0-0 = old logic (show all)
-    if (intv1 == 0 && intv2 == 0)
-    {
-        shouldAdd = true;
-    }
- else if (intv1 == 0 && intv2 > 0)
-{
- if (ts.TotalSeconds <= intv2)
- {
-    shouldAdd = true;
-  }
-  }
- // 10-0 = greater than 10 minute
- else if (intv1 > 0 && intv2 == 0)
-    {
-        if (ts.TotalSeconds >= intv1)
-        {
-            shouldAdd = true;
-        }
-    }
+                                // 0-0 = old logic (show all)
+                                if (intv1 == 0 && intv2 == 0)
+                                {
+                                    shouldAdd = true;
+                                }
+                                else if (intv1 == 0 && intv2 > 0)
+                                {
+                                    if (ts.TotalSeconds <= intv2)
+                                    {
+                                        shouldAdd = true;
+                                    }
+                                }
+                                // 10-0 = greater than 10 minute
+                                else if (intv1 > 0 && intv2 == 0)
+                                {
+                                    if (ts.TotalSeconds >= intv1)
+                                    {
+                                        shouldAdd = true;
+                                    }
+                                }
 
-    // 1-2 = between 1 and 2 minute
-    else
-    {
-        if (ts.TotalSeconds >= intv1 &&
-            ts.TotalSeconds <= intv2)
-        {
-            shouldAdd = true;
-        }
-    }
+                                // 1-2 = between 1 and 2 minute
+                                else
+                                {
+                                    if (ts.TotalSeconds >= intv1 &&
+                                        ts.TotalSeconds <= intv2)
+                                    {
+                                        shouldAdd = true;
+                                    }
+                                }
 
-    if (shouldAdd)
-    {
-        currentStop.Duration =
-            $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+                                if (shouldAdd)
+                                {
+                                    currentStop.Duration =
+                                        $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
 
-        totalDuration += ts;
+                                    totalDuration += ts;
 
-        result[resultIndex]
-            .objStoppageReport
-            .Add(currentStop);
+                                    result[resultIndex]
+                                        .objStoppageReport
+                                        .Add(currentStop);
 
-        result[resultIndex].StoppageCount++;
-    }
-}
+                                    result[resultIndex].StoppageCount++;
+                                }
+                            }
                             //currentStop.Duration =
                             //    $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
 
@@ -1040,7 +1040,7 @@ ORDER BY datadate ASC";
                         {
                             currentStop = new IdlingSubStatus
                             {
-                                StartDate=
+                                StartDate =
                                     data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
                                 StopDate =
                                     data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
@@ -2113,7 +2113,7 @@ ORDER BY datadate";
         {
             var model = new OverSpeedModel();
             model.OSmainLst = new List<overSpeedMain>();
-            
+
             try
             {
                 using (SqlConnection con = new SqlConnection(_connectionString43))
@@ -2131,7 +2131,7 @@ ORDER BY datadate";
                     };
                     cmd.Parameters.Add(outParam);
                     await con.OpenAsync();
-                    
+
                     using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                     {
                         while (await dr.ReadAsync())
@@ -2146,7 +2146,7 @@ ORDER BY datadate";
                             });
 
                         }
-                        
+
                     }
                     model.PageCount = Convert.ToInt32(outParam.Value);
                 }
@@ -2164,7 +2164,7 @@ ORDER BY datadate";
                             cmd.Parameters.AddWithValue("@EndDate", requestModel.endDate);
 
                             var result = await cmd.ExecuteScalarAsync();
-                            item.maxSpeed = result != DBNull.Value && result != null? Convert.ToInt32(result): 0;
+                            item.maxSpeed = result != DBNull.Value && result != null ? Convert.ToInt32(result) : 0;
                         }
                         var dyn = 3;
                         if (mode == "over")// this condition depends upon report type i.e overspeed or speed analysis.
@@ -2182,7 +2182,7 @@ ORDER BY datadate";
                             new SqlParameter("@mode", "over")
                         };
 
-                        DataSet ds = SqlHelper.ExecuteDataset(con, CommandType.StoredProcedure,"SpeedAnalysisTM",parameters);
+                        DataSet ds = SqlHelper.ExecuteDataset(con, CommandType.StoredProcedure, "SpeedAnalysisTM", parameters);
                         if (ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0)
                         {
                             DataTable dt = ds.Tables[0];
@@ -2235,7 +2235,7 @@ ORDER BY datadate";
                         item.OSsublst = speedSublist;
 
                     }
-                    
+
                 }
             }
             catch (Exception ex)
@@ -2260,7 +2260,8 @@ ORDER BY datadate";
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@LowerBand", requestModel.iDisplayStart);
                     cmd.Parameters.AddWithValue("@UpperBand", requestModel.iDisplayStart + requestModel.iDisplayLength);
-
+                    cmd.Parameters.AddWithValue("@sortColumn", requestModel.sortColumn);
+                    cmd.Parameters.AddWithValue("@sortDirection", requestModel.sortDirection);
                     cmd.Parameters.Add("@ItemCount", SqlDbType.Int).Direction = ParameterDirection.Output;
 
                     cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
@@ -2292,16 +2293,18 @@ ORDER BY datadate";
                     {
                         POIEntryExitModelExt obj = new POIEntryExitModelExt();
 
-                        obj.Bbid = row["bbid"]?.ToString() ?? "";
+                        obj.Bbid = GetString(row["bbid"]);
 
-                        obj.VehName = row["VehName"]?.ToString() ?? "";
+                        obj.VehName = GetString(row["VehName"]) ;
 
-                        obj.driverName = row["DriverName"]?.ToString() ?? "";
+                        obj.driverName = GetString(row["DriverName"])   ;
 
                         obj.poisCoveredList = new List<POIEntryExitModel>();
 
+                        // =====================================
+                        // ENTRY EXIT REPORT
+                        // =====================================                      
                         using (SqlConnection con = new SqlConnection(_defaultConnectionOrange44))
-
                         using (SqlCommand cmd = new SqlCommand("[dbo].[GetPOIDetailsEntryExiy]", con))
                         {
                             cmd.CommandType = CommandType.StoredProcedure;
@@ -2322,7 +2325,7 @@ ORDER BY datadate";
                                 dt.Load(dr);
                                 for (int i = 0; i < dt.Rows.Count; i++)
                                 {
-                                    POIEntryExitModel item = AddData(requestModel.CustId, dt, i, obj.VehName, Convert.ToInt32(requestModel.Interval));
+                                    POIEntryExitModel item = AddData(requestModel.CustId, dt, i, obj.VehName, GetInt(requestModel.Interval));
                                     if (item != null)
                                     {
                                         obj.poisCoveredList.Add(item);
@@ -2348,9 +2351,9 @@ ORDER BY datadate";
         private POIEntryExitModel AddData(int custid, DataTable dt, int i, string vehName, int seconds)
         {
             POIEntryExitModel poiEntryExitModelObj = new POIEntryExitModel();
-            poiEntryExitModelObj.POIID = Convert.IsDBNull(dt.Rows[i]["POIId"]) ? 0 : Convert.ToInt32(dt.Rows[i]["POIId"]);
-            poiEntryExitModelObj.POIName = Convert.IsDBNull(dt.Rows[i]["POIName"]) ? string.Empty : Convert.ToString(dt.Rows[i]["POIName"]);
-            poiEntryExitModelObj.Bbid = Convert.IsDBNull(dt.Rows[i]["BBID"]) ? string.Empty : Convert.ToString(dt.Rows[i]["BBID"]);
+            poiEntryExitModelObj.POIID = GetInt(dt.Rows[i]["POIId"]);
+            poiEntryExitModelObj.POIName = GetString(dt.Rows[i]["POIName"]);
+            poiEntryExitModelObj.Bbid = GetString(dt.Rows[i]["BBID"]);
             string status = "~/resources/images/legends/stop.png";
 
             string statusid = string.Empty;
@@ -2369,9 +2372,9 @@ ORDER BY datadate";
                 {
                     while (dr.Read())
                     {
-                        statusid = Convert.IsDBNull(dr["POIStatus"]) ? string.Empty : dr["POIStatus"].ToString();
-                        poiEntryExitModelObj.POILat = Convert.IsDBNull(dr["lat"]) ? 0 : Convert.ToDouble(dr["lat"]);
-                        poiEntryExitModelObj.POILong = Convert.IsDBNull(dr["longi"]) ? 0 : Convert.ToDouble(dr["longi"]);
+                        statusid = GetString(dr["POIStatus"]);
+                        poiEntryExitModelObj.POILat = GetDouble(dr["lat"]);
+                        poiEntryExitModelObj.POILong = GetDouble(dr["longi"]);
                     }
                 }
             }
@@ -2386,10 +2389,10 @@ ORDER BY datadate";
                     poiEntryExitModelObj.IsActive = "<font color='red'>Inactive</font>";
             }
 
-            poiEntryExitModelObj.Intime = Convert.IsDBNull(dt.Rows[i]["InTime"]) ? string.Empty : dt.Rows[i]["InTime"].ToString();
+            poiEntryExitModelObj.Intime = GetString(dt.Rows[i]["InTime"]);
 
-            string bbidnew = Convert.IsDBNull(dt.Rows[i]["BBID"]) ? string.Empty : dt.Rows[i]["BBID"].ToString();
-            var responseStartDate = StartStopTemp(bbidnew, Convert.ToString(poiEntryExitModelObj.Intime));
+            string bbidnew = GetString(dt.Rows[i]["BBID"]);
+            var responseStartDate = StartStopTemp(bbidnew, GetString(poiEntryExitModelObj.Intime));
             if (responseStartDate == "-100")
             {
                 responseStartDate = "99";
@@ -2404,10 +2407,10 @@ ORDER BY datadate";
 
                 con.Open();
 
-                poiEntryExitModelObj.Vehname = Convert.ToString(cmd.ExecuteScalar());
+                poiEntryExitModelObj.Vehname = GetString(cmd.ExecuteScalar());
             }
-            poiEntryExitModelObj.OutTime = Convert.IsDBNull(dt.Rows[i]["OutTime"]) ? string.Empty : dt.Rows[i]["OutTime"].ToString();
-            var responseEndDate = StartStopTemp(bbidnew, Convert.ToString(poiEntryExitModelObj.OutTime));
+            poiEntryExitModelObj.OutTime = Convert.IsDBNull(dt.Rows[i]["OutTime"]) ? string.Empty : GetString(dt.Rows[i]["OutTime"]);
+            var responseEndDate = StartStopTemp(bbidnew, GetString(poiEntryExitModelObj.OutTime));
             if (responseEndDate == "-100")
             {
                 responseEndDate = "99";
@@ -2421,12 +2424,12 @@ ORDER BY datadate";
 
                 con.Open();
 
-                stptime = Convert.ToString(cmd.ExecuteScalar());
+                stptime = GetString(cmd.ExecuteScalar());
             }
-            var d = Convert.IsDBNull(dt.Rows[i]["Duration"]) ? 0 : Convert.ToInt32(dt.Rows[i]["Duration"]);
+            var d = GetInt(dt.Rows[i]["Duration"]);
             var timecheck = d / 60;
             var ts = new TimeSpan(0, 0, d);
-            if (Convert.ToInt32(d) > 180)
+            if (GetInt(d) > 180)
             {
                 poiEntryExitModelObj.duration = "<font color='red'>" + string.Format("{0} Day(s) {1} Hour(s) {2} Minute(s) {3} Second(s)", ts.Days, ts.Hours, ts.Minutes, ts.Seconds) + "</font>";
             }
@@ -2450,7 +2453,7 @@ ORDER BY datadate";
             string responseTemp = "";
             if (!string.IsNullOrEmpty(date))
             {
-                var startDate = Convert.ToDateTime(date);
+                var startDate = GetDateTime(date);
                 var strcmd4 = "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; select temp2 from " + vehId + " where vehbatvoltage > 8 and datadate ='" + startDate + "'  order by datadate desc";
                 using (SqlConnection con = new SqlConnection(GetConnectionStringTableWise(vehId)))
                 using (SqlCommand cmd = new SqlCommand(strcmd4, con))
@@ -2459,7 +2462,7 @@ ORDER BY datadate";
 
                     con.Open();
 
-                    responseTemp = Convert.ToString(cmd.ExecuteScalar());
+                    responseTemp = GetString (cmd.ExecuteScalar());
                 }
             }
             return responseTemp;

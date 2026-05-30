@@ -355,10 +355,23 @@ namespace Trackmaster_Backend.Controllers
             }
         }
         #endregion
-        [HttpGet("GetEntryExitReport")]
+        [HttpPost("GetEntryExitReport")]
         public async Task<IActionResult> GetEntryExitReport([FromQuery] DataTableRequestModel model, [FromQuery] string bbid = "")
         {
             var stoppage = await _reportsService.GetListofEntryExit(model, bbid);
+
+            if(model.DownloadType == "Excel")
+            {
+                var reportName = $"EntryExitReport_{model.CustId}.xlsx";
+                var stream = await _importExportExcelService.ExportToExcelFlatList(stoppage.vehicleList, reportName, null, null);
+                return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
+            }
+            if(model.DownloadType == "Pdf")
+            {
+                var reportName = $"EntryExitReport_{model.CustId}.pdf";
+                var stream = await _importExportPdfService.ExportToPdfFlatList(stoppage.vehicleList, reportName, null, null);
+                return File(stream, "application/pdf", reportName);
+            }
 
             return Ok(new
             {
