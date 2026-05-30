@@ -516,7 +516,7 @@ namespace Trackmaster_Repository.Repository
                                 Batterycon = GetDateTime(dr["enddate"]),
                                 startloc = GetString(dr["sloc"]),
                                 Endloc = GetString(dr["eloc"]),
-                                Duration = GetDateTime(dr["duration"]),
+                                Duration = GetString(dr["duration"]),
                                 Status = GetString(dr["Status"])
                             });
                         }

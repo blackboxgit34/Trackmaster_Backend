@@ -131,7 +131,7 @@ namespace Trackmaster_Model
             public DateTime? Batterycon { get; set; }
             public string startloc { get; set; }
             public string Endloc { get; set; }
-            public DateTime? Duration { get; set; }
+            public string Duration { get; set; }
         }
 
         public class StoppageMainModel
