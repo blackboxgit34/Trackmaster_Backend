@@ -1,14 +1,13 @@
-﻿using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
-
+﻿using iText.IO.Font.Constants;
 using iText.IO.Image;
+using iText.Kernel.Font;
 using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
-
 using iText.Layout;
 using iText.Layout.Element;
 using iText.Layout.Properties;
-
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using System.Data;
 using System.Reflection;
 
@@ -109,18 +108,18 @@ namespace Trackmaster_Service
             // ================= REPORT NAME =================
 
             document.Add(
-      new Paragraph(
-          "Report Name : " + reportName
-      )
-      .SetFontSize(14)
-  );
+                new Paragraph(
+                    "Report Name : " + reportName
+                )
+                .SetFontSize(14)
+                .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
+            );
 
             // ================= DATE =================
 
             document.Add(
                 new Paragraph(
-                    "Date : " +
-                    DateTime.Now.ToString("dd/MM/yyyy")
+                    "Date : " + DateTime.Now.ToString("dd/MM/yyyy")
                 )
                 .SetFontSize(11)
             );
@@ -173,13 +172,15 @@ namespace Trackmaster_Service
 
                 foreach (PropertyInfo prop in properties)
                 {
-                    table.AddHeaderCell(
+                    _ = table.AddHeaderCell(
                         new Cell().Add(
                             new Paragraph(prop.Name)
                                 .SetFontSize(9)
+                                .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
                         )
                     );
                 }
+
                 // ================= DATA =================
 
                 foreach (var item in data)
@@ -189,14 +190,74 @@ namespace Trackmaster_Service
                         var value =
                             prop.GetValue(item);
 
-                        table.AddCell(
-                            new Cell().Add(
-                                new Paragraph(
-                                    value?.ToString() ?? ""
+                        // ================= HANDLE LIST =================
+
+                        if (
+                            value != null &&
+                            value is System.Collections.IEnumerable enumerable &&
+                            !(value is string)
+                        )
+                        {
+                            List<string> subItems =
+                                new List<string>();
+
+                            foreach (var subItem in enumerable)
+                            {
+                                if (subItem == null)
+                                    continue;
+
+                                var subProps =
+                                    subItem
+                                        .GetType()
+                                        .GetProperties();
+
+                                List<string> subValues =
+                                    new List<string>();
+
+                                foreach (var subProp in subProps)
+                                {
+                                    var subValue =
+                                        subProp.GetValue(subItem);
+
+                                    subValues.Add(
+                                        $"{subProp.Name}: {subValue}"
+                                    );
+                                }
+
+                                subItems.Add(
+                                    string.Join(
+                                        " | ",
+                                        subValues
+                                    )
+                                );
+                            }
+
+                            table.AddCell(
+                                new Cell().Add(
+                                    new Paragraph(
+                                        string.Join(
+                                            "\n\n",
+                                            subItems
+                                        )
+                                    )
+                                    .SetFontSize(7)
                                 )
-                                .SetFontSize(8)
-                            )
-                        );
+                            );
+                        }
+
+                        // ================= HANDLE NORMAL VALUE =================
+
+                        else
+                        {
+                            table.AddCell(
+                                new Cell().Add(
+                                    new Paragraph(
+                                        value?.ToString() ?? ""
+                                    )
+                                    .SetFontSize(8)
+                                )
+                            );
+                        }
                     }
                 }
 

@@ -28,5 +28,6 @@ namespace Trackmaster_Model
 
         public string? endDate { get; set; }
         public string? Status { get; set; }
+        public string? DownloadType { get; set; }
     }
 }

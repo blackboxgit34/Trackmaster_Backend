@@ -74,10 +74,19 @@ namespace Trackmaster_Service.Service
         {
             return await _reportsRepository.GetCombinedStoppageReport(dtmodel);
         }
-
-        public VehicleStatusResponse VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        public async Task<(List<IdlingMainModel> data, int TotalCount)> GetIdlingStatusReport(DataTableRequestModel dtmodel)
         {
-            return _reportsRepository.VehicleStatus(custId, lower, upper, search, start, end);
+            return await _reportsRepository.GetIdlingStatusReport(dtmodel);
+        }
+
+        public async Task<VehicleStatusResponse> VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        {
+            return await _reportsRepository.VehicleStatus(custId, lower, upper, search, start, end);
+        }
+
+        public async Task<VehicleStatusResponse> BatteryDisconnection(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        {
+            return await _reportsRepository.BatteryDisconnection(custId, lower, upper, search, start, end);
         }
         public async Task<(List<DistanceReportDataModel> data, int TotalCount)> GetDistanceReportData(DataTableRequestModel model)
         {
@@ -88,5 +97,17 @@ namespace Trackmaster_Service.Service
             return await _reportsRepository.GetMonthlyDistanceReportData(model);
         }
        
+        #region Neha Vaid
+        public async Task<OverSpeedModel> getSpeedReport(string mode, DataTableRequestModel requestModel)
+        {
+            return await _reportsRepository.getSpeedReport(mode, requestModel);
+        }
+        #endregion
+
+
+        public async Task<EntryExitReport> GetListofEntryExit(DataTableRequestModel requestModel, string bbid)
+        {
+            return await _reportsRepository.GetListofEntryExit(requestModel, bbid);
+        }
     }
 }
