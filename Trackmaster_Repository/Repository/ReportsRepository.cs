@@ -2109,7 +2109,7 @@ ORDER BY datadate";
         public async Task<OverSpeedModel> getSpeedReport(string mode, DataTableRequestModel requestModel)
         {
             var model = new OverSpeedModel();
-            model.OSmainLst = new List<overSpeedMain>();
+             model.OSmainLst = new List<overSpeedMain>();
             
             try
             {
@@ -2169,6 +2169,7 @@ ORDER BY datadate";
                             dyn = 1;
                         }
                         int OverCount = 0;
+                        int totalSpeed = 0;
                         DateTime previousDateTime = DateTime.MinValue;
                         TimeSpan overspeedDuration = new TimeSpan(0, 0, 0);
                         SqlParameter[] parameters =
@@ -2188,14 +2189,14 @@ ORDER BY datadate";
                             {
                                 DataRow row = dt.Rows[i];
 
-                                OverSpeedAnalysis sublistObj = new OverSpeedAnalysis
-                                {
-                                    speed = GetInt(row["Speed"]),
-                                    dateTime = GetDateTime(row["datadate"]),
-                                    location = GetString(row["Location"]),
-                                    latitude = GetFloat(row["latitude"]),
-                                    longitude = GetFloat(row["longitude"])
-                                };
+                                OverSpeedAnalysis sublistObj = new OverSpeedAnalysis();
+                                sublistObj.speed = GetInt(row["Speed"]);
+                                sublistObj.dateTime = GetDateTime(row["datadate"]);
+                                sublistObj.location = GetString(row["Location"]);
+                                sublistObj.latitude = GetFloat(row["latitude"]);
+                                sublistObj.longitude = GetFloat(row["longitude"]);
+                                totalSpeed = totalSpeed + GetInt(row["Speed"]);
+                                
 
                                 speedSublist.Add(sublistObj);
 
@@ -2216,7 +2217,7 @@ ORDER BY datadate";
 
                                 previousDateTime = sublistObj.dateTime;
                             }
-
+                            item.totalSpeed = GetInt(totalSpeed);
                             item.overspeedCount = OverCount;
 
                             item.overSpeedDuration =
@@ -2228,7 +2229,7 @@ ORDER BY datadate";
                         {
                             item.overSpeedDuration = "0 Hour(s) 0 Minute(s) 0 Second(s)";
                         }
-
+                      
                         item.OSsublst = speedSublist;
 
                     }

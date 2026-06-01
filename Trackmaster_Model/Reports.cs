@@ -233,6 +233,7 @@ namespace Trackmaster_Model
             public int maxSpeed { get; set; }
             public int avgSpeed { get; set; }
             public int overSpeedVal { get; set; }
+            public int totalSpeed { get; set; }
             public string overSpeedDuration { get; set; }
             public List<OverSpeedAnalysis> OSsublst { get; set; }
         }
@@ -243,6 +244,7 @@ namespace Trackmaster_Model
             public int speed { get; set; }
             public float latitude { get; set; }
             public float longitude { get; set; }
+            
         }
         #endregion
     }
