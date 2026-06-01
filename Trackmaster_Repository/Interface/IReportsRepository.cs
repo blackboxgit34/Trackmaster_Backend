@@ -17,6 +17,7 @@ namespace Trackmaster_Repository.Interface
         Task<string> AddUpdateEmployee(Employee objEmp, string imagePaths = "");
         Task<List<DropDownItems>> GetMessageType();
         Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype, string vehicleNo); // neha k
+        Task<ConsolidatedIgnitionModel> GetConsolidatedIgnitionStatus(DataTableRequestModel requestModel, string bbid, string reportName); // neha k
         Task<VehicleStatusResponse> VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end);
         Task<VehicleStatusResponse> BatteryDisconnection(int custId, int lower, int upper, string search, DateTime start, DateTime end);
         Task<(List<StoppageSubModel> data, int TotalCount)> GetCombinedStoppageReport(DataTableRequestModel dtmodel);
@@ -26,5 +27,6 @@ namespace Trackmaster_Repository.Interface
         Task<OverSpeedModel> getSpeedReport(string mode, DataTableRequestModel requestModel);
         #endregion
         Task<(List<DistanceMonthlyReportDataModel> data, int TotalCount)> GetMonthlyDistanceReportData(DataTableRequestModel model);
+        Task<EntryExitReport> GetListofEntryExit(DataTableRequestModel requestModel, string bbid);
     }
 }

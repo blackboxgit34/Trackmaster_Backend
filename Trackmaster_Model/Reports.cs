@@ -100,10 +100,35 @@ namespace Trackmaster_Model
             public List<SMSReport> objSMSReport { get; set; }
             public int pagecount { get; set; }
         }
+       
+        //neha  k 
+        public class IgnitionStatus
+        {
+            public string IgnitionOnTime { get; set; }
+            public string IgnitionOffTime { get; set; }
+            public string SLocation { get; set; }
+            public string ELocation { get; set; }
+            public string Duration { get; set; }
+        }
+        public class IgnitionStatusEx
+        {
+            public string VehicleName { get; set; }
+            public string DriverName { get; set; }
+            public string IgnitionOnOffCounter { get; set; }
+            public string TotalIgnitionTime { get; set; }
+            public int custid { get; set; }
+            public string bbid { get; set; }
+            public List<IgnitionStatus> objIgnitionStatusReport { get; set; }
+        }
 
-        
-        
-        
+        public class ConsolidatedIgnitionModel
+        {
+            public int PageCount { get; set; }
+            public List<IgnitionStatusEx> ConsolidatedIgnitionList { get; set; }
+        }
+
+
+
         public class VehicleStatusResponse
         {
             public int ItemCount { get; set; }
@@ -131,7 +156,7 @@ namespace Trackmaster_Model
             public DateTime? Batterycon { get; set; }
             public string startloc { get; set; }
             public string Endloc { get; set; }
-            public DateTime? Duration { get; set; }
+            public string Duration { get; set; }
         }
 
         public class StoppageMainModel
@@ -247,5 +272,40 @@ namespace Trackmaster_Model
             
         }
         #endregion
+        public class EntryExitReport
+        {
+            public List<POIEntryExitModelExt> vehicleList { get; set; }
+            public int PageCount { get; set; }
+        }
+
+        public class POIEntryExitModelExt
+        {
+            public String VehName { get; set; }
+            public String driverName { get; set; }
+            public int poisCovered { get; set; }
+            public String Bbid { get; set; }
+
+            public int Totalpois { get; set; }
+
+            public List<POIEntryExitModel> poisCoveredList { get; set; }
+        }
+
+        public class POIEntryExitModel
+        {
+            public string color { get; set; }
+            public String POIName { get; set; }
+            public string Intime { get; set; }
+            public string OutTime { get; set; }
+            public string duration { get; set; }
+            public int POIID { get; set; }
+            public string Bbid { get; set; }
+            public double POILat { get; set; }
+            public double POILong { get; set; }
+            public string IsActive { get; set; }
+            public string StartTempTime { get; set; }
+            public string Vehname { get; set; }
+            public string EndtTempTime { get; set; }
+        }
+
     }
 }
