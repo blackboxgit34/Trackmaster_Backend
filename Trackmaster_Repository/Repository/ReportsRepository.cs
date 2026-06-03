@@ -1045,16 +1045,8 @@ namespace Trackmaster_Repository.Repository
                     {
                         await con.OpenAsync();
 
-                        string query = $@"
-SELECT speed,
-       datadate,
-       acignition,
-       distance,
-       loc
-FROM [{item.BBID}]
-WHERE datadate >= @startdate
-AND datadate <= @enddate
-ORDER BY datadate ASC";
+                      //  string query = $@"SELECT speed, datadate,acignition,distance,loc FROM [{item.BBID}] WHERE datadate >= @startdate AND datadate <= @enddate ORDER BY datadate ASC";
+                        string query = $@"SELECT speed,datadate,acignition,distance,loc,latitude,longitude FROM [{item.BBID}] WHERE datadate >= @startdate AND datadate <= @enddate ORDER BY datadate ASC";
 
                         using (SqlCommand cmd = new SqlCommand(query, con))
                         {
@@ -1077,18 +1069,14 @@ ORDER BY datadate ASC";
                             {
                                 while (await dr.ReadAsync())
                                 {
-                                    deviceDetailList.Add(
-                                        new PlaybackDataModel
-                                        {
-                                            speed = GetInt(dr["speed"]),
-                                            datadate = GetDateTime(dr["datadate"]),
-                                            acignition =
-                                                GetString(dr["acignition"]) == "1"
-                                                    ? "Off"
-                                                    : "On",
-                                            distance = GetDecimal(dr["distance"]),
-                                            location = GetString(dr["loc"])
-                                        });
+                                    deviceDetailList.Add(new PlaybackDataModel
+                                    {
+                                        speed = GetInt(dr["speed"]),
+                                        datadate = GetDateTime(dr["datadate"]),
+                                        acignition = GetString(dr["acignition"]), // keep raw 0/1
+                                        distance = GetDecimal(dr["distance"]),
+                                        location = GetString(dr["loc"])
+                                    });
                                 }
                             }
                         }
@@ -1116,27 +1104,20 @@ ORDER BY datadate ASC";
 
                     IdlingSubStatus currentStop = null;
 
-                    int resultIndex =
-                        result.FindIndex(x => x.BBID == item.BBID);
+                    int resultIndex = result.FindIndex(x => x.BBID == item.BBID);
 
                     foreach (var data in deviceDetailList)
                     {
-                        bool ignitionOn = data.acignition == "On";
-                        bool ignitionOff = data.acignition == "Off";
+                        int ignition = Convert.ToInt32(
+                            data.acignition == "Off" ? 1 : 0);
 
-                        bool isIdle =
-                            ignitionOn &&
-                            data.speed == 0;
-
-                        if (isIdle && !flag)
+                        // START IDLING
+                        if (ignition == 0 && data.speed == 0 && !flag)
                         {
                             currentStop = new IdlingSubStatus
                             {
-                                StartDate =
-                                    data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
-                                StopDate =
-                                    data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
-                                Location = data.location,
+                                startDate = data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
+                                location = data.location,
                                 IgnitionStatus = false
                             };
 
@@ -1144,72 +1125,94 @@ ORDER BY datadate ASC";
                             endd = data.datadate;
                             flag = true;
                         }
-                        else if (isIdle && flag)
+
+                        // CONTINUE IDLING
+                        else if (ignition == 0 && data.speed == 0 && flag)
                         {
                             endd = data.datadate;
                         }
-                        else if ((!isIdle || ignitionOff) && flag)
+
+                        // IGNITION OFF EVENT
+                        else if (ignition == 1 && data.speed == 0 && flag)
                         {
+                            endd = data.datadate;
+
                             TimeSpan ts = endd.Subtract(startd);
 
-                            if (ts.TotalSeconds > 0)
+                            if (ts.TotalSeconds > 0 &&
+                                IsValidIdling(ts, intv1, intv2))
                             {
-                                bool shouldAdd =
-                                    IsValidIdling(ts, intv1, intv2);
-
-                                if (shouldAdd)
-                                {
-                                    currentStop.StopDate =
-                                        endd.ToString("yyyy-MM-dd HH:mm:ss");
-
-                                    currentStop.Duration =
-                                        $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
-
-                                    totalDuration =
-                                        totalDuration.Add(ts);
-
-                                    result[resultIndex]
-                                        .IdlingSubStatuslist
-                                        .Add(currentStop);
-                                }
-                            }
-
-                            flag = false;
-                        }
-                    }
-
-                    if (flag && currentStop != null)
-                    {
-                        TimeSpan ts = endd.Subtract(startd);
-
-                        if (ts.TotalSeconds > 0)
-                        {
-                            bool shouldAdd =
-                                IsValidIdling(ts, intv1, intv2);
-
-                            if (shouldAdd)
-                            {
-                                currentStop.StopDate =
+                                currentStop.stopDate =
                                     endd.ToString("yyyy-MM-dd HH:mm:ss");
 
-                                currentStop.Duration =
+                                currentStop.duration =
                                     $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
 
-                                totalDuration =
-                                    totalDuration.Add(ts);
+                                totalDuration = totalDuration.Add(ts);
 
                                 result[resultIndex]
                                     .IdlingSubStatuslist
                                     .Add(currentStop);
                             }
+
+                            flag = false;
+                            currentStop = null;
+                        }
+
+                        // VEHICLE MOVED EVENT
+                        else if (ignition == 0 && data.speed > 0 && flag)
+                        {
+                            endd = data.datadate;
+
+                            TimeSpan ts = endd.Subtract(startd);
+
+                            if (ts.TotalSeconds > 0 &&
+                                IsValidIdling(ts, intv1, intv2))
+                            {
+                                currentStop.stopDate =
+                                    endd.ToString("yyyy-MM-dd HH:mm:ss");
+
+                                currentStop.duration =
+                                    $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+
+                                totalDuration = totalDuration.Add(ts);
+
+                                result[resultIndex]
+                                    .IdlingSubStatuslist
+                                    .Add(currentStop);
+                            }
+
+                            flag = false;
+                            currentStop = null;
                         }
                     }
 
-                    result[resultIndex].IdlingCount =
-                        result[resultIndex]
-                        .IdlingSubStatuslist.Count;
+                    // Handle open idling session at end
+                    if (flag && currentStop != null)
+                    {
+                        TimeSpan ts = endd.Subtract(startd);
 
-                    result[resultIndex].TotalIdlingHours =
+                        if (ts.TotalSeconds > 0 &&
+                            IsValidIdling(ts, intv1, intv2))
+                        {
+                            currentStop.stopDate =
+                                endd.ToString("yyyy-MM-dd HH:mm:ss");
+
+                            currentStop.duration =
+                                $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+
+                            totalDuration = totalDuration.Add(ts);
+
+                            result[resultIndex]
+                                .IdlingSubStatuslist
+                                .Add(currentStop);
+                        }
+                    }
+
+                    result[resultIndex].idlingCount =
+                        result[resultIndex].IdlingSubStatuslist.Count;
+
+                    result[resultIndex].TotalIdlingTime =
                         $"{totalDuration.Days} day(s) " +
                         $"{totalDuration.Hours} hour(s) " +
                         $"{totalDuration.Minutes} minute(s)";
