@@ -32,6 +32,6 @@ namespace Trackmaster_Service.Interface
         Task<OverSpeedModel> getSpeedReport(string mode, DataTableRequestModel requestModel);
         #endregion
 
-        Task<EntryExitReport> GetListofEntryExit(DataTableRequestModel requestModel, string bbid);
+        Task<EntryExitReport> GetListofEntryExit(DataTableRequestModel requestModel, string rtype, string bbid);
     }
 }
