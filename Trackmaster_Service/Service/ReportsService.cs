@@ -105,9 +105,9 @@ namespace Trackmaster_Service.Service
         #endregion
 
 
-        public async Task<EntryExitReport> GetListofEntryExit(DataTableRequestModel requestModel, string bbid)
+        public async Task<EntryExitReport> GetListofEntryExit(DataTableRequestModel requestModel, string rtype, string bbid)
         {
-            return await _reportsRepository.GetListofEntryExit(requestModel, bbid);
+            return await _reportsRepository.GetListofEntryExit(requestModel, rtype,bbid);
         }
     }
 }

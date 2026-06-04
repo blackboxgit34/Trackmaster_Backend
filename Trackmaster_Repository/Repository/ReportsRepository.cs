@@ -763,7 +763,7 @@ namespace Trackmaster_Repository.Repository
                                         // IMPORTANT:
                                         // 1 = OFF
                                         // 0 = ON
-                                        acignition =GetString(dr["acignition"]) == "1"? "Off": "On",
+                                        acignition = GetString(dr["acignition"]) == "1" ? "Off" : "On",
                                         distance = GetDecimal(dr["distance"]),
                                         location = GetString(dr["loc"])
                                     });
@@ -771,14 +771,14 @@ namespace Trackmaster_Repository.Repository
                             }
                         }
                     }
-                    bool flag = false;string interval =dtmodel.Interval ?? "0-0";
+                    bool flag = false; string interval = dtmodel.Interval ?? "0-0";
                     int intv1 = 0;
                     int intv2 = 0;
                     string[] words = interval.Split('-');
                     if (words.Length > 0)
-                        intv1 =Convert.ToInt32(words[0]) * 60;
+                        intv1 = Convert.ToInt32(words[0]) * 60;
                     if (words.Length > 1)
-                        intv2 =Convert.ToInt32(words[1]) * 60;
+                        intv2 = Convert.ToInt32(words[1]) * 60;
                     DateTime startd = DateTime.MinValue;
                     DateTime endd = DateTime.MinValue;
                     TimeSpan totalDuration = TimeSpan.Zero;
@@ -797,7 +797,7 @@ namespace Trackmaster_Repository.Repository
                         {
                             currentStop = new StoppageAnalysis
                             {
-                                StopDateAndTime =data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
+                                StopDateAndTime = data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
                                 Location = data.location,
                                 IgnitionStatus = false,
                                 Duration = "0 minute(s) 0 second(s)"
@@ -867,7 +867,7 @@ namespace Trackmaster_Repository.Repository
                                     }
                                     if (shouldAdd)
                                     {
-                                        currentStop.Duration =$"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+                                        currentStop.Duration = $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
                                         totalDuration += ts;
                                         result[resultIndex].objStoppageReport.Add(currentStop);
                                         result[resultIndex].StoppageCount++;
@@ -989,7 +989,7 @@ namespace Trackmaster_Repository.Repository
                    ts.TotalSeconds <= intv2;
         }
 
-        public async Task<(List<IdlingMainModel> data, int TotalCount)>GetIdlingStatusReport(DataTableRequestModel dtmodel)
+        public async Task<(List<IdlingMainModel> data, int TotalCount)> GetIdlingStatusReport(DataTableRequestModel dtmodel)
         {
             var result = new List<IdlingMainModel>();
             int TotalCount = 0;
@@ -1955,7 +1955,7 @@ ORDER BY datadate";
                                 sublistObj.latitude = GetFloat(row["latitude"]);
                                 sublistObj.longitude = GetFloat(row["longitude"]);
                                 totalSpeed = totalSpeed + GetInt(row["Speed"]);
-                                
+
 
                                 speedSublist.Add(sublistObj);
 
@@ -1988,7 +1988,7 @@ ORDER BY datadate";
                         {
                             item.overSpeedDuration = "0 Hour(s) 0 Minute(s) 0 Second(s)";
                         }
-                      
+
                         item.OSsublst = speedSublist;
 
                     }
@@ -2003,7 +2003,8 @@ ORDER BY datadate";
         }
         #endregion
 
-        public async Task<EntryExitReport> GetListofEntryExit(DataTableRequestModel requestModel, string bbid)
+
+        public async Task<EntryExitReport> GetListofEntryExit( DataTableRequestModel requestModel,string rtype,string bbid)
         {
             EntryExitReport modelObj = new EntryExitReport();
             modelObj.vehicleList = new List<POIEntryExitModelExt>();
@@ -2011,38 +2012,38 @@ ORDER BY datadate";
             try
             {
                 DataTable dataT = new DataTable();
+
                 using (SqlConnection con = new SqlConnection(_connectionString43))
                 using (SqlCommand cmd = new SqlCommand("New_getpoidetailsforbbid", con))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
+
                     cmd.Parameters.AddWithValue("@LowerBand", requestModel.iDisplayStart);
                     cmd.Parameters.AddWithValue("@UpperBand", requestModel.iDisplayStart + requestModel.iDisplayLength);
                     cmd.Parameters.AddWithValue("@sortColumn", requestModel.sortColumn);
                     cmd.Parameters.AddWithValue("@sortDirection", requestModel.sortDirection);
-                    cmd.Parameters.Add("@ItemCount", SqlDbType.Int).Direction = ParameterDirection.Output;
+
+                    cmd.Parameters.Add("@ItemCount", SqlDbType.Int).Direction =ParameterDirection.Output;
 
                     cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
 
-                    cmd.Parameters.AddWithValue("@BBID", string.IsNullOrWhiteSpace(bbid) ? (object)DBNull.Value : bbid);
+                    cmd.Parameters.AddWithValue("@BBID",string.IsNullOrWhiteSpace(bbid)? (object)DBNull.Value: bbid);
 
+                    cmd.Parameters.Add("@searchText", SqlDbType.VarChar).Value =string.IsNullOrWhiteSpace(requestModel.sSearch)? DBNull.Value : requestModel.sSearch;
 
-                    cmd.Parameters.Add("@searchText", SqlDbType.VarChar).Value = string.IsNullOrWhiteSpace(requestModel.sSearch) || requestModel.sSearch == "null" ? DBNull.Value : requestModel.sSearch;
-
-                    //cmd.Parameters.AddWithValue("@command", "A");
-
-                    cmd.Parameters.AddWithValue("@Type", (object)type ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Type",string.IsNullOrWhiteSpace(type)? (object)DBNull.Value: type);
 
                     cmd.Parameters.AddWithValue("@From", requestModel.beginDate);
-
                     cmd.Parameters.AddWithValue("@To", requestModel.endDate);
 
                     await con.OpenAsync();
-                    using (SqlDataReader dr =
-                        await cmd.ExecuteReaderAsync())
+
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                     {
                         dataT.Load(dr);
                     }
-                    modelObj.PageCount = Convert.ToInt32(cmd.Parameters["@ItemCount"].Value);
+
+                    modelObj.PageCount =GetInt(cmd.Parameters["@ItemCount"].Value);
                 }
 
                 var tasks = dataT.AsEnumerable()
@@ -2051,60 +2052,139 @@ ORDER BY datadate";
                         POIEntryExitModelExt obj = new POIEntryExitModelExt();
 
                         obj.Bbid = GetString(row["bbid"]);
-
-                        obj.VehName = GetString(row["VehName"]) ;
-
-                        obj.driverName = GetString(row["DriverName"])   ;
-
+                        obj.VehName = GetString(row["VehName"]);
+                        obj.driverName = GetString(row["DriverName"]);
                         obj.poisCoveredList = new List<POIEntryExitModel>();
 
-                        // =====================================
+                        string reportType = (rtype ?? "").Trim();
+
+                        // ====================================================
                         // ENTRY EXIT REPORT
-                        // =====================================                      
-                        using (SqlConnection con = new SqlConnection(_defaultConnectionOrange44))
-                        using (SqlCommand cmd = new SqlCommand("[dbo].[GetPOIDetailsEntryExiy]", con))
+                        // ====================================================
+                        if (string.Equals(
+                            reportType,
+                            "EntryExitReport",
+                            StringComparison.OrdinalIgnoreCase))
                         {
-                            cmd.CommandType = CommandType.StoredProcedure;
-
-                            cmd.Parameters.AddWithValue("@From", requestModel.beginDate);
-
-                            cmd.Parameters.AddWithValue("@To", requestModel.endDate);
-
-                            cmd.Parameters.AddWithValue("@Custid", requestModel.CustId);
-
-                            cmd.Parameters.AddWithValue("@BBid", obj.Bbid);
-
-                            await con.OpenAsync();
-
-                            using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                            using (SqlConnection con =
+                                new SqlConnection(_defaultConnectionOrange44))
+                            using (SqlCommand cmd =
+                                new SqlCommand("[dbo].[GetPOIDetailsEntryExiy]", con))
                             {
-                                DataTable dt = new DataTable();
-                                dt.Load(dr);
-                                for (int i = 0; i < dt.Rows.Count; i++)
+                                cmd.CommandType = CommandType.StoredProcedure;
+
+                                cmd.Parameters.AddWithValue("@From",requestModel.beginDate);
+
+                                cmd.Parameters.AddWithValue("@To",requestModel.endDate);
+
+                                cmd.Parameters.AddWithValue("@Custid", requestModel.CustId);
+
+                                cmd.Parameters.AddWithValue("@BBid",obj.Bbid);
+
+                                await con.OpenAsync();
+
+                                using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                                 {
-                                    POIEntryExitModel item = AddData(requestModel.CustId, dt, i, obj.VehName, GetInt(requestModel.Interval));
-                                    if (item != null)
+                                    DataTable dt = new DataTable();
+                                    dt.Load(dr);
+
+                                    for (int i = 0; i < dt.Rows.Count; i++)
                                     {
-                                        obj.poisCoveredList.Add(item);
+                                        POIEntryExitModel item = AddData( requestModel.CustId, dt, i,obj.VehName,GetInt( requestModel.Interval));
+
+                                        if (item != null)
+                                        {
+                                            obj.poisCoveredList.Add(item);
+                                        }
                                     }
                                 }
                             }
                         }
-                        obj.poisCovered = obj.poisCoveredList.Count;
+                        // ====================================================
+                        // EXIT ENTRY REPORT
+                        // ====================================================
+                        else if (string.Equals(reportType, "ExitEntryReport",StringComparison.OrdinalIgnoreCase))
+                        {
+                            using (SqlConnection con =new SqlConnection(_defaultConnectionOrange44))
+                            {
+                                await con.OpenAsync();
+
+                                using (SqlCommand cmd =new SqlCommand("NewGetPOIsCoveredExitEntryCustom", con))
+                                {
+                                    cmd.CommandType = CommandType.StoredProcedure;
+
+                                    cmd.Parameters.AddWithValue("@From",requestModel.beginDate);
+
+                                    cmd.Parameters.AddWithValue("@To",requestModel.endDate);
+
+                                    cmd.Parameters.AddWithValue("@Custid",requestModel.CustId);
+
+                                    cmd.Parameters.AddWithValue("@BBid",obj.Bbid);
+
+                                    DataTable poiTable = new DataTable();
+
+                                    using (SqlDataReader dr =await cmd.ExecuteReaderAsync())
+                                    {
+                                        poiTable.Load(dr);
+                                    }
+
+                                    obj.poisCovered = poiTable.Rows.Count;
+
+                                    foreach (DataRow poiRow in poiTable.Rows)
+                                    {
+                                        using (SqlCommand detailCmd =new SqlCommand("[dbo].[NewGetPOIDetailsExitEntryCustomy]", con))
+                                        {
+                                            detailCmd.CommandType =CommandType.StoredProcedure;
+
+                                            detailCmd.Parameters.AddWithValue("@From",requestModel.beginDate);
+
+                                            detailCmd.Parameters.AddWithValue("@To",requestModel.endDate);
+
+                                            detailCmd.Parameters.AddWithValue("@Custid",requestModel.CustId);
+
+                                            detailCmd.Parameters.AddWithValue("@BBid",obj.Bbid);
+
+                                            detailCmd.Parameters.AddWithValue("@poiid", GetInt( poiRow["POIId"]));
+
+                                            DataTable detailTable =new DataTable();
+
+                                            using (SqlDataReader dr =await detailCmd.ExecuteReaderAsync())
+                                            {
+                                                detailTable.Load(dr);
+                                            }
+
+                                            foreach (DataRow detailRow in detailTable.Rows)
+                                            {
+                                                obj.poisCoveredList.Add(
+                                                    new POIEntryExitModel
+                                                    {
+                                                        POIName = GetString(detailRow["POIName"]),
+                                                        duration = GetString(detailRow["duration"]),
+                                                        Intime =GetString( detailRow["intime"]),
+                                                        OutTime =GetString(detailRow["outtime"])
+                                                    });
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        obj.poisCoveredList = obj.poisCoveredList;
+
                         return obj;
                     });
 
-                modelObj.vehicleList = (await Task.WhenAll(tasks)).ToList();
+                modelObj.vehicleList =
+                    (await Task.WhenAll(tasks)).ToList();
             }
             catch (Exception ex)
             {
-                modelObj.vehicleList =
-                    new List<POIEntryExitModelExt>();
+                modelObj.vehicleList = new List<POIEntryExitModelExt>();
             }
 
             return modelObj;
         }
-
         private POIEntryExitModel AddData(int custid, DataTable dt, int i, string vehName, int seconds)
         {
             POIEntryExitModel poiEntryExitModelObj = new POIEntryExitModel();
@@ -2204,7 +2284,6 @@ ORDER BY datadate";
                 return null;
             }
         }
-
         private string StartStopTemp(string vehId, string date)
         {
             string responseTemp = "";
@@ -2219,7 +2298,7 @@ ORDER BY datadate";
 
                     con.Open();
 
-                    responseTemp = GetString (cmd.ExecuteScalar());
+                    responseTemp = GetString(cmd.ExecuteScalar());
                 }
             }
             return responseTemp;

@@ -27,6 +27,6 @@ namespace Trackmaster_Repository.Interface
         Task<OverSpeedModel> getSpeedReport(string mode, DataTableRequestModel requestModel);
         #endregion
         Task<(List<DistanceMonthlyReportDataModel> data, int TotalCount)> GetMonthlyDistanceReportData(DataTableRequestModel model);
-        Task<EntryExitReport> GetListofEntryExit(DataTableRequestModel requestModel, string bbid);
+        Task<EntryExitReport> GetListofEntryExit(DataTableRequestModel requestModel, string bbid,string rtype);
     }
 }
