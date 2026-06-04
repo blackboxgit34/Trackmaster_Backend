@@ -989,7 +989,7 @@ namespace Trackmaster_Repository.Repository
                    ts.TotalSeconds <= intv2;
         }
 
-        public async Task<(List<IdlingMainModel> data, int TotalCount)>GetIdlingStatusReport(DataTableRequestModel dtmodel)
+        public async Task<(List<IdlingMainModel> data, int TotalCount)> GetIdlingStatusReport(DataTableRequestModel dtmodel)
         {
             var result = new List<IdlingMainModel>();
             int TotalCount = 0;
@@ -1045,7 +1045,7 @@ namespace Trackmaster_Repository.Repository
                     {
                         await con.OpenAsync();
 
-                      //  string query = $@"SELECT speed, datadate,acignition,distance,loc FROM [{item.BBID}] WHERE datadate >= @startdate AND datadate <= @enddate ORDER BY datadate ASC";
+                        //  string query = $@"SELECT speed, datadate,acignition,distance,loc FROM [{item.BBID}] WHERE datadate >= @startdate AND datadate <= @enddate ORDER BY datadate ASC";
                         string query = $@"SELECT speed,datadate,acignition,distance,loc,latitude,longitude FROM [{item.BBID}] WHERE datadate >= @startdate AND datadate <= @enddate ORDER BY datadate ASC";
 
                         using (SqlCommand cmd = new SqlCommand(query, con))
@@ -1073,9 +1073,11 @@ namespace Trackmaster_Repository.Repository
                                     {
                                         speed = GetInt(dr["speed"]),
                                         datadate = GetDateTime(dr["datadate"]),
-                                        acignition = GetString(dr["acignition"]), // keep raw 0/1
+                                        acignition = GetString(dr["acignition"]),
                                         distance = GetDecimal(dr["distance"]),
-                                        location = GetString(dr["loc"])
+                                        location = GetString(dr["loc"]),
+                                        latitude = GetDecimal(dr["latitude"]),
+                                        longitude = GetDecimal(dr["longitude"])
                                     });
                                 }
                             }
@@ -1108,16 +1110,27 @@ namespace Trackmaster_Repository.Repository
 
                     foreach (var data in deviceDetailList)
                     {
-                        int ignition = Convert.ToInt32(
-                            data.acignition == "Off" ? 1 : 0);
+                        int ignition;
+
+                        if (!int.TryParse(data.acignition, out ignition))
+                        {
+                            ignition = data.acignition.Equals("Off",
+                                StringComparison.OrdinalIgnoreCase)
+                                ? 1
+                                : 0;
+                        }
 
                         // START IDLING
-                        if (ignition == 0 && data.speed == 0 && !flag)
+                        if (ignition == 0 &&
+                            data.speed == 0 &&
+                            !flag)
                         {
                             currentStop = new IdlingSubStatus
                             {
                                 startDate = data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
                                 location = data.location,
+                                latitude = data.latitude,
+                                longitude = data.longitude,
                                 IgnitionStatus = false
                             };
 
@@ -1127,13 +1140,21 @@ namespace Trackmaster_Repository.Repository
                         }
 
                         // CONTINUE IDLING
-                        else if (ignition == 0 && data.speed == 0 && flag)
+                        else if (ignition == 0 &&
+                                 data.speed == 0 &&
+                                 flag)
                         {
                             endd = data.datadate;
+
+                            currentStop.location = data.location;
+                            currentStop.latitude = data.latitude;
+                            currentStop.longitude = data.longitude;
                         }
 
-                        // IGNITION OFF EVENT
-                        else if (ignition == 1 && data.speed == 0 && flag)
+                        // IGNITION OFF
+                        else if (ignition == 1 &&
+                                 data.speed == 0 &&
+                                 flag)
                         {
                             endd = data.datadate;
 
@@ -1144,6 +1165,12 @@ namespace Trackmaster_Repository.Repository
                             {
                                 currentStop.stopDate =
                                     endd.ToString("yyyy-MM-dd HH:mm:ss");
+
+                                currentStop.location = data.location;
+                                currentStop.latitude = data.latitude;
+                                currentStop.longitude = data.longitude;
+
+                                currentStop.Vstatus = "Ignition switch Off";
 
                                 currentStop.duration =
                                     $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
@@ -1159,10 +1186,15 @@ namespace Trackmaster_Repository.Repository
                             currentStop = null;
                         }
 
-                        // VEHICLE MOVED EVENT
-                        else if (ignition == 0 && data.speed > 0 && flag)
+                        // VEHICLE MOVED
+                        else if (ignition == 0 &&
+                                 data.speed > 0 &&
+                                 flag)
                         {
-                            endd = data.datadate;
+                            if (endd < data.datadate)
+                            {
+                                endd = data.datadate;
+                            }
 
                             TimeSpan ts = endd.Subtract(startd);
 
@@ -1171,6 +1203,12 @@ namespace Trackmaster_Repository.Repository
                             {
                                 currentStop.stopDate =
                                     endd.ToString("yyyy-MM-dd HH:mm:ss");
+
+                                currentStop.location = data.location;
+                                currentStop.latitude = data.latitude;
+                                currentStop.longitude = data.longitude;
+
+                                currentStop.Vstatus = "Vehicle Moved";
 
                                 currentStop.duration =
                                     $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
@@ -1197,6 +1235,8 @@ namespace Trackmaster_Repository.Repository
                         {
                             currentStop.stopDate =
                                 endd.ToString("yyyy-MM-dd HH:mm:ss");
+
+                            currentStop.Vstatus = "Open Session";
 
                             currentStop.duration =
                                 $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
