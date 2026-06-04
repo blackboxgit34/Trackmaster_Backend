@@ -2091,6 +2091,8 @@ ORDER BY datadate";
                                     DataTable dt = new DataTable();
                                     dt.Load(dr);
 
+                                    obj.poisCovered = dt.Rows.Count;
+
                                     for (int i = 0; i < dt.Rows.Count; i++)
                                     {
                                         POIEntryExitModel item = AddData( requestModel.CustId, dt, i,obj.VehName,GetInt( requestModel.Interval));
