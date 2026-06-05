@@ -217,8 +217,12 @@ namespace Trackmaster_Model
 
            
             public string AddPoi { get; set; }
+            public decimal latitude { get; set; }
+            public decimal longitude { get; set; }
 
-         
+            public string Vstatus { get; set; }
+
+
         }
 
         public class ReportBase 
