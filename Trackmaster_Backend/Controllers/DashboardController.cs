@@ -60,5 +60,28 @@ namespace Trackmaster_Backend.Controllers
                 });
             }
         }
+        [HttpGet("GetAllVehicleTypes")]
+        public async Task<IActionResult> GetAllVehicleTypes()
+        {
+            try
+            {
+                var vehicleTypeList = await _dashboardService.GetAllVehicleTypes();
+                return Ok(new
+                {
+                    success = true,
+                    message = "Vehicle types retrieved successfully",
+                    data = vehicleTypeList
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
     }
 }

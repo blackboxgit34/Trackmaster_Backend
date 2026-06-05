@@ -39,7 +39,7 @@ namespace Trackmaster_Service.Service
                         break;
 
                     case "avgspeedgraph":
-                        dashboard.overSpeedReport = await _dashboardRepository.GetOverSpeedGraphData(userid,bbid);
+                        dashboard.overSpeedReport = await _dashboardRepository.GetOverSpeedGraphData(userid, bbid);
                         break;
 
                     case "distancecovered":
@@ -102,6 +102,21 @@ namespace Trackmaster_Service.Service
             _cache.Set(cacheKey, vehiclelist, TimeSpan.FromMinutes(10));
 
             return vehiclelist;
+        }
+        public async Task<List<VehicleType>> GetAllVehicleTypes()
+        {
+            string cacheKey = $"vehicleTypeList";
+
+            if (_cache.TryGetValue(cacheKey, out List<VehicleType> cached))
+            {
+                return cached;
+            }
+
+            var vehicletypeList = await _dashboardRepository.GetAllVehicleTypes();
+
+            _cache.Set(cacheKey, vehicletypeList, TimeSpan.FromMinutes(10));
+
+            return vehicletypeList;
         }
     }
 }
