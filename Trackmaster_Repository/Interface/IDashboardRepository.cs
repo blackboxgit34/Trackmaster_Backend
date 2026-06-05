@@ -11,6 +11,7 @@ namespace Trackmaster_Repository.Interface
         Task<VehicleUtilization> GetVehicleUtilization(int userid);
         Task<SpeedAnalysis> GetSpeedAnalysis(int userid, DateTime start, DateTime end);
         Task<List<VehicleList>> GetAllVehicleListByCustId(int userid);
+        Task<List<VehicleType>> GetAllVehicleTypes();
         Task<List<OverSpeedReport>> GetOverSpeedGraphData(int custid, string bbid);
         Task<List<DistanceDashModel>> GetDistanceDash(int custId, DateTime start, DateTime end);
         Task<List<IdlingDuration>> GetIdlingDuration(int userid);

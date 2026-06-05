@@ -744,7 +744,8 @@ namespace Trackmaster_Repository.Repository
                     {
                         await con.OpenAsync();
 
-                        string query = $@"SELECT speed,datadate,acignition,distance,locFROM [{item.BBID}]WHERE datadate >= @startdateAND datadate <= @enddateORDER BY datadate ASC";
+                        string query = $@"SELECT speed,datadate,acignition,distance,loc FROM  [{item.BBID}] WHERE datadate >= @startdate AND datadate <= @enddate ORDER BY datadate ASC";
+
                         using (SqlCommand cmd = new SqlCommand(query, con))
                         {
                             DateTime startDate = GetDateTime(dtmodel.beginDate);
@@ -762,7 +763,7 @@ namespace Trackmaster_Repository.Repository
                                         // IMPORTANT:
                                         // 1 = OFF
                                         // 0 = ON
-                                        acignition =GetString(dr["acignition"]) == "1"? "Off": "On",
+                                        acignition = GetString(dr["acignition"]) == "1" ? "Off" : "On",
                                         distance = GetDecimal(dr["distance"]),
                                         location = GetString(dr["loc"])
                                     });
@@ -770,14 +771,14 @@ namespace Trackmaster_Repository.Repository
                             }
                         }
                     }
-                    bool flag = false;string interval =dtmodel.Interval ?? "0-0";
+                    bool flag = false; string interval = dtmodel.Interval ?? "0-0";
                     int intv1 = 0;
                     int intv2 = 0;
                     string[] words = interval.Split('-');
                     if (words.Length > 0)
-                        intv1 =Convert.ToInt32(words[0]) * 60;
+                        intv1 = Convert.ToInt32(words[0]) * 60;
                     if (words.Length > 1)
-                        intv2 =Convert.ToInt32(words[1]) * 60;
+                        intv2 = Convert.ToInt32(words[1]) * 60;
                     DateTime startd = DateTime.MinValue;
                     DateTime endd = DateTime.MinValue;
                     TimeSpan totalDuration = TimeSpan.Zero;
@@ -796,7 +797,7 @@ namespace Trackmaster_Repository.Repository
                         {
                             currentStop = new StoppageAnalysis
                             {
-                                StopDateAndTime =data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
+                                StopDateAndTime = data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
                                 Location = data.location,
                                 IgnitionStatus = false,
                                 Duration = "0 minute(s) 0 second(s)"
@@ -866,7 +867,7 @@ namespace Trackmaster_Repository.Repository
                                     }
                                     if (shouldAdd)
                                     {
-                                        currentStop.Duration =$"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+                                        currentStop.Duration = $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
                                         totalDuration += ts;
                                         result[resultIndex].objStoppageReport.Add(currentStop);
                                         result[resultIndex].StoppageCount++;
@@ -976,20 +977,28 @@ namespace Trackmaster_Repository.Repository
 
 
 
+        private bool IsValidIdling(TimeSpan ts, int intv1, int intv2)
+        {
+            if (intv1 <= 0)
+                return true;
 
+            if (intv1 >= 1500)
+                return ts.TotalSeconds >= intv1;
 
-        public async Task<(List<IdlingMainModel> data, int TotalCount)> GetIdlingStatusReport(
-           DataTableRequestModel dtmodel)
+            return ts.TotalSeconds >= intv1 &&
+                   ts.TotalSeconds <= intv2;
+        }
+
+        public async Task<(List<IdlingMainModel> data, int TotalCount)> GetIdlingStatusReport(DataTableRequestModel dtmodel)
         {
             var result = new List<IdlingMainModel>();
             int TotalCount = 0;
+
             try
             {
-
-                // ================= MAIN DATA =================
-
                 using (SqlConnection con = new SqlConnection(_connectionString43))
-                using (SqlCommand cmd = new SqlCommand("GetVehiclesByCustIdAndSearch", con))
+                using (SqlCommand cmd =
+                       new SqlCommand("GetVehiclesByCustIdAndSearch", con))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
 
@@ -1000,8 +1009,12 @@ namespace Trackmaster_Repository.Repository
                     cmd.Parameters.AddWithValue("@sortDirection", dtmodel.sortDirection);
                     cmd.Parameters.AddWithValue("@sSearch", dtmodel.sSearch);
 
-                    SqlParameter totalCountParam = new SqlParameter("@TotalCount", SqlDbType.Int);
-                    totalCountParam.Direction = ParameterDirection.Output;
+                    SqlParameter totalCountParam =
+                        new SqlParameter("@TotalCount", SqlDbType.Int)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+
                     cmd.Parameters.Add(totalCountParam);
 
                     await con.OpenAsync();
@@ -1015,15 +1028,14 @@ namespace Trackmaster_Repository.Repository
                                 BBID = GetString(dr["BBID"]),
                                 VehicleName = GetString(dr["VehName"]),
                                 DriverName = GetString(dr["DriverName"]),
-                                IdlingSubStatuslist =
-                                    new List<IdlingSubStatus>()
+                                IdlingSubStatuslist = new List<IdlingSubStatus>()
                             });
                         }
                     }
+
                     TotalCount = Convert.ToInt32(totalCountParam.Value);
                 }
 
-                // ================= PARALLEL DEVICE TABLE CALLS =================
                 var tasks = result.Select(async item =>
                 {
                     var deviceDetailList = new List<PlaybackDataModel>();
@@ -1033,30 +1045,24 @@ namespace Trackmaster_Repository.Repository
                     {
                         await con.OpenAsync();
 
-                        string query = $@"
-SELECT speed,
-       datadate,
-       acignition,
-       distance,
-       loc
-FROM [{item.BBID}]
-WHERE datadate >= @startdate
-AND datadate <= @enddate
-ORDER BY datadate ASC";
+                        //  string query = $@"SELECT speed, datadate,acignition,distance,loc FROM [{item.BBID}] WHERE datadate >= @startdate AND datadate <= @enddate ORDER BY datadate ASC";
+                        string query = $@"SELECT speed,datadate,acignition,distance,loc,latitude,longitude FROM [{item.BBID}] WHERE datadate >= @startdate AND datadate <= @enddate ORDER BY datadate ASC";
 
                         using (SqlCommand cmd = new SqlCommand(query, con))
                         {
-                            DateTime startDate = GetDateTime(dtmodel.beginDate);
+                            DateTime startDate =
+                                GetDateTime(dtmodel.beginDate);
 
-                            DateTime endDate = GetDateTime(dtmodel.endDate)
+                            DateTime endDate =
+                                GetDateTime(dtmodel.endDate)
                                 .AddDays(1)
                                 .AddSeconds(-1);
 
-                            cmd.Parameters.Add("@startdate", SqlDbType.DateTime)
-                                .Value = startDate;
+                            cmd.Parameters.Add("@startdate",
+                                SqlDbType.DateTime).Value = startDate;
 
-                            cmd.Parameters.Add("@enddate", SqlDbType.DateTime)
-                                .Value = endDate;
+                            cmd.Parameters.Add("@enddate",
+                                SqlDbType.DateTime).Value = endDate;
 
                             using (SqlDataReader dr =
                                    await cmd.ExecuteReaderAsync())
@@ -1066,29 +1072,19 @@ ORDER BY datadate ASC";
                                     deviceDetailList.Add(new PlaybackDataModel
                                     {
                                         speed = GetInt(dr["speed"]),
-
                                         datadate = GetDateTime(dr["datadate"]),
-
-                                        // IMPORTANT:
-                                        // 1 = OFF
-                                        // 0 = ON
-                                        acignition =
-                                            GetString(dr["acignition"]) == "1"
-                                            ? "Off"
-                                            : "On",
-
+                                        acignition = GetString(dr["acignition"]),
                                         distance = GetDecimal(dr["distance"]),
-
-                                        location = GetString(dr["loc"])
+                                        location = GetString(dr["loc"]),
+                                        latitude = GetDecimal(dr["latitude"]),
+                                        longitude = GetDecimal(dr["longitude"])
                                     });
                                 }
                             }
                         }
                     }
 
-                    bool flag = false;
-                    string interval =
-                dtmodel.Interval ?? "0-0";
+                    string interval = dtmodel.Interval ?? "0-0";
 
                     int intv1 = 0;
                     int intv2 = 0;
@@ -1096,80 +1092,105 @@ ORDER BY datadate ASC";
                     string[] words = interval.Split('-');
 
                     if (words.Length > 0)
-                        intv1 =
-                            Convert.ToInt32(words[0]) * 60;
+                        intv1 = Convert.ToInt32(words[0]);
 
                     if (words.Length > 1)
-                        intv2 =
-                            Convert.ToInt32(words[1]) * 60;
+                        intv2 = Convert.ToInt32(words[1]);
 
+                    bool flag = false;
 
                     DateTime startd = DateTime.MinValue;
-
                     DateTime endd = DateTime.MinValue;
 
                     TimeSpan totalDuration = TimeSpan.Zero;
 
                     IdlingSubStatus currentStop = null;
 
-                    int resultIndex =
-                        result.FindIndex(x => x.BBID == item.BBID);
+                    int resultIndex = result.FindIndex(x => x.BBID == item.BBID);
 
-                    for (int i = 0; i < deviceDetailList.Count; i++)
+                    foreach (var data in deviceDetailList)
                     {
-                        var data = deviceDetailList[i];
+                        int ignition;
 
-                        bool ignitionOff = data.acignition == "Off";
+                        if (!int.TryParse(data.acignition, out ignition))
+                        {
+                            ignition = data.acignition.Equals("Off",
+                                StringComparison.OrdinalIgnoreCase)
+                                ? 1
+                                : 0;
+                        }
 
-                        bool ignitionOn = data.acignition == "On";
-
-                        // =========================================
-                        // START STOPPAGE
-                        // SAME AS ORIGINAL CODE
-                        // =========================================
-
-                        if (ignitionOn && flag == false)
+                        // START IDLING
+                        if (ignition == 0 &&
+                            data.speed == 0 &&
+                            !flag)
                         {
                             currentStop = new IdlingSubStatus
                             {
-                                StartDate =
-                                    data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
-                                StopDate =
-                                    data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
-
-                                Location = data.location,
-
-                                IgnitionStatus = false,
-
-                                Duration = "0 minute(s) 0 second(s)"
+                                startDate = data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
+                                location = data.location,
+                                latitude = data.latitude,
+                                longitude = data.longitude,
+                                IgnitionStatus = false
                             };
 
                             startd = data.datadate;
-
                             endd = data.datadate;
-
                             flag = true;
                         }
 
-                        // =========================================
-                        // CONTINUE STOPPAGE
-                        // UPDATE END TIME
-                        // =========================================
-
-                        else if (ignitionOn && flag == true)
+                        // CONTINUE IDLING
+                        else if (ignition == 0 &&
+                                 data.speed == 0 &&
+                                 flag)
                         {
                             endd = data.datadate;
+
+                            currentStop.location = data.location;
+                            currentStop.latitude = data.latitude;
+                            currentStop.longitude = data.longitude;
                         }
 
-                        // =========================================
-                        // CLOSE STOPPAGE
-                        // ONLY WHEN IGNITION ON
-                        // =========================================
-
-                        else if (ignitionOff && flag == true)
+                        // IGNITION OFF
+                        else if (ignition == 1 &&
+                                 data.speed == 0 &&
+                                 flag)
                         {
-                            // EXACT OLD LOGIC
+                            endd = data.datadate;
 
+                            TimeSpan ts = endd.Subtract(startd);
+
+                            if (ts.TotalSeconds > 0 &&
+                                IsValidIdling(ts, intv1, intv2))
+                            {
+                                currentStop.stopDate =
+                                    endd.ToString("yyyy-MM-dd HH:mm:ss");
+
+                                currentStop.location = data.location;
+                                currentStop.latitude = data.latitude;
+                                currentStop.longitude = data.longitude;
+
+                                currentStop.Vstatus = "Ignition switch Off";
+
+                                currentStop.duration =
+                                    $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+
+                                totalDuration = totalDuration.Add(ts);
+
+                                result[resultIndex]
+                                    .IdlingSubStatuslist
+                                    .Add(currentStop);
+                            }
+
+                            flag = false;
+                            currentStop = null;
+                        }
+
+                        // VEHICLE MOVED
+                        else if (ignition == 0 &&
+                                 data.speed > 0 &&
+                                 flag)
+                        {
                             if (endd < data.datadate)
                             {
                                 endd = data.datadate;
@@ -1177,391 +1198,77 @@ ORDER BY datadate ASC";
 
                             TimeSpan ts = endd.Subtract(startd);
 
-                            // IMPORTANT:
-                            // skip zero duration stoppage
-                            if (ts.TotalSeconds > 0)
+                            if (ts.TotalSeconds > 0 &&
+                                IsValidIdling(ts, intv1, intv2))
                             {
-                                if (ts.TotalSeconds > 0)
-                                {
-                                    bool shouldAdd = false;
+                                currentStop.stopDate =
+                                    endd.ToString("yyyy-MM-dd HH:mm:ss");
 
-                                    // 0-0 = old logic (show all)
-                                    if (intv1 == 0 && intv2 == 0)
-                                    {
-                                        shouldAdd = true;
-                                    }
+                                currentStop.location = data.location;
+                                currentStop.latitude = data.latitude;
+                                currentStop.longitude = data.longitude;
 
-                                    // 10-0 = greater than 10 minute
-                                    else if (intv1 > 0 && intv2 == 0)
-                                    {
-                                        if (ts.TotalSeconds >= intv1)
-                                        {
-                                            shouldAdd = true;
-                                        }
-                                    }
+                                currentStop.Vstatus = "Vehicle Moved";
 
-                                    // 1-2 = between 1 and 2 minute
-                                    else
-                                    {
-                                        if (ts.TotalSeconds >= intv1 &&
-                                            ts.TotalSeconds <= intv2)
-                                        {
-                                            shouldAdd = true;
-                                        }
-                                    }
+                                currentStop.duration =
+                                    $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
 
-                                    if (shouldAdd)
-                                    {
-                                        currentStop.Duration =
-                                            $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
+                                totalDuration = totalDuration.Add(ts);
 
-                                        totalDuration += ts;
-
-                                        result[resultIndex]
-                                            .IdlingSubStatuslist
-                                            .Add(currentStop);
-
-                                        result[resultIndex].IdlingCount++;
-                                    }
-                                }
-                                //currentStop.Duration =
-                                //    $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
-
-                                //totalDuration += ts;
-
-                                //result[resultIndex]
-                                //    .objStoppageReport
-                                //    .Add(currentStop);
-
-                                //result[resultIndex].StoppageCount++;
+                                result[resultIndex]
+                                    .IdlingSubStatuslist
+                                    .Add(currentStop);
                             }
 
                             flag = false;
+                            currentStop = null;
                         }
                     }
 
-                    // =========================================
-                    // HANDLE LAST RECORD
-                    // =========================================
-
+                    // Handle open idling session at end
                     if (flag && currentStop != null)
                     {
                         TimeSpan ts = endd.Subtract(startd);
 
-                        if (ts.TotalSeconds > 0)
+                        if (ts.TotalSeconds > 0 &&
+                            IsValidIdling(ts, intv1, intv2))
                         {
-                            if (ts.TotalSeconds > 0)
-                            {
-                                bool shouldAdd = false;
+                            currentStop.stopDate =
+                                endd.ToString("yyyy-MM-dd HH:mm:ss");
 
-                                // 0-0 = old logic (show all)
-                                if (intv1 == 0 && intv2 == 0)
-                                {
-                                    shouldAdd = true;
-                                }
+                            currentStop.Vstatus = "Open Session";
 
-                                // 10-0 = greater than 10 minute
-                                else if (intv1 > 0 && intv2 == 0)
-                                {
-                                    if (ts.TotalSeconds >= intv1)
-                                    {
-                                        shouldAdd = true;
-                                    }
-                                }
+                            currentStop.duration =
+                                $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
 
-                                // 1-2 = between 1 and 2 minute
-                                else
-                                {
-                                    if (ts.TotalSeconds >= intv1 &&
-                                        ts.TotalSeconds <= intv2)
-                                    {
-                                        shouldAdd = true;
-                                    }
-                                }
+                            totalDuration = totalDuration.Add(ts);
 
-                                if (shouldAdd)
-                                {
-                                    currentStop.Duration =
-                                        $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
-
-                                    totalDuration += ts;
-
-                                    result[resultIndex]
-                                        .IdlingSubStatuslist
-                                        .Add(currentStop);
-
-                                    result[resultIndex].IdlingCount++;
-                                }
-                            }
-                            //currentStop.Duration =
-                            //    $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
-
-                            //totalDuration += ts;
-
-                            //result[resultIndex]
-                            //    .objStoppageReport
-                            //    .Add(currentStop);
-
-                            //result[resultIndex].StoppageCount++;
+                            result[resultIndex]
+                                .IdlingSubStatuslist
+                                .Add(currentStop);
                         }
                     }
 
-                    result[resultIndex].TotalIdlingHours =
+                    result[resultIndex].idlingCount =
+                        result[resultIndex].IdlingSubStatuslist.Count;
+
+                    result[resultIndex].TotalIdlingTime =
                         $"{totalDuration.Days} day(s) " +
                         $"{totalDuration.Hours} hour(s) " +
-                        $"{totalDuration.Minutes} minute(s) " +
-                        $"{totalDuration.Seconds} second(s)";
+                        $"{totalDuration.Minutes} minute(s)";
                 });
 
                 await Task.WhenAll(tasks);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: " + ex.Message);
+                Console.WriteLine(ex.Message);
             }
+
             return (result, TotalCount);
         }
 
 
-        //        public async Task<(List<StoppageSubModel> data, int TotalCount)> GetCombinedStoppageReport(
-        //            DataTableRequestModel dtmodel)
-        //        {
-        //            var result = new List<StoppageSubModel>();
-        //            int TotalCount = 0;
-        //            try
-        //            {
-
-        //                // ================= MAIN DATA =================
-
-        //                using (SqlConnection con = new SqlConnection(_connectionString43))
-        //                using (SqlCommand cmd = new SqlCommand("GetVehiclesByCustIdAndSearch", con))
-        //                {
-        //                    cmd.CommandType = CommandType.StoredProcedure;
-
-        //                    cmd.Parameters.AddWithValue("@custId", dtmodel.CustId);
-        //                    cmd.Parameters.AddWithValue("@iDisplayStart", dtmodel.iDisplayStart);
-        //                    cmd.Parameters.AddWithValue("@iDisplayLength", dtmodel.iDisplayLength);
-        //                    cmd.Parameters.AddWithValue("@sortColumn", dtmodel.sortColumn);
-        //                    cmd.Parameters.AddWithValue("@sortDirection", dtmodel.sortDirection);
-        //                    cmd.Parameters.AddWithValue("@sSearch", dtmodel.sSearch);
-
-        //                    SqlParameter totalCountParam = new SqlParameter("@TotalCount", SqlDbType.Int);
-        //                    totalCountParam.Direction = ParameterDirection.Output;
-        //                    cmd.Parameters.Add(totalCountParam);
-
-        //                    await con.OpenAsync();
-
-        //                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
-        //                    {
-        //                        while (await dr.ReadAsync())
-        //                        {
-        //                            result.Add(new StoppageSubModel
-        //                            {
-        //                                BBID = GetString(dr["BBID"]),
-        //                                VehicleName = GetString(dr["VehName"]),
-        //                                DriverName = GetString(dr["DriverName"]),
-        //                                objStoppageReport =
-        //                                    new List<StoppageAnalysis>()
-        //                            });
-        //                        }
-        //                    }
-        //                    TotalCount = Convert.ToInt32(totalCountParam.Value);
-        //                }
-
-        //                // ================= PARALLEL DEVICE TABLE CALLS =================
-        //                var tasks = result.Select(async item =>
-        //                {
-        //                    var deviceDetailList = new List<PlaybackDataModel>();
-
-        //                    using (SqlConnection con =
-        //                           new SqlConnection(GetConnectionStringTableWise(item.BBID)))
-        //                    {
-        //                        await con.OpenAsync();
-
-        //                        string query = $@"
-        //SELECT speed,
-        //       datadate,
-        //       acignition,
-        //       distance,
-        //       loc
-        //FROM [{item.BBID}]
-        //WHERE datadate >= @startdate
-        //AND datadate <= @enddate
-        //ORDER BY datadate ASC";
-
-        //                        using (SqlCommand cmd = new SqlCommand(query, con))
-        //                        {
-        //                            DateTime startDate = GetDateTime(dtmodel.beginDate);
-
-        //                            DateTime endDate = GetDateTime(dtmodel.endDate)
-        //                                .AddDays(1)
-        //                                .AddSeconds(-1);
-
-        //                            cmd.Parameters.Add("@startdate", SqlDbType.DateTime)
-        //                                .Value = startDate;
-
-        //                            cmd.Parameters.Add("@enddate", SqlDbType.DateTime)
-        //                                .Value = endDate;
-
-        //                            using (SqlDataReader dr =
-        //                                   await cmd.ExecuteReaderAsync())
-        //                            {
-        //                                while (await dr.ReadAsync())
-        //                                {
-        //                                    deviceDetailList.Add(new PlaybackDataModel
-        //                                    {
-        //                                        speed = GetInt(dr["speed"]),
-
-        //                                        datadate = GetDateTime(dr["datadate"]),
-
-        //                                        // IMPORTANT:
-        //                                        // 1 = OFF
-        //                                        // 0 = ON
-        //                                        acignition =
-        //                                            GetString(dr["acignition"]) == "1"
-        //                                            ? "Off"
-        //                                            : "On",
-
-        //                                        distance = GetDecimal(dr["distance"]),
-
-        //                                        location = GetString(dr["loc"])
-        //                                    });
-        //                                }
-        //                            }
-        //                        }
-        //                    }
-
-        //                    bool flag = false;
-
-        //                    DateTime startd = DateTime.MinValue;
-
-        //                    DateTime endd = DateTime.MinValue;
-
-        //                    TimeSpan totalDuration = TimeSpan.Zero;
-
-        //                    StoppageAnalysis currentStop = null;
-
-        //                    int resultIndex =
-        //                        result.FindIndex(x => x.BBID == item.BBID);
-
-        //                    for (int i = 0; i < deviceDetailList.Count; i++)
-        //                    {
-        //                        var data = deviceDetailList[i];
-
-        //                        bool ignitionOff = data.acignition == "Off";
-
-        //                        bool ignitionOn = data.acignition == "On";
-
-        //                        // =========================================
-        //                        // START STOPPAGE
-        //                        // SAME AS ORIGINAL CODE
-        //                        // =========================================
-
-        //                        if (ignitionOff && flag == false)
-        //                        {
-        //                            currentStop = new StoppageAnalysis
-        //                            {
-        //                                StopDateAndTime =
-        //                                    data.datadate.ToString("yyyy-MM-dd HH:mm:ss"),
-
-        //                                Location = data.location,
-
-        //                                IgnitionStatus = false,
-
-        //                                Duration = "0 minute(s) 0 second(s)"
-        //                            };
-
-        //                            startd = data.datadate;
-
-        //                            endd = data.datadate;
-
-        //                            flag = true;
-        //                        }
-
-        //                        // =========================================
-        //                        // CONTINUE STOPPAGE
-        //                        // UPDATE END TIME
-        //                        // =========================================
-
-        //                        else if (ignitionOff && flag == true)
-        //                        {
-        //                            endd = data.datadate;
-        //                        }
-
-        //                        // =========================================
-        //                        // CLOSE STOPPAGE
-        //                        // ONLY WHEN IGNITION ON
-        //                        // =========================================
-
-        //                        else if (ignitionOn && flag == true)
-        //                        {
-        //                            // EXACT OLD LOGIC
-
-        //                            if (endd < data.datadate)
-        //                            {
-        //                                endd = data.datadate;
-        //                            }
-
-        //                            TimeSpan ts = endd.Subtract(startd);
-
-        //                            // IMPORTANT:
-        //                            // skip zero duration stoppage
-        //                            if (ts.TotalSeconds > 0)
-        //                            {
-        //                                currentStop.Duration =
-        //                                    $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
-
-        //                                totalDuration += ts;
-
-        //                                result[resultIndex]
-        //                                    .objStoppageReport
-        //                                    .Add(currentStop);
-
-        //                                result[resultIndex].StoppageCount++;
-        //                            }
-
-        //                            flag = false;
-        //                        }
-        //                    }
-
-        //                    // =========================================
-        //                    // HANDLE LAST RECORD
-        //                    // =========================================
-
-        //                    if (flag && currentStop != null)
-        //                    {
-        //                        TimeSpan ts = endd.Subtract(startd);
-
-        //                        if (ts.TotalSeconds > 0)
-        //                        {
-        //                            currentStop.Duration =
-        //                                $"{ts.Days:D2}-{ts.Hours:D2}:{ts.Minutes:D2}:{ts.Seconds:D2}";
-
-        //                            totalDuration += ts;
-
-        //                            result[resultIndex]
-        //                                .objStoppageReport
-        //                                .Add(currentStop);
-
-        //                            result[resultIndex].StoppageCount++;
-        //                        }
-        //                    }
-
-        //                    result[resultIndex].TotalStoppageTime =
-        //                        $"{totalDuration.Days} day(s) " +
-        //                        $"{totalDuration.Hours} hour(s) " +
-        //                        $"{totalDuration.Minutes} minute(s) " +
-        //                        $"{totalDuration.Seconds} second(s)";
-        //                });
-
-        //                await Task.WhenAll(tasks);
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                Console.WriteLine("Error: " + ex.Message);
-        //            }
-        //            return (result, TotalCount);
-        //        }
         public async Task<(List<DistanceReportDataModel> data, int TotalCount)> GetDistanceReportData(DataTableRequestModel model)
         {
             var result = new List<DistanceReportDataModel>();
@@ -2291,7 +1998,7 @@ ORDER BY datadate";
                                 sublistObj.latitude = GetFloat(row["latitude"]);
                                 sublistObj.longitude = GetFloat(row["longitude"]);
                                 totalSpeed = totalSpeed + GetInt(row["Speed"]);
-                                
+
 
                                 speedSublist.Add(sublistObj);
 
@@ -2324,7 +2031,7 @@ ORDER BY datadate";
                         {
                             item.overSpeedDuration = "0 Hour(s) 0 Minute(s) 0 Second(s)";
                         }
-                      
+
                         item.OSsublst = speedSublist;
 
                     }
@@ -2339,7 +2046,8 @@ ORDER BY datadate";
         }
         #endregion
 
-        public async Task<EntryExitReport> GetListofEntryExit(DataTableRequestModel requestModel, string bbid)
+
+        public async Task<EntryExitReport> GetListofEntryExit( DataTableRequestModel requestModel,string rtype,string bbid)
         {
             EntryExitReport modelObj = new EntryExitReport();
             modelObj.vehicleList = new List<POIEntryExitModelExt>();
@@ -2347,38 +2055,38 @@ ORDER BY datadate";
             try
             {
                 DataTable dataT = new DataTable();
+
                 using (SqlConnection con = new SqlConnection(_connectionString43))
                 using (SqlCommand cmd = new SqlCommand("New_getpoidetailsforbbid", con))
                 {
                     cmd.CommandType = CommandType.StoredProcedure;
+
                     cmd.Parameters.AddWithValue("@LowerBand", requestModel.iDisplayStart);
                     cmd.Parameters.AddWithValue("@UpperBand", requestModel.iDisplayStart + requestModel.iDisplayLength);
                     cmd.Parameters.AddWithValue("@sortColumn", requestModel.sortColumn);
                     cmd.Parameters.AddWithValue("@sortDirection", requestModel.sortDirection);
-                    cmd.Parameters.Add("@ItemCount", SqlDbType.Int).Direction = ParameterDirection.Output;
+
+                    cmd.Parameters.Add("@ItemCount", SqlDbType.Int).Direction =ParameterDirection.Output;
 
                     cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
 
-                    cmd.Parameters.AddWithValue("@BBID", string.IsNullOrWhiteSpace(bbid) ? (object)DBNull.Value : bbid);
+                    cmd.Parameters.AddWithValue("@BBID",string.IsNullOrWhiteSpace(bbid)? (object)DBNull.Value: bbid);
 
+                    cmd.Parameters.Add("@searchText", SqlDbType.VarChar).Value =string.IsNullOrWhiteSpace(requestModel.sSearch)? DBNull.Value : requestModel.sSearch;
 
-                    cmd.Parameters.Add("@searchText", SqlDbType.VarChar).Value = string.IsNullOrWhiteSpace(requestModel.sSearch) || requestModel.sSearch == "null" ? DBNull.Value : requestModel.sSearch;
-
-                    //cmd.Parameters.AddWithValue("@command", "A");
-
-                    cmd.Parameters.AddWithValue("@Type", (object)type ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@Type",string.IsNullOrWhiteSpace(type)? (object)DBNull.Value: type);
 
                     cmd.Parameters.AddWithValue("@From", requestModel.beginDate);
-
                     cmd.Parameters.AddWithValue("@To", requestModel.endDate);
 
                     await con.OpenAsync();
-                    using (SqlDataReader dr =
-                        await cmd.ExecuteReaderAsync())
+
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                     {
                         dataT.Load(dr);
                     }
-                    modelObj.PageCount = Convert.ToInt32(cmd.Parameters["@ItemCount"].Value);
+
+                    modelObj.PageCount =GetInt(cmd.Parameters["@ItemCount"].Value);
                 }
 
                 var tasks = dataT.AsEnumerable()
@@ -2387,60 +2095,141 @@ ORDER BY datadate";
                         POIEntryExitModelExt obj = new POIEntryExitModelExt();
 
                         obj.Bbid = GetString(row["bbid"]);
-
-                        obj.VehName = GetString(row["VehName"]) ;
-
-                        obj.driverName = GetString(row["DriverName"])   ;
-
+                        obj.VehName = GetString(row["VehName"]);
+                        obj.driverName = GetString(row["DriverName"]);
                         obj.poisCoveredList = new List<POIEntryExitModel>();
 
-                        // =====================================
+                        string reportType = (rtype ?? "").Trim();
+
+                        // ====================================================
                         // ENTRY EXIT REPORT
-                        // =====================================                      
-                        using (SqlConnection con = new SqlConnection(_defaultConnectionOrange44))
-                        using (SqlCommand cmd = new SqlCommand("[dbo].[GetPOIDetailsEntryExiy]", con))
+                        // ====================================================
+                        if (string.Equals(
+                            reportType,
+                            "EntryExitReport",
+                            StringComparison.OrdinalIgnoreCase))
                         {
-                            cmd.CommandType = CommandType.StoredProcedure;
-
-                            cmd.Parameters.AddWithValue("@From", requestModel.beginDate);
-
-                            cmd.Parameters.AddWithValue("@To", requestModel.endDate);
-
-                            cmd.Parameters.AddWithValue("@Custid", requestModel.CustId);
-
-                            cmd.Parameters.AddWithValue("@BBid", obj.Bbid);
-
-                            await con.OpenAsync();
-
-                            using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                            using (SqlConnection con =
+                                new SqlConnection(_defaultConnectionOrange44))
+                            using (SqlCommand cmd =
+                                new SqlCommand("[dbo].[GetPOIDetailsEntryExiy]", con))
                             {
-                                DataTable dt = new DataTable();
-                                dt.Load(dr);
-                                for (int i = 0; i < dt.Rows.Count; i++)
+                                cmd.CommandType = CommandType.StoredProcedure;
+
+                                cmd.Parameters.AddWithValue("@From",requestModel.beginDate);
+
+                                cmd.Parameters.AddWithValue("@To",requestModel.endDate);
+
+                                cmd.Parameters.AddWithValue("@Custid", requestModel.CustId);
+
+                                cmd.Parameters.AddWithValue("@BBid",obj.Bbid);
+
+                                await con.OpenAsync();
+
+                                using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
                                 {
-                                    POIEntryExitModel item = AddData(requestModel.CustId, dt, i, obj.VehName, GetInt(requestModel.Interval));
-                                    if (item != null)
+                                    DataTable dt = new DataTable();
+                                    dt.Load(dr);
+
+                                    obj.poisCovered = dt.Rows.Count;
+
+                                    for (int i = 0; i < dt.Rows.Count; i++)
                                     {
-                                        obj.poisCoveredList.Add(item);
+                                        POIEntryExitModel item = AddData( requestModel.CustId, dt, i,obj.VehName,GetInt( requestModel.Interval));
+
+                                        if (item != null)
+                                        {
+                                            obj.poisCoveredList.Add(item);
+                                        }
                                     }
                                 }
                             }
                         }
-                        obj.poisCovered = obj.poisCoveredList.Count;
+                        // ====================================================
+                        // EXIT ENTRY REPORT
+                        // ====================================================
+                        else if (string.Equals(reportType, "ExitEntryReport",StringComparison.OrdinalIgnoreCase))
+                        {
+                            using (SqlConnection con =new SqlConnection(_defaultConnectionOrange44))
+                            {
+                                await con.OpenAsync();
+
+                                using (SqlCommand cmd =new SqlCommand("NewGetPOIsCoveredExitEntryCustom", con))
+                                {
+                                    cmd.CommandType = CommandType.StoredProcedure;
+
+                                    cmd.Parameters.AddWithValue("@From",requestModel.beginDate);
+
+                                    cmd.Parameters.AddWithValue("@To",requestModel.endDate);
+
+                                    cmd.Parameters.AddWithValue("@Custid",requestModel.CustId);
+
+                                    cmd.Parameters.AddWithValue("@BBid",obj.Bbid);
+
+                                    DataTable poiTable = new DataTable();
+
+                                    using (SqlDataReader dr =await cmd.ExecuteReaderAsync())
+                                    {
+                                        poiTable.Load(dr);
+                                    }
+
+                                    obj.poisCovered = poiTable.Rows.Count;
+
+                                    foreach (DataRow poiRow in poiTable.Rows)
+                                    {
+                                        using (SqlCommand detailCmd =new SqlCommand("[dbo].[NewGetPOIDetailsExitEntryCustomy]", con))
+                                        {
+                                            detailCmd.CommandType =CommandType.StoredProcedure;
+
+                                            detailCmd.Parameters.AddWithValue("@From",requestModel.beginDate);
+
+                                            detailCmd.Parameters.AddWithValue("@To",requestModel.endDate);
+
+                                            detailCmd.Parameters.AddWithValue("@Custid",requestModel.CustId);
+
+                                            detailCmd.Parameters.AddWithValue("@BBid",obj.Bbid);
+
+                                            detailCmd.Parameters.AddWithValue("@poiid", GetInt( poiRow["POIId"]));
+
+                                            DataTable detailTable =new DataTable();
+
+                                            using (SqlDataReader dr =await detailCmd.ExecuteReaderAsync())
+                                            {
+                                                detailTable.Load(dr);
+                                            }
+
+                                            foreach (DataRow detailRow in detailTable.Rows)
+                                            {
+                                                obj.poisCoveredList.Add(
+                                                    new POIEntryExitModel
+                                                    {
+                                                        POIName = GetString(detailRow["POIName"]),
+                                                        duration = GetString(detailRow["duration"]),
+                                                        Intime =GetString( detailRow["intime"]),
+                                                        OutTime =GetString(detailRow["outtime"])
+                                                    });
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        obj.poisCoveredList = obj.poisCoveredList;
+
                         return obj;
                     });
 
-                modelObj.vehicleList = (await Task.WhenAll(tasks)).ToList();
+                modelObj.vehicleList =
+                    (await Task.WhenAll(tasks)).ToList();
             }
             catch (Exception ex)
             {
-                modelObj.vehicleList =
-                    new List<POIEntryExitModelExt>();
+                modelObj.vehicleList = new List<POIEntryExitModelExt>();
             }
 
             return modelObj;
         }
-
         private POIEntryExitModel AddData(int custid, DataTable dt, int i, string vehName, int seconds)
         {
             POIEntryExitModel poiEntryExitModelObj = new POIEntryExitModel();
@@ -2540,7 +2329,6 @@ ORDER BY datadate";
                 return null;
             }
         }
-
         private string StartStopTemp(string vehId, string date)
         {
             string responseTemp = "";
@@ -2555,7 +2343,7 @@ ORDER BY datadate";
 
                     con.Open();
 
-                    responseTemp = GetString (cmd.ExecuteScalar());
+                    responseTemp = GetString(cmd.ExecuteScalar());
                 }
             }
             return responseTemp;

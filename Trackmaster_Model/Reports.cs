@@ -193,38 +193,36 @@ namespace Trackmaster_Model
       
         public class IdlingMainModel
         {
-            public string BBID { get; set; }          
-            public int IdlingCount { get; set; }          
-            public int TotalIdlingTime { get; set; }          
+            public string BBID { get; set; }
+            public int idlingCount { get; set; }          
+            public string TotalIdlingTime { get; set; }          
             public string VehicleName { get; set; }           
             public string DriverName { get; set; }           
             public string IgnitionOnOffCounter { get; set; }          
-            public string TotalIdlingHours { get; set; }
-
-            
-
             public int custid { get; set; }
-           
-
             public List<IdlingSubStatus> IdlingSubStatuslist { get; set; }
         }
         public class IdlingSubStatus
         {
             public Boolean IgnitionStatus { get; set; }
-            public string StartDate { get; set; }           
-            public string StopDate { get; set; }           
+            public string startDate { get; set; }           
+            public string stopDate { get; set; }           
             public string IgnitionOnTime { get; set; }           
             public string IgnitionOffTime { get; set; }          
             public string VehicleStatus { get; set; }
-            public string Location { get; set; }
-            public string Duration { get; set; }
+            public string location { get; set; }
+            public string duration { get; set; }
             [DisplayName("POI Location")]
             public string poi { get; set; }
 
            
             public string AddPoi { get; set; }
+            public decimal latitude { get; set; }
+            public decimal longitude { get; set; }
 
-         
+            public string Vstatus { get; set; }
+
+
         }
 
         public class ReportBase 

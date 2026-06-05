@@ -392,10 +392,11 @@ namespace Trackmaster_Backend.Controllers
             }
         }
         #endregion
+
         [HttpPost("GetEntryExitReport")]
-        public async Task<IActionResult> GetEntryExitReport([FromQuery] DataTableRequestModel model, [FromQuery] string bbid = "")
+        public async Task<IActionResult> GetEntryExitReport([FromQuery] DataTableRequestModel model, string rtype, [FromQuery] string bbid = "")
         {
-            var stoppage = await _reportsService.GetListofEntryExit(model, bbid);
+            var stoppage = await _reportsService.GetListofEntryExit(model, rtype, bbid);
 
             if(model.DownloadType == "Excel")
             {

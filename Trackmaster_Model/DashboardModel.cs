@@ -58,7 +58,12 @@ namespace Trackmaster_Model
     {
         public string VehName { get; set; }
         public string BBID { get; set; }
-
+        public string Type { get; set; }
+    }
+    public class VehicleType
+    {
+        public int Id { get; set; }
+        public string TypeName { get; set; }
     }
 
     public class OverSpeedReport

@@ -16,6 +16,7 @@ builder.Services.AddSingleton<IAccountService, AccountService>();
 builder.Services.AddSingleton<IDashboardService, DashboardService>();
 builder.Services.AddSingleton<IReportsService, ReportsService>();
 builder.Services.AddSingleton<IVehicleStatusService, VehicleStatusService>();
+builder.Services.AddSingleton<IGeofenceService, GeofenceService>();
 
 
 
@@ -24,6 +25,7 @@ builder.Services.AddSingleton<IAccountRepository, AccountRepository>();
 builder.Services.AddSingleton<IDashboardRepository, DashboardRepository>();
 builder.Services.AddSingleton<IReportsRepository, ReportsRepository>();
 builder.Services.AddSingleton<IVehicleStatusRepository, VehicleStatusRepository>();
+builder.Services.AddSingleton<IGeofenceRepository, GeofenceRepository>();
 
 //-------------------Registration of repositories------------------------//
 builder.Services.AddSingleton<ImportExportExcelService>();
