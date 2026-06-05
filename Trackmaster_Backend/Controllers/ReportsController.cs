@@ -286,7 +286,7 @@ namespace Trackmaster_Backend.Controllers
         }
 
         [HttpPost("GetDistanceReportData")]
-        public async Task<IActionResult> GetDistanceReportData([FromQuery] DataTableRequestModel model)
+        public async Task<IActionResult> GetDistanceReportData([FromBody] DataTableRequestModel model)
         {
             var result = await _reportsService.GetDistanceReportData(model);
 
