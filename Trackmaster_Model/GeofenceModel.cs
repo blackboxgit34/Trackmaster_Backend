@@ -19,15 +19,24 @@ namespace Trackmaster_Model
     public class AddPoiRequest
     {
         public string custid { get; set; }
-        public string id { get; set; }
         public string lat { get; set; }
         public string longi { get; set; }
         public string location { get; set; }
         public string radius { get; set; }=null;
+    }
+
+
+    public class PoiList
+    {
+        public string id { get; set; }
+        public string lat { get; set; }
+        public string lng { get; set; }
         public string details { get; set; }
         public string StandardDistance { get; set; }
         public string poitype { get; set; }
+
     }
+
 
 
 }

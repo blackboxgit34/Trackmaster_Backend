@@ -26,7 +26,7 @@ namespace Trackmaster_Service.Service
             return await _geofenceRepository.LocationExist(lat, longi, custid);
         }
 
-        public async Task<List<AddPoiRequest>>GetPOi(string CustId)
+        public async Task<List<PoiList>>GetPOi(string CustId)
         {
             return await _geofenceRepository.GetPOI(CustId);
         }
