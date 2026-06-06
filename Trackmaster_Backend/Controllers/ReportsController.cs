@@ -312,28 +312,71 @@ namespace Trackmaster_Backend.Controllers
         [HttpGet("GetAllStoppageReport")]
         public async Task<IActionResult> GetAllStoppageReport([FromQuery] DataTableRequestModel dtmodel)
          {
-           
-           var stoppage = await _reportsService.GetCombinedStoppageReport(dtmodel);
+            try
+            {
+                var stoppage = await _reportsService.GetCombinedStoppageReport(dtmodel);
+                if (dtmodel.DownloadType == "Excel")
+                {
+                    var reportName = $"StoppageReport_{dtmodel.CustId}.xlsx";
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(stoppage.data, reportName, null, null);
+                    return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
+                }
+                if (dtmodel.DownloadType == "Pdf")
+                {
+                    var reportName = $"StoppageReport_{dtmodel.CustId}.pdf";
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(stoppage.data, reportName, null, null);
+                    return File(stream, "application/pdf", reportName);
+                }
 
-            return Ok(new
+                return Ok(new
             {
                 data = stoppage.data,
                 count = stoppage.TotalCount
             });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "An error occurred while fetching Stoppage data.",
+                    error = ex.Message
+                });
+            }
 
         }
 
         [HttpGet("GetIdlingStatusReport")]
         public async Task<IActionResult> GetIdlingStatusReport([FromQuery] DataTableRequestModel dtmodel)
         {
-
-            var stoppage = await _reportsService.GetIdlingStatusReport(dtmodel);
-
-            return Ok(new
+            try
+            {
+                var stoppage = await _reportsService.GetIdlingStatusReport(dtmodel);
+                if (dtmodel.DownloadType == "Excel")
+                {
+                    var reportName = $"IdlingStatus_{dtmodel.CustId}.xlsx";
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(stoppage.data, reportName, null, null);
+                    return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
+                }
+                if (dtmodel.DownloadType == "Pdf")
+                {
+                    var reportName = $"IdlingStatus_{dtmodel.CustId}.pdf";
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(stoppage.data, reportName, null, null);
+                    return File(stream, "application/pdf", reportName);
+                }
+                return Ok(new
             {
                 data = stoppage.data,
                 count = stoppage.TotalCount
             });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "An error occurred while fetching Idling data.",
+                    error = ex.Message
+                });
+            }
 
         }
 
