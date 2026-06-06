@@ -546,7 +546,7 @@ namespace Trackmaster_Repository.Repository
 
 
 
-        public async Task<VehicleStatusResponse> VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        public async Task<VehicleStatusResponse> VehicleStatus(DataTableRequestModel model)
         {
             var result = new VehicleStatusResponse();
             result.VehicleData = new List<VehicleStatusDto>();
@@ -556,10 +556,10 @@ namespace Trackmaster_Repository.Repository
             {
                 cmd.CommandType = CommandType.StoredProcedure;
 
-                cmd.Parameters.AddWithValue("@custId", custId);
-                cmd.Parameters.AddWithValue("@LowerBand", lower);
-                cmd.Parameters.AddWithValue("@UpperBand", upper);
-                cmd.Parameters.AddWithValue("@searchText", (object)search ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@custId", model.CustId);
+                cmd.Parameters.AddWithValue("@LowerBand", model.iDisplayStart);
+                cmd.Parameters.AddWithValue("@UpperBand", model.iDisplayLength);
+                cmd.Parameters.AddWithValue("@searchText", (object)model.sSearch ?? DBNull.Value);
 
                 SqlParameter outParam = new SqlParameter("@ItemCount", SqlDbType.Int)
                 {
@@ -597,8 +597,8 @@ namespace Trackmaster_Repository.Repository
 
                     cmd.Parameters.AddWithValue("@bbid", item.BBID);
                     cmd.Parameters.AddWithValue("@overspeed", item.Overspeed);
-                    cmd.Parameters.AddWithValue("@beginDate", start);
-                    cmd.Parameters.AddWithValue("@EndDate", end);
+                    cmd.Parameters.AddWithValue("@beginDate", model.beginDate);
+                    cmd.Parameters.AddWithValue("@EndDate", model.endDate);
 
                     await con.OpenAsync();
 
@@ -621,7 +621,7 @@ namespace Trackmaster_Repository.Repository
             return result;
         }
 
-        public async Task<VehicleStatusResponse> BatteryDisconnection(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        public async Task<VehicleStatusResponse> BatteryDisconnection(DataTableRequestModel model)
         {
             var result = new VehicleStatusResponse();
             result.VehicleData = new List<VehicleStatusDto>();
@@ -631,10 +631,10 @@ namespace Trackmaster_Repository.Repository
             {
                 cmd.CommandType = CommandType.StoredProcedure;
 
-                cmd.Parameters.AddWithValue("@custId", custId);
-                cmd.Parameters.AddWithValue("@LowerBand", lower);
-                cmd.Parameters.AddWithValue("@UpperBand", upper);
-                cmd.Parameters.AddWithValue("@searchText", (object)search ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@custId", model.CustId);
+                cmd.Parameters.AddWithValue("@LowerBand", model.iDisplayStart);
+                cmd.Parameters.AddWithValue("@UpperBand", model.iDisplayLength);
+                cmd.Parameters.AddWithValue("@searchText", (object)model.sSearch ?? DBNull.Value);
 
                 SqlParameter outParam = new SqlParameter("@ItemCount", SqlDbType.Int)
                 {
@@ -669,8 +669,8 @@ namespace Trackmaster_Repository.Repository
                     cmd.CommandType = CommandType.StoredProcedure;
 
                     cmd.Parameters.AddWithValue("@TableName", item.BBID);
-                    cmd.Parameters.AddWithValue("@beginDate", start);
-                    cmd.Parameters.AddWithValue("@EndDate", end);
+                    cmd.Parameters.AddWithValue("@beginDate", model.beginDate);
+                    cmd.Parameters.AddWithValue("@EndDate", model.endDate);
 
                     await con.OpenAsync();
 

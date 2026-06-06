@@ -262,9 +262,9 @@ namespace Trackmaster_Backend.Controllers
         }
 
         [HttpGet("VehicleStatus")]
-        public async Task<IActionResult> VehicleStatus(int custId, int lower, int upper, string? search, DateTime start, DateTime end)
+        public async Task<IActionResult> VehicleStatus([FromQuery] DataTableRequestModel model)
         {
-            var result = await _reportsService.VehicleStatus(custId, lower, upper, search, start, end);
+            var result = await _reportsService.VehicleStatus(model);
 
             return Ok(new
             {
@@ -274,9 +274,9 @@ namespace Trackmaster_Backend.Controllers
         }
 
         [HttpGet("BatteryDisconnection")]
-        public async Task<IActionResult> BatteryDisconnection(int custId, int lower, int upper, string? search, DateTime start, DateTime end)
+        public async Task<IActionResult> BatteryDisconnection([FromQuery] DataTableRequestModel model)
         {
-            var result = await _reportsService.BatteryDisconnection(custId, lower, upper, search, start, end);
+            var result = await _reportsService.BatteryDisconnection(model);
 
             return Ok(new
             {

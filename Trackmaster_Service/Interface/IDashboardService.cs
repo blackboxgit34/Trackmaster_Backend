@@ -7,5 +7,6 @@ namespace Trackmaster_Service.Interface
     {
         Task<DashboardData> GetDashboardData(int userid, string type, string bbid, DateTime start, DateTime end);
         Task<List<VehicleList>> GetAllVehicleListByCustId(int custId);
+        Task<List<VehicleType>> GetAllVehicleTypes();
     }
 }
