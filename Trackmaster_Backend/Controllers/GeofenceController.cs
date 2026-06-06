@@ -95,7 +95,7 @@ namespace Trackmaster_Backend.Controllers
                     return StatusCode(404, new
                     {
                         success = false,
-                        data = new List<AddPoiRequest>(),
+                        data = new List<PoiList>(),
                         message = "No POI found"
                     });
                 }

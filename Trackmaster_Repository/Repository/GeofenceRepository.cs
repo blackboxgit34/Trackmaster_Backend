@@ -245,9 +245,9 @@ namespace Trackmaster_Repository.Repository
         }
 
 
-        public async Task<List<AddPoiRequest>> GetPOI(string custId)
+        public async Task<List<PoiList>> GetPOI(string custId)
         {
-            var poiList = new List<AddPoiRequest>();
+            var poiList = new List<PoiList>();
             try
             {
                 using var con = new SqlConnection(_connectionString43);
@@ -260,12 +260,12 @@ namespace Trackmaster_Repository.Repository
 
                 while (await reader.ReadAsync())
                 {
-                    poiList.Add(new AddPoiRequest
+                    poiList.Add(new PoiList
                     {
                       
                         id = GetString(reader["id"]),
                         lat = GetString(reader["lat"]),
-                        longi = GetString(reader["longi"]),
+                        lng = GetString(reader["longi"]),
                         details = GetString(reader["details"]),
                         StandardDistance = GetString(reader["StandardDistance"]),
                         poitype = GetString(reader["poitype"])
