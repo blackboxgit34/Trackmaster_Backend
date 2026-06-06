@@ -151,14 +151,40 @@ namespace Trackmaster_Model
             public DateTime? Time { get; set; }
             public string Speed { get; set; }
             public string Location { get; set; }
-            public string Status { get; set; }
-            public DateTime? Batterydisc { get; set; }
-            public DateTime? Batterycon { get; set; }
-            public string startloc { get; set; }
-            public string Endloc { get; set; }
-            public string Duration { get; set; }
+            public string Status { get; set; }           
+        }
+        public class BatteryDisconnectionResponse
+        {
+            public int ItemCount { get; set; }
+
+            public List<BatteryDisconnectionDto> VehicleData { get; set; } = new();
         }
 
+        public class BatteryDisconnectionDto
+        {
+            public int RowNo { get; set; }
+
+            public string BBID { get; set; }
+
+            public string VehName { get; set; }
+
+            public List<BatteryDisconnectionLogDto> Logs { get; set; } = new();
+        }
+
+        public class BatteryDisconnectionLogDto
+        {
+            public DateTime? Batterydisc { get; set; }
+
+            public DateTime? Batterycon { get; set; }
+
+            public string Startloc { get; set; }
+
+            public string Endloc { get; set; }
+
+            public string Duration { get; set; }
+
+            public string Status { get; set; }
+        }
         public class StoppageMainModel
         {
             public List<StoppageSubModel> StoppageSubModel { get; set; }

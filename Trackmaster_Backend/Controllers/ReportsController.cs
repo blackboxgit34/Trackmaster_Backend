@@ -264,25 +264,101 @@ namespace Trackmaster_Backend.Controllers
         [HttpGet("VehicleStatus")]
         public async Task<IActionResult> VehicleStatus([FromQuery] DataTableRequestModel model)
         {
-            var result = await _reportsService.VehicleStatus(model);
-
-            return Ok(new
+            try
             {
-                data = result.VehicleData,
-                count = result.ItemCount
-            });
+                var result = await _reportsService.VehicleStatus(model);
+
+                if (result == null)
+                    return NoContent();
+
+                if (model.DownloadType == "Excel")
+                {
+                    var reportName = $"VehicleStatus_{model.CustId}.xlsx";
+
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(result.VehicleData, reportName, null, null);
+
+                    return File(
+                        stream,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        reportName);
+                }
+
+                if (model.DownloadType == "Pdf")
+                {
+                    var reportName = $"VehicleStatus_{model.CustId}.pdf";
+
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(result.VehicleData, reportName, null, null);
+
+                    return File(
+                        stream,
+                        "application/pdf",
+                        reportName);
+                }
+
+                return Ok(new
+                {
+                    data = result.VehicleData,
+                    count = result.ItemCount
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "An error occurred while fetching vehicle status data.",
+                    error = ex.Message
+                });
+            }
         }
 
         [HttpGet("BatteryDisconnection")]
         public async Task<IActionResult> BatteryDisconnection([FromQuery] DataTableRequestModel model)
         {
-            var result = await _reportsService.BatteryDisconnection(model);
-
-            return Ok(new
+            try
             {
-                data = result.VehicleData,
-                count = result.ItemCount
-            });
+                var result = await _reportsService.BatteryDisconnection(model);
+
+                if (result == null)
+                    return NoContent();
+
+                if (model.DownloadType == "Excel")
+                {
+                    var reportName = $"BatteryDisconnection_{model.CustId}.xlsx";
+
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(result.VehicleData, reportName, null, null);
+
+                    return File(
+                        stream,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        reportName);
+                }
+
+                if (model.DownloadType == "Pdf")
+                {
+                    var reportName = $"BatteryDisconnection_{model.CustId}.pdf";
+
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(result.VehicleData, reportName, null, null);
+
+                    return File(
+                        stream,
+                        "application/pdf",
+                        reportName);
+                }
+
+                return Ok(new
+                {
+                    data = result.VehicleData,
+                    count = result.ItemCount
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "An error occurred while fetching battery disconnection data.",
+                    error = ex.Message
+                });
+            }
         }
 
         [HttpPost("GetDistanceReportData")]

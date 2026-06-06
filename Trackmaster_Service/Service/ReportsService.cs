@@ -84,7 +84,7 @@ namespace Trackmaster_Service.Service
             return await _reportsRepository.VehicleStatus(model);
         }
 
-        public async Task<VehicleStatusResponse> BatteryDisconnection(DataTableRequestModel model)
+        public async Task<BatteryDisconnectionResponse> BatteryDisconnection(DataTableRequestModel model)
         {
             return await _reportsRepository.BatteryDisconnection(model);
         }
