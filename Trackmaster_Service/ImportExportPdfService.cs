@@ -150,118 +150,94 @@ namespace Trackmaster_Service
 
             // ================= TABLE =================
 
+           
             if (data != null && data.Count > 0)
             {
-                var properties =
-                    typeof(T).GetProperties();
+                var properties = typeof(T).GetProperties();
 
-                // AUTO WIDTH TABLE
-                float[] columnWidths =
-                    Enumerable
-                    .Repeat(1f, properties.Length)
-                    .ToArray();
-
-                Table table =
-                    new Table(columnWidths);
-
-                table.SetWidth(
-                    UnitValue.CreatePercentValue(100)
-                );
-
-                // ================= HEADER =================
-
-                foreach (PropertyInfo prop in properties)
+                foreach (var parent in data)
                 {
-                    _ = table.AddHeaderCell(
-                        new Cell().Add(
-                            new Paragraph(prop.Name)
-                                .SetFontSize(9)
-                                .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
-                        )
-                    );
-                }
+                    // ================= PARENT HEADER (ONCE) =================
+                    Table parentTable = new Table(2);
+                    parentTable.SetWidth(UnitValue.CreatePercentValue(100));
 
-                // ================= DATA =================
-
-                foreach (var item in data)
-                {
-                    foreach (PropertyInfo prop in properties)
+                    foreach (var prop in properties)
                     {
-                        var value =
-                            prop.GetValue(item);
+                        var value = prop.GetValue(parent);
 
-                        // ================= HANDLE LIST =================
+                        // SKIP CHILD LIST HERE (we handle separately)
+                        if (IsEnumerableButNotString(value))
+                            continue;
 
-                        if (
-                            value != null &&
-                            value is System.Collections.IEnumerable enumerable &&
-                            !(value is string)
-                        )
+                        parentTable.AddCell(
+                            new Cell().Add(
+                            new Paragraph(prop.Name)
+                            .SetFontSize(9)
+                            .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
+                            )
+                        );
+
+                        parentTable.AddCell(new Cell()
+                            .Add(new Paragraph(value?.ToString() ?? "")
+                            .SetFontSize(9)));
+                    }
+
+                    document.Add(parentTable);
+
+                    // ================= CHILD TABLE =================
+                    foreach (var prop in properties)
+                    {
+                        var value = prop.GetValue(parent);
+
+                        if (!IsEnumerableButNotString(value))
+                            continue;
+
+                        var list = value as System.Collections.IEnumerable;
+
+                        Table childTable = new Table(UnitValue.CreatePercentArray(new float[] { 2, 2, 2, 2, 2 }))
+                            .SetWidth(UnitValue.CreatePercentValue(100));
+
+                        bool headerAdded = false;
+
+                        foreach (var item in list)
                         {
-                            List<string> subItems =
-                                new List<string>();
+                            var childProps = item.GetType().GetProperties();
 
-                            foreach (var subItem in enumerable)
+                            // HEADER ONCE
+                            if (!headerAdded)
                             {
-                                if (subItem == null)
-                                    continue;
-
-                                var subProps =
-                                    subItem
-                                        .GetType()
-                                        .GetProperties();
-
-                                List<string> subValues =
-                                    new List<string>();
-
-                                foreach (var subProp in subProps)
+                                foreach (var cp in childProps)
                                 {
-                                    var subValue =
-                                        subProp.GetValue(subItem);
-
-                                    subValues.Add(
-                                        $"{subProp.Name}: {subValue}"
+                                    childTable.AddHeaderCell(
+                                        new Cell().Add(
+                                            new Paragraph(cp.Name)
+                                            .SetFontSize(8)
+                                            .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
+                                        )
                                     );
                                 }
+                                headerAdded = true;
+                            }
 
-                                subItems.Add(
-                                    string.Join(
-                                        " | ",
-                                        subValues
+                            // DATA ROWS
+                            foreach (var cp in childProps)
+                            {
+                                var childValue = cp.GetValue(item);
+
+                                childTable.AddCell(
+                                    new Cell().Add(
+                                        new Paragraph(childValue?.ToString() ?? "")
+                                        .SetFontSize(7)
                                     )
                                 );
                             }
-
-                            table.AddCell(
-                                new Cell().Add(
-                                    new Paragraph(
-                                        string.Join(
-                                            "\n\n",
-                                            subItems
-                                        )
-                                    )
-                                    .SetFontSize(7)
-                                )
-                            );
                         }
 
-                        // ================= HANDLE NORMAL VALUE =================
-
-                        else
-                        {
-                            table.AddCell(
-                                new Cell().Add(
-                                    new Paragraph(
-                                        value?.ToString() ?? ""
-                                    )
-                                    .SetFontSize(8)
-                                )
-                            );
-                        }
+                        document.Add(childTable);
                     }
-                }
 
-                document.Add(table);
+                    document.Add(new Paragraph("\n"));
+                }
             }
 
             document.Add(new Paragraph(" "));
@@ -346,5 +322,14 @@ namespace Trackmaster_Service
 
             return companyInfo;
         }
+
+        //06.06.2025
+        private bool IsEnumerableButNotString(object value)
+        {
+            return value != null &&
+                   value is System.Collections.IEnumerable &&
+                   !(value is string);
+        }
+
     }
 }

@@ -225,7 +225,7 @@ namespace Trackmaster_Backend.Controllers
         }
         // neha k
         [HttpGet("GetConsolidatedIgnitionStatus")]
-        public async Task<IActionResult> GetConsolidatedIgnitionStatus([FromQuery] DataTableRequestModel requestModel,string bbid,string reportName)
+        public async Task<IActionResult> GetConsolidatedIgnitionStatus([FromQuery] DataTableRequestModel requestModel, string bbid, string reportName, string downloadType = null)
         {
             try
             {
@@ -236,7 +236,10 @@ namespace Trackmaster_Backend.Controllers
                     upperBound = 20;
 
                 ConsolidatedIgnitionModel consIgnition =
-                    await _reportsService.GetConsolidatedIgnitionStatus(requestModel,bbid,reportName);
+                    await _reportsService.GetConsolidatedIgnitionStatus(
+                        requestModel,
+                        bbid,
+                        reportName);
 
                 if (consIgnition == null ||
                     consIgnition.ConsolidatedIgnitionList == null)
@@ -244,6 +247,51 @@ namespace Trackmaster_Backend.Controllers
                     return NoContent();
                 }
 
+                // ================= EXCEL EXPORT =================
+                if (downloadType == "Excel")
+                {
+                    var fileName =
+                        $"ConsolidatedIgnitionStatus_{DateTime.Now:yyyyMMdd}.xlsx";
+
+                    var exportData =
+                        consIgnition.ConsolidatedIgnitionList.ToList();
+
+                    var stream =
+                        await _importExportExcelService.ExportToExcelFlatList(
+                            exportData,
+                            fileName,
+                            null,
+                            null);
+
+                    return File(
+                        stream,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        fileName);
+                }
+
+                // ================= PDF EXPORT =================
+                if (downloadType == "Pdf")
+                {
+                    var fileName =
+                        $"ConsolidatedIgnitionStatus_{DateTime.Now:yyyyMMdd}.pdf";
+
+                    var exportData =
+                        consIgnition.ConsolidatedIgnitionList.ToList();
+
+                    var stream =
+                        await _importExportPdfService.ExportToPdfFlatList(
+                            exportData,
+                            fileName,
+                            null,
+                            null);
+
+                    return File(
+                        stream,
+                        "application/pdf",
+                        fileName);
+                }
+
+                // ================= NORMAL RESPONSE =================
                 return Ok(new
                 {
                     sEcho = requestModel.sEcho,
@@ -254,35 +302,116 @@ namespace Trackmaster_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new
-                {
-                    message = ex.Message
-                });
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new
+                    {
+                        message = "An error occurred while fetching consolidated ignition status.",
+                        error = ex.Message
+                    });
             }
         }
+
+
 
         [HttpGet("VehicleStatus")]
         public async Task<IActionResult> VehicleStatus([FromQuery] DataTableRequestModel model)
         {
-            var result = await _reportsService.VehicleStatus(model);
-
-            return Ok(new
+            try
             {
-                data = result.VehicleData,
-                count = result.ItemCount
-            });
+                var result = await _reportsService.VehicleStatus(model);
+
+                if (result == null)
+                    return NoContent();
+
+                if (model.DownloadType == "Excel")
+                {
+                    var reportName = $"VehicleStatus_{model.CustId}.xlsx";
+
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(result.VehicleData, reportName, null, null);
+
+                    return File(
+                        stream,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        reportName);
+                }
+
+                if (model.DownloadType == "Pdf")
+                {
+                    var reportName = $"VehicleStatus_{model.CustId}.pdf";
+
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(result.VehicleData, reportName, null, null);
+
+                    return File(
+                        stream,
+                        "application/pdf",
+                        reportName);
+                }
+
+                return Ok(new
+                {
+                    data = result.VehicleData,
+                    count = result.ItemCount
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "An error occurred while fetching vehicle status data.",
+                    error = ex.Message
+                });
+            }
         }
 
         [HttpGet("BatteryDisconnection")]
         public async Task<IActionResult> BatteryDisconnection([FromQuery] DataTableRequestModel model)
         {
-            var result = await _reportsService.BatteryDisconnection(model);
-
-            return Ok(new
+            try
             {
-                data = result.VehicleData,
-                count = result.ItemCount
-            });
+                var result = await _reportsService.BatteryDisconnection(model);
+
+                if (result == null)
+                    return NoContent();
+
+                if (model.DownloadType == "Excel")
+                {
+                    var reportName = $"BatteryDisconnection_{model.CustId}.xlsx";
+
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(result.VehicleData, reportName, null, null);
+
+                    return File(
+                        stream,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        reportName);
+                }
+
+                if (model.DownloadType == "Pdf")
+                {
+                    var reportName = $"BatteryDisconnection_{model.CustId}.pdf";
+
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(result.VehicleData, reportName, null, null);
+
+                    return File(
+                        stream,
+                        "application/pdf",
+                        reportName);
+                }
+
+                return Ok(new
+                {
+                    data = result.VehicleData,
+                    count = result.ItemCount
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "An error occurred while fetching battery disconnection data.",
+                    error = ex.Message
+                });
+            }
         }
 
         [HttpPost("GetDistanceReportData")]
