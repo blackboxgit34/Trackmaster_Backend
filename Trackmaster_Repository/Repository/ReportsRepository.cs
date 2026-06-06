@@ -973,11 +973,6 @@ namespace Trackmaster_Repository.Repository
             }
             return (result, TotalCount);
         }
-
-
-
-
-
         public async Task<(List<IdlingMainModel> data, int TotalCount)> GetIdlingStatusReport(
            DataTableRequestModel dtmodel)
         {
@@ -1033,16 +1028,7 @@ namespace Trackmaster_Repository.Repository
                     {
                         await con.OpenAsync();
 
-                        string query = $@"
-SELECT speed,
-       datadate,
-       acignition,
-       distance,
-       loc
-FROM [{item.BBID}]
-WHERE datadate >= @startdate
-AND datadate <= @enddate
-ORDER BY datadate ASC";
+                        string query = $@"SELECT speed, datadate,  acignition,  distance,   loc FROM [{item.BBID}] WHERE datadate >= @startdate AND datadate <= @enddate ORDER BY datadate ASC";
 
                         using (SqlCommand cmd = new SqlCommand(query, con))
                         {
