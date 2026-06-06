@@ -79,14 +79,14 @@ namespace Trackmaster_Service.Service
             return await _reportsRepository.GetIdlingStatusReport(dtmodel);
         }
 
-        public async Task<VehicleStatusResponse> VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        public async Task<VehicleStatusResponse> VehicleStatus(DataTableRequestModel model)
         {
-            return await _reportsRepository.VehicleStatus(custId, lower, upper, search, start, end);
+            return await _reportsRepository.VehicleStatus(model);
         }
 
-        public async Task<VehicleStatusResponse> BatteryDisconnection(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        public async Task<VehicleStatusResponse> BatteryDisconnection(DataTableRequestModel model)
         {
-            return await _reportsRepository.BatteryDisconnection(custId, lower, upper, search, start, end);
+            return await _reportsRepository.BatteryDisconnection(model);
         }
         public async Task<(List<DistanceReportDataModel> data, int TotalCount)> GetDistanceReportData(DataTableRequestModel model)
         {
@@ -105,9 +105,9 @@ namespace Trackmaster_Service.Service
         #endregion
 
 
-        public async Task<EntryExitReport> GetListofEntryExit(DataTableRequestModel requestModel, string bbid)
+        public async Task<EntryExitReport> GetListofEntryExit(DataTableRequestModel requestModel, string rtype, string bbid)
         {
-            return await _reportsRepository.GetListofEntryExit(requestModel, bbid);
+            return await _reportsRepository.GetListofEntryExit(requestModel, rtype,bbid);
         }
     }
 }

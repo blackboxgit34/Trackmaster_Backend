@@ -164,7 +164,8 @@ namespace Trackmaster_Repository.Repository
                     list.Add(new VehicleList
                     {
                         VehName = GetString(reader["VehicleName"]),
-                        BBID = GetString(reader["BBID"])
+                        BBID = GetString(reader["BBID"]),
+                        Type = GetString(reader["Type"])
                     });
                 }
             }
@@ -174,7 +175,32 @@ namespace Trackmaster_Repository.Repository
             }
             return list;
         }
+        public async Task<List<VehicleType>> GetAllVehicleTypes()
+        {
+            var list = new List<VehicleType>();
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand("GetAllVehicleTypes", con);
+                cmd.CommandType = CommandType.StoredProcedure;
 
+                await con.OpenAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    list.Add(new VehicleType
+                    {
+                        Id = GetInt(reader["Id"]),
+                        TypeName = GetString(reader["TypeName"])
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message);
+            }
+            return list;
+        }
         public async Task<List<OverSpeedReport>> GetOverSpeedGraphData(int custid, string bbid)
         {
             var list = new List<OverSpeedReport>();
