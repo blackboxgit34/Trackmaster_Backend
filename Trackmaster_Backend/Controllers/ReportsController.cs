@@ -467,7 +467,7 @@ namespace Trackmaster_Backend.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, new
                 {
-                    message = "An error occurred while fetching Stoppage data.",
+                    message = "An error occurred while fetching Stoppage Report data.",
                     error = ex.Message
                 });
             }
