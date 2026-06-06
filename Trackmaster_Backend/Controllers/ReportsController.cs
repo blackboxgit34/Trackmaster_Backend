@@ -422,6 +422,18 @@ namespace Trackmaster_Backend.Controllers
             try
             {
                 var speedData = await _reportsService.getSpeedReport(mode, requestModel);
+                if (requestModel.DownloadType == "Excel")
+                {
+                    var reportName = $"OverSpeedAnalysis_{requestModel.CustId}.xlsx";
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(speedData.OSmainLst, reportName, null, null);
+                    return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
+                }
+                if (requestModel.DownloadType == "Pdf")
+                {
+                    var reportName = $"DistanceReport_{requestModel.CustId}.pdf";
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(speedData.OSmainLst, reportName, null, null);
+                    return File(stream, "application/pdf", reportName);
+                }
                 if (speedData != null)
                 {
                     return Ok(new

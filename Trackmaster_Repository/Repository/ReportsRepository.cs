@@ -977,16 +977,31 @@ namespace Trackmaster_Repository.Repository
 
 
 
+        //private bool IsValidIdling(TimeSpan ts, int intv1, int intv2)
+        //{
+        //    if (intv1 <= 0)
+        //        return true;
+
+        //    if (intv1 >= 1500)
+        //        return ts.TotalSeconds >= intv1;
+
+        //    return ts.TotalSeconds >= intv1 &&
+        //           ts.TotalSeconds <= intv2;
+        //}
+
         private bool IsValidIdling(TimeSpan ts, int intv1, int intv2)
         {
-            if (intv1 <= 0)
+            double durationSeconds = ts.TotalSeconds;
+
+            // All
+            if (intv1 == 0 && intv2 == 0)
                 return true;
 
-            if (intv1 >= 1500)
-                return ts.TotalSeconds >= intv1;
+            int minSeconds = intv1 * 60;
+            int maxSeconds = intv2 * 60;
 
-            return ts.TotalSeconds >= intv1 &&
-                   ts.TotalSeconds <= intv2;
+            return durationSeconds >= minSeconds &&
+                   durationSeconds < maxSeconds;
         }
 
         public async Task<(List<IdlingMainModel> data, int TotalCount)> GetIdlingStatusReport(DataTableRequestModel dtmodel)
