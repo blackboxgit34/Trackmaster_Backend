@@ -10,5 +10,8 @@ namespace Trackmaster_Repository.Interface
     public interface IGeofenceRepository
     {
         Task<string> SaveGeofence(GeofenceModel model);
+        Task<bool> LocationExist(double lat, double longi, int custid);
+        Task<Boolean> SavePOI(double lat, double longi, int custid, string location, string radius);
+        Task<List<AddPoiRequest>> GetPOI(string custId);
     }
 }

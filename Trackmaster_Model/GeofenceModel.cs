@@ -15,4 +15,19 @@ namespace Trackmaster_Model
         public List<VehicleList> vehicleLists { get; set; } = new List<VehicleList>();
         public List<LatLongHistory> latLongList { get; set; } = new List<LatLongHistory>();
     }
+
+    public class AddPoiRequest
+    {
+        public string custid { get; set; }
+        public string id { get; set; }
+        public string lat { get; set; }
+        public string longi { get; set; }
+        public string location { get; set; }
+        public string radius { get; set; }=null;
+        public string details { get; set; }
+        public string StandardDistance { get; set; }
+        public string poitype { get; set; }
+    }
+
+
 }

@@ -15,5 +15,20 @@ namespace Trackmaster_Service.Service
         {
             return await _geofenceRepository.SaveGeofence(model);
         }
+   
+        public async Task<Boolean> SavePOI(double lat, double longi, int custid, string location, string radius)
+        {
+            return await _geofenceRepository.SavePOI(lat, longi, custid, location, radius);
+        }
+
+        public async Task<bool> LocationExist(float lat, float longi, int custid)
+        {
+            return await _geofenceRepository.LocationExist(lat, longi, custid);
+        }
+
+        public async Task<List<AddPoiRequest>>GetPOi(string CustId)
+        {
+            return await _geofenceRepository.GetPOI(CustId);
+        }
     }
 }

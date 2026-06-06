@@ -156,5 +156,128 @@ namespace Trackmaster_Repository.Repository
                 return ex.Message;
             }
         }
+
+        public async Task<bool> LocationExist(double lat, double longi, int custid)
+        {
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                await con.OpenAsync();
+                using var tran = con.BeginTransaction();
+                try
+                {
+                    using var cmd = new SqlCommand("CustLocationExists", con, tran);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@lat", lat);
+                    cmd.Parameters.AddWithValue("@longi", longi);
+                    cmd.Parameters.AddWithValue("@custid", custid);
+                    var loc = await cmd.ExecuteScalarAsync();
+                    //var loc = Convert.ToString(await cmd.ExecuteScalarAsync());
+                    using var poiCmd = new SqlCommand("GetPOICount", con, tran);
+                    poiCmd.CommandType = CommandType.StoredProcedure;
+                    poiCmd.Parameters.AddWithValue("@custid", custid);
+                    var poiCount = GetInt(await poiCmd.ExecuteScalarAsync());
+                    await tran.CommitAsync();
+
+                    //if (string.IsNullOrEmpty(LOC))
+                    //{
+                    //    return "true";
+                    //}
+                    //else
+                    //{
+                    //    return "FALSE";
+                    //}
+
+                    // No record found
+                    return loc == null || loc == DBNull.Value;
+                }
+                catch
+                {
+                    await tran.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public async Task<Boolean> SavePOI(double lat, double longi, int custid, string location, string radius)
+        {
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                await con.OpenAsync();
+                using var tran = con.BeginTransaction();
+                try
+                {
+                    using var cmd = new SqlCommand("SavePOI", con, tran);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@lat", lat);
+                    cmd.Parameters.AddWithValue("@longi", longi);
+                    cmd.Parameters.AddWithValue("@custid", custid);
+                    cmd.Parameters.AddWithValue("@location", location);
+                    cmd.Parameters.AddWithValue("@radius", radius);
+                    var affectedRows = GetInt(await cmd.ExecuteScalarAsync());
+                    await tran.CommitAsync();
+                    if (affectedRows > 0)
+                    {
+                        return true;
+
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                catch (Exception)
+                {
+                    await tran.RollbackAsync();
+
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+
+        public async Task<List<AddPoiRequest>> GetPOI(string custId)
+        {
+            var poiList = new List<AddPoiRequest>();
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                await con.OpenAsync();
+                using var cmd = new SqlCommand("GetPOI", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@CustId", custId);
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    poiList.Add(new AddPoiRequest
+                    {
+                      
+                        id = GetString(reader["id"]),
+                        lat = GetString(reader["lat"]),
+                        longi = GetString(reader["longi"]),
+                        details = GetString(reader["details"]),
+                        StandardDistance = GetString(reader["StandardDistance"]),
+                        poitype = GetString(reader["poitype"])
+                    });
+                }
+
+                return poiList;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error getting POI data: {ex.Message}", ex);
+            }
+        }
     }
 }
