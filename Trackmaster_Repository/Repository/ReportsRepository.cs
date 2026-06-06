@@ -546,7 +546,7 @@ namespace Trackmaster_Repository.Repository
 
 
 
-        public async Task<VehicleStatusResponse> VehicleStatus(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        public async Task<VehicleStatusResponse> VehicleStatus(DataTableRequestModel model)
         {
             var result = new VehicleStatusResponse();
             result.VehicleData = new List<VehicleStatusDto>();
@@ -556,10 +556,10 @@ namespace Trackmaster_Repository.Repository
             {
                 cmd.CommandType = CommandType.StoredProcedure;
 
-                cmd.Parameters.AddWithValue("@custId", custId);
-                cmd.Parameters.AddWithValue("@LowerBand", lower);
-                cmd.Parameters.AddWithValue("@UpperBand", upper);
-                cmd.Parameters.AddWithValue("@searchText", (object)search ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@custId", model.CustId);
+                cmd.Parameters.AddWithValue("@LowerBand", model.iDisplayStart);
+                cmd.Parameters.AddWithValue("@UpperBand", model.iDisplayLength);
+                cmd.Parameters.AddWithValue("@searchText", (object)model.sSearch ?? DBNull.Value);
 
                 SqlParameter outParam = new SqlParameter("@ItemCount", SqlDbType.Int)
                 {
@@ -597,8 +597,8 @@ namespace Trackmaster_Repository.Repository
 
                     cmd.Parameters.AddWithValue("@bbid", item.BBID);
                     cmd.Parameters.AddWithValue("@overspeed", item.Overspeed);
-                    cmd.Parameters.AddWithValue("@beginDate", start);
-                    cmd.Parameters.AddWithValue("@EndDate", end);
+                    cmd.Parameters.AddWithValue("@beginDate", model.beginDate);
+                    cmd.Parameters.AddWithValue("@EndDate", model.endDate);
 
                     await con.OpenAsync();
 
@@ -621,20 +621,20 @@ namespace Trackmaster_Repository.Repository
             return result;
         }
 
-        public async Task<VehicleStatusResponse> BatteryDisconnection(int custId, int lower, int upper, string search, DateTime start, DateTime end)
+        public async Task<BatteryDisconnectionResponse> BatteryDisconnection(DataTableRequestModel model)
         {
-            var result = new VehicleStatusResponse();
-            result.VehicleData = new List<VehicleStatusDto>();
+            var result = new BatteryDisconnectionResponse();
+            result.VehicleData = new List<BatteryDisconnectionDto>(); 
 
             using (SqlConnection con = new SqlConnection(_connectionString43))
             using (SqlCommand cmd = new SqlCommand("NewTMVehicleStatus", con))
             {
                 cmd.CommandType = CommandType.StoredProcedure;
 
-                cmd.Parameters.AddWithValue("@custId", custId);
-                cmd.Parameters.AddWithValue("@LowerBand", lower);
-                cmd.Parameters.AddWithValue("@UpperBand", upper);
-                cmd.Parameters.AddWithValue("@searchText", (object)search ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@custId", model.CustId);
+                cmd.Parameters.AddWithValue("@LowerBand", model.iDisplayStart);
+                cmd.Parameters.AddWithValue("@UpperBand", model.iDisplayLength);
+                cmd.Parameters.AddWithValue("@searchText", (object)model.sSearch ?? DBNull.Value);
 
                 SqlParameter outParam = new SqlParameter("@ItemCount", SqlDbType.Int)
                 {
@@ -648,12 +648,12 @@ namespace Trackmaster_Repository.Repository
                 {
                     while (await dr.ReadAsync())
                     {
-                        result.VehicleData.Add(new VehicleStatusDto
+                        result.VehicleData.Add(new BatteryDisconnectionDto
                         {
                             RowNo = GetInt(dr["RowNo"]),
                             BBID = GetString(dr["BBID"]),
                             VehName = GetString(dr["vehname"]),
-                            Logs = new List<SpeedLogDto>()
+                            Logs = new List<BatteryDisconnectionLogDto>()
                         });
                     }
                 }
@@ -669,8 +669,8 @@ namespace Trackmaster_Repository.Repository
                     cmd.CommandType = CommandType.StoredProcedure;
 
                     cmd.Parameters.AddWithValue("@TableName", item.BBID);
-                    cmd.Parameters.AddWithValue("@beginDate", start);
-                    cmd.Parameters.AddWithValue("@EndDate", end);
+                    cmd.Parameters.AddWithValue("@beginDate", model.beginDate);
+                    cmd.Parameters.AddWithValue("@EndDate", model.endDate);
 
                     await con.OpenAsync();
 
@@ -678,11 +678,11 @@ namespace Trackmaster_Repository.Repository
                     {
                         while (await dr.ReadAsync())
                         {
-                            item.Logs.Add(new SpeedLogDto
+                            item.Logs.Add(new BatteryDisconnectionLogDto
                             {
                                 Batterydisc = GetDateTime(dr["startdate"]),
                                 Batterycon = GetDateTime(dr["enddate"]),
-                                startloc = GetString(dr["sloc"]),
+                                Startloc = GetString(dr["sloc"]),
                                 Endloc = GetString(dr["eloc"]),
                                 Duration = GetString(dr["duration"]),
                                 Status = GetString(dr["Status"])
@@ -977,16 +977,31 @@ namespace Trackmaster_Repository.Repository
 
 
 
+        //private bool IsValidIdling(TimeSpan ts, int intv1, int intv2)
+        //{
+        //    if (intv1 <= 0)
+        //        return true;
+
+        //    if (intv1 >= 1500)
+        //        return ts.TotalSeconds >= intv1;
+
+        //    return ts.TotalSeconds >= intv1 &&
+        //           ts.TotalSeconds <= intv2;
+        //}
+
         private bool IsValidIdling(TimeSpan ts, int intv1, int intv2)
         {
-            if (intv1 <= 0)
+            double durationSeconds = ts.TotalSeconds;
+
+            // All
+            if (intv1 == 0 && intv2 == 0)
                 return true;
 
-            if (intv1 >= 1500)
-                return ts.TotalSeconds >= intv1;
+            int minSeconds = intv1 * 60;
+            int maxSeconds = intv2 * 60;
 
-            return ts.TotalSeconds >= intv1 &&
-                   ts.TotalSeconds <= intv2;
+            return durationSeconds >= minSeconds &&
+                   durationSeconds < maxSeconds;
         }
 
         public async Task<(List<IdlingMainModel> data, int TotalCount)> GetIdlingStatusReport(DataTableRequestModel dtmodel)
