@@ -190,11 +190,16 @@ namespace Trackmaster_Backend.Controllers
                     return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
                 }
                 // ================= PDF EXPORT =================
-                else if (downloadType == "PDF")
+                else if (downloadType == "Pdf")
                 {
-                    var reportName = $"SMSNotificationReport_{DateTime.Now:yyyyMMdd}.pdf";
+                    //var reportName = $"SMSNotificationReport_{DateTime.Now:yyyyMMdd}.pdf";
+                    var reportName = $"SMSNotificationReport_{requestModel.beginDate:ddMMMyyyy}_To_{requestModel.endDate:ddMMMyyyy}.pdf";
                     var exportData = sms?.objSMSReport?.ToList();
                     var stream = await _importExportPdfService.ExportToPdfFlatList(exportData, reportName, null, null);
+                    //  IMPORTANT: expose header to frontend
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                    //  IMPORTANT: force filename into response header
+                    Response.Headers["Content-Disposition"] = $"attachment; filename={reportName}";
                     return File(stream, "application/pdf", reportName);
                 }
                 // ================= NORMAL RESPONSE =================
@@ -226,6 +231,7 @@ namespace Trackmaster_Backend.Controllers
         // neha k
         [HttpGet("GetConsolidatedIgnitionStatus")]
         public async Task<IActionResult> GetConsolidatedIgnitionStatus([FromQuery] DataTableRequestModel requestModel, string bbid, string reportName, string downloadType = null)
+        
         {
             try
             {
@@ -235,11 +241,7 @@ namespace Trackmaster_Backend.Controllers
                 if (upperBound == 0)
                     upperBound = 20;
 
-                ConsolidatedIgnitionModel consIgnition =
-                    await _reportsService.GetConsolidatedIgnitionStatus(
-                        requestModel,
-                        bbid,
-                        reportName);
+                ConsolidatedIgnitionModel consIgnition = await _reportsService.GetConsolidatedIgnitionStatus(requestModel,bbid,reportName);
 
                 if (consIgnition == null ||
                     consIgnition.ConsolidatedIgnitionList == null)
@@ -250,45 +252,27 @@ namespace Trackmaster_Backend.Controllers
                 // ================= EXCEL EXPORT =================
                 if (downloadType == "Excel")
                 {
-                    var fileName =
-                        $"ConsolidatedIgnitionStatus_{DateTime.Now:yyyyMMdd}.xlsx";
+                    var fileName =$"ConsolidatedIgnitionStatus_{DateTime.Now:yyyyMMdd}.xlsx";
 
-                    var exportData =
-                        consIgnition.ConsolidatedIgnitionList.ToList();
+                    var exportData =consIgnition.ConsolidatedIgnitionList.ToList();
 
-                    var stream =
-                        await _importExportExcelService.ExportToExcelFlatList(
-                            exportData,
-                            fileName,
-                            null,
-                            null);
+                    var stream =await _importExportExcelService.ExportToExcelFlatList(exportData,fileName,null,null);
 
-                    return File(
-                        stream,
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        fileName);
+                    return File(stream,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",fileName);
                 }
 
                 // ================= PDF EXPORT =================
                 if (downloadType == "Pdf")
                 {
-                    var fileName =
-                        $"ConsolidatedIgnitionStatus_{DateTime.Now:yyyyMMdd}.pdf";
+                    var fileName =$"ConsolidatedIgnitionStatus_{bbid}_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
+                    var exportData =consIgnition.ConsolidatedIgnitionList.ToList();
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(exportData,"Consolidated Ignition Status Report", fileName, bbid);
+                    // expose header to frontend
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                    // force filename into response header
+                    Response.Headers["Content-Disposition"] =$"attachment; filename={fileName}";
 
-                    var exportData =
-                        consIgnition.ConsolidatedIgnitionList.ToList();
-
-                    var stream =
-                        await _importExportPdfService.ExportToPdfFlatList(
-                            exportData,
-                            fileName,
-                            null,
-                            null);
-
-                    return File(
-                        stream,
-                        "application/pdf",
-                        fileName);
+                    return File(stream,"application/pdf",fileName);
                 }
 
                 // ================= NORMAL RESPONSE =================
@@ -578,6 +562,7 @@ namespace Trackmaster_Backend.Controllers
         #endregion
 
         [HttpPost("GetEntryExitReport")]
+
         public async Task<IActionResult> GetEntryExitReport([FromQuery] DataTableRequestModel model, string rtype, [FromQuery] string bbid = "")
         {
             var stoppage = await _reportsService.GetListofEntryExit(model, rtype, bbid);

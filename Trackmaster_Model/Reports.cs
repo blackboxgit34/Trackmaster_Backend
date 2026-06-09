@@ -224,18 +224,13 @@ namespace Trackmaster_Model
             public string TotalIdlingTime { get; set; }          
             public string VehicleName { get; set; }           
             public string DriverName { get; set; }           
-            public string IgnitionOnOffCounter { get; set; }          
-            public int custid { get; set; }
             public List<IdlingSubStatus> IdlingSubStatuslist { get; set; }
         }
         public class IdlingSubStatus
         {
             public Boolean IgnitionStatus { get; set; }
             public string startDate { get; set; }           
-            public string stopDate { get; set; }           
-            public string IgnitionOnTime { get; set; }           
-            public string IgnitionOffTime { get; set; }          
-            public string VehicleStatus { get; set; }
+            public string stopDate { get; set; }                      
             public string location { get; set; }
             public string duration { get; set; }
             [DisplayName("POI Location")]
