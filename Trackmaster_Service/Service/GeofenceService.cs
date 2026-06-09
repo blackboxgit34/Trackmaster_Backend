@@ -30,5 +30,10 @@ namespace Trackmaster_Service.Service
         {
             return await _geofenceRepository.GetPOI(CustId);
         }
+
+        public async Task<ManagePoiResponse> ManagePoi(DataTableRequestModel request, string? id)
+        {
+            return await _geofenceRepository.ManagePoi(request, id);
+        }
     }
 }

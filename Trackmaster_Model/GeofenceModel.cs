@@ -37,6 +37,23 @@ namespace Trackmaster_Model
 
     }
 
+    public class ManagePoi
+    {
+        public string id { get; set; }
+        public string custid { get; set; }
+        public string PoiName { get; set; }
+        public string Mobileno { get; set; }
+        public string Latitude { get; set; }
+        public string Longitude { get; set; }
+        public string Radius { get; set; }
+        public string POIStatus { get; set; }
+        public string Approve { get; set; }
+    }
 
+    public class ManagePoiResponse
+    {
+        public int ItemCount { get; set; }
+        public List<ManagePoi> Data { get; set; } = new();
+    }
 
 }

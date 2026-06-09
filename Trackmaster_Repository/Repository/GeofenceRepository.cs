@@ -279,5 +279,82 @@ namespace Trackmaster_Repository.Repository
                 throw new Exception($"Error getting POI data: {ex.Message}", ex);
             }
         }
+
+        public async Task<ManagePoiResponse> ManagePoi(DataTableRequestModel request, string? id)
+        {
+            var response = new ManagePoiResponse();
+
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                await con.OpenAsync();
+
+                using var cmd = new SqlCommand("GetPoi_TM", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue(
+                    "@LowerBound",
+                    request.iDisplayStart);
+
+                cmd.Parameters.AddWithValue(
+                    "@UpperBound",
+                    request.iDisplayStart + request.iDisplayLength);
+
+                cmd.Parameters.AddWithValue(
+                    "@custId",
+                    request.CustId);
+
+                cmd.Parameters.AddWithValue(
+                    "@searchText",
+                    string.IsNullOrWhiteSpace(request.sSearch)
+                        ? DBNull.Value
+                        : request.sSearch);
+
+                cmd.Parameters.AddWithValue(
+                    "@id",
+                    string.IsNullOrWhiteSpace(id)
+                        ? DBNull.Value
+                        : id);
+
+                var itemCountParam = new SqlParameter("@ItemCount", SqlDbType.Int)
+                {
+                    Direction = ParameterDirection.Output
+                };
+
+                cmd.Parameters.Add(itemCountParam);
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    response.Data.Add(new ManagePoi
+                    {
+                        id = GetString(reader["id"]),
+                        custid = GetString(reader["custid"]),
+                        PoiName = GetString(reader["PoiName"]),
+                        Mobileno = GetString(reader["Mobileno"]),
+                        Latitude = GetString(reader["Latitude"]),
+                        Longitude = GetString(reader["Longitude"]),
+                        Radius = GetString(reader["Radius"]),
+                        POIStatus = GetString(reader["POIStatus"]),
+                        Approve = GetString(reader["Approve"])
+                    });
+                }
+
+                await reader.CloseAsync();
+
+                response.ItemCount =
+                    itemCountParam.Value != DBNull.Value
+                        ? Convert.ToInt32(itemCountParam.Value)
+                        : 0;
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(
+                    $"Error getting POI data: {ex.Message}", ex);
+            }
+        }
     }
 }

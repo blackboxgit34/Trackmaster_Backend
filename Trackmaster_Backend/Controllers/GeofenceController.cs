@@ -107,5 +107,35 @@ namespace Trackmaster_Backend.Controllers
             }
         }
 
+        [HttpPost("ManagePoi")]
+        public async Task<IActionResult> ManagePoi([FromQuery] DataTableRequestModel request, string? id = null)
+        {
+            try
+            {
+                var result = await _geofenceService.ManagePoi(request, id);
+
+                if (result != null && result.Data.Any())
+                {
+                    return StatusCode(200, new
+                    {
+                        success = true,
+                        data = result,
+                        message = "POI fetched successfully"
+                    });
+                }
+
+                return StatusCode(404, new
+                {
+                    success = false,
+                    data = result,
+                    message = "No POI found"
+                });
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
     }
 }
