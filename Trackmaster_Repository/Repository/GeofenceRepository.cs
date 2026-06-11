@@ -1,7 +1,10 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Threading.Tasks;
 using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
 using static Trackmaster_Model.Reports;
@@ -155,6 +158,206 @@ namespace Trackmaster_Repository.Repository
             catch (Exception ex)
             {
                 return ex.Message;
+            }
+        }
+
+        public async Task<bool> LocationExist(double lat, double longi, int custid)
+        {
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                await con.OpenAsync();
+                using var tran = con.BeginTransaction();
+                try
+                {
+                    using var cmd = new SqlCommand("CustLocationExists", con, tran);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@lat", lat);
+                    cmd.Parameters.AddWithValue("@longi", longi);
+                    cmd.Parameters.AddWithValue("@custid", custid);
+                    var loc = await cmd.ExecuteScalarAsync();
+                    //var loc = Convert.ToString(await cmd.ExecuteScalarAsync());
+                    using var poiCmd = new SqlCommand("GetPOICount", con, tran);
+                    poiCmd.CommandType = CommandType.StoredProcedure;
+                    poiCmd.Parameters.AddWithValue("@custid", custid);
+                    var poiCount = GetInt(await poiCmd.ExecuteScalarAsync());
+                    await tran.CommitAsync();
+
+                    //if (string.IsNullOrEmpty(LOC))
+                    //{
+                    //    return "true";
+                    //}
+                    //else
+                    //{
+                    //    return "FALSE";
+                    //}
+
+                    // No record found
+                    return loc == null || loc == DBNull.Value;
+                }
+                catch
+                {
+                    await tran.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public async Task<Boolean> SavePOI(double lat, double longi, int custid, string location, string radius)
+        {
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                await con.OpenAsync();
+                using var tran = con.BeginTransaction();
+                try
+                {
+                    using var cmd = new SqlCommand("SavePOI", con, tran);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@lat", lat);
+                    cmd.Parameters.AddWithValue("@longi", longi);
+                    cmd.Parameters.AddWithValue("@custid", custid);
+                    cmd.Parameters.AddWithValue("@location", location);
+                    cmd.Parameters.AddWithValue("@radius", radius);
+                    var affectedRows = GetInt(await cmd.ExecuteScalarAsync());
+                    await tran.CommitAsync();
+                    if (affectedRows > 0)
+                    {
+                        return true;
+
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                catch (Exception)
+                {
+                    await tran.RollbackAsync();
+
+                    throw;
+                }
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+
+        public async Task<List<PoiList>> GetPOI(string custId)
+        {
+            var poiList = new List<PoiList>();
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                await con.OpenAsync();
+                using var cmd = new SqlCommand("GetPOI", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@CustId", custId);
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    poiList.Add(new PoiList
+                    {
+                      
+                        id = GetString(reader["id"]),
+                        lat = GetString(reader["lat"]),
+                        lng = GetString(reader["longi"]),
+                        details = GetString(reader["details"]),
+                        StandardDistance = GetString(reader["StandardDistance"]),
+                        poitype = GetString(reader["poitype"])
+                    });
+                }
+
+                return poiList;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error getting POI data: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<ManagePoiResponse> ManagePoi(DataTableRequestModel request, string? id)
+        {
+            var response = new ManagePoiResponse();
+
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                await con.OpenAsync();
+
+                using var cmd = new SqlCommand("GetPoi_TM", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue(
+                    "@LowerBound",
+                    request.iDisplayStart);
+
+                cmd.Parameters.AddWithValue(
+                    "@UpperBound",
+                    request.iDisplayStart + request.iDisplayLength);
+
+                cmd.Parameters.AddWithValue(
+                    "@custId",
+                    request.CustId);
+
+                cmd.Parameters.AddWithValue(
+                    "@searchText",
+                    string.IsNullOrWhiteSpace(request.sSearch)
+                        ? DBNull.Value
+                        : request.sSearch);
+
+                cmd.Parameters.AddWithValue(
+                    "@id",
+                    string.IsNullOrWhiteSpace(id)
+                        ? DBNull.Value
+                        : id);
+
+                var itemCountParam = new SqlParameter("@ItemCount", SqlDbType.Int)
+                {
+                    Direction = ParameterDirection.Output
+                };
+
+                cmd.Parameters.Add(itemCountParam);
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    response.Data.Add(new ManagePoi
+                    {
+                        id = GetString(reader["id"]),
+                        custid = GetString(reader["custid"]),
+                        PoiName = GetString(reader["PoiName"]),
+                        Mobileno = GetString(reader["Mobileno"]),
+                        Latitude = GetString(reader["Latitude"]),
+                        Longitude = GetString(reader["Longitude"]),
+                        Radius = GetString(reader["Radius"]),
+                        POIStatus = GetString(reader["POIStatus"]),
+                        Approve = GetString(reader["Approve"])
+                    });
+                }
+
+                await reader.CloseAsync();
+
+                response.ItemCount =
+                    itemCountParam.Value != DBNull.Value
+                        ? Convert.ToInt32(itemCountParam.Value)
+                        : 0;
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(
+                    $"Error getting POI data: {ex.Message}", ex);
             }
         }
         public async Task<(List<GeofenceModel> geofenceList, int TotalCount)> GetGeofenceList(DataTableRequestModel model)

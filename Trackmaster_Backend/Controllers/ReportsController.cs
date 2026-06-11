@@ -190,11 +190,16 @@ namespace Trackmaster_Backend.Controllers
                     return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
                 }
                 // ================= PDF EXPORT =================
-                else if (downloadType == "PDF")
+                else if (downloadType == "Pdf")
                 {
-                    var reportName = $"SMSNotificationReport_{DateTime.Now:yyyyMMdd}.pdf";
+                    //var reportName = $"SMSNotificationReport_{DateTime.Now:yyyyMMdd}.pdf";
+                    var reportName = $"SMSNotificationReport_{requestModel.beginDate:ddMMMyyyy}_To_{requestModel.endDate:ddMMMyyyy}.pdf";
                     var exportData = sms?.objSMSReport?.ToList();
                     var stream = await _importExportPdfService.ExportToPdfFlatList(exportData, reportName, null, null);
+                    //  IMPORTANT: expose header to frontend
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                    //  IMPORTANT: force filename into response header
+                    Response.Headers["Content-Disposition"] = $"attachment; filename={reportName}";
                     return File(stream, "application/pdf", reportName);
                 }
                 // ================= NORMAL RESPONSE =================
@@ -225,7 +230,8 @@ namespace Trackmaster_Backend.Controllers
         }
         // neha k
         [HttpGet("GetConsolidatedIgnitionStatus")]
-        public async Task<IActionResult> GetConsolidatedIgnitionStatus([FromQuery] DataTableRequestModel requestModel,string bbid,string reportName)
+        public async Task<IActionResult> GetConsolidatedIgnitionStatus([FromQuery] DataTableRequestModel requestModel, string bbid, string reportName, string downloadType = null)
+        
         {
             try
             {
@@ -235,8 +241,7 @@ namespace Trackmaster_Backend.Controllers
                 if (upperBound == 0)
                     upperBound = 20;
 
-                ConsolidatedIgnitionModel consIgnition =
-                    await _reportsService.GetConsolidatedIgnitionStatus(requestModel,bbid,reportName);
+                ConsolidatedIgnitionModel consIgnition = await _reportsService.GetConsolidatedIgnitionStatus(requestModel,bbid,reportName);
 
                 if (consIgnition == null ||
                     consIgnition.ConsolidatedIgnitionList == null)
@@ -244,6 +249,33 @@ namespace Trackmaster_Backend.Controllers
                     return NoContent();
                 }
 
+                // ================= EXCEL EXPORT =================
+                if (downloadType == "Excel")
+                {
+                    var fileName =$"ConsolidatedIgnitionStatus_{DateTime.Now:yyyyMMdd}.xlsx";
+
+                    var exportData =consIgnition.ConsolidatedIgnitionList.ToList();
+
+                    var stream =await _importExportExcelService.ExportToExcelFlatList(exportData,fileName,null,null);
+
+                    return File(stream,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",fileName);
+                }
+
+                // ================= PDF EXPORT =================
+                if (downloadType == "Pdf")
+                {
+                    var fileName =$"ConsolidatedIgnitionStatus_{bbid}_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
+                    var exportData =consIgnition.ConsolidatedIgnitionList.ToList();
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(exportData,"Consolidated Ignition Status Report", fileName, bbid);
+                    // expose header to frontend
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                    // force filename into response header
+                    Response.Headers["Content-Disposition"] =$"attachment; filename={fileName}";
+
+                    return File(stream,"application/pdf",fileName);
+                }
+
+                // ================= NORMAL RESPONSE =================
                 return Ok(new
                 {
                     sEcho = requestModel.sEcho,
@@ -254,35 +286,116 @@ namespace Trackmaster_Backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, new
-                {
-                    message = ex.Message
-                });
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new
+                    {
+                        message = "An error occurred while fetching consolidated ignition status.",
+                        error = ex.Message
+                    });
             }
         }
+
+
 
         [HttpGet("VehicleStatus")]
         public async Task<IActionResult> VehicleStatus([FromQuery] DataTableRequestModel model)
         {
-            var result = await _reportsService.VehicleStatus(model);
-
-            return Ok(new
+            try
             {
-                data = result.VehicleData,
-                count = result.ItemCount
-            });
+                var result = await _reportsService.VehicleStatus(model);
+
+                if (result == null)
+                    return NoContent();
+
+                if (model.DownloadType == "Excel")
+                {
+                    var reportName = $"VehicleStatus_{model.CustId}.xlsx";
+
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(result.VehicleData, reportName, null, null);
+
+                    return File(
+                        stream,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        reportName);
+                }
+
+                if (model.DownloadType == "Pdf")
+                {
+                    var reportName = $"VehicleStatus_{model.CustId}.pdf";
+
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(result.VehicleData, reportName, null, null);
+
+                    return File(
+                        stream,
+                        "application/pdf",
+                        reportName);
+                }
+
+                return Ok(new
+                {
+                    data = result.VehicleData,
+                    count = result.ItemCount
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "An error occurred while fetching vehicle status data.",
+                    error = ex.Message
+                });
+            }
         }
 
         [HttpGet("BatteryDisconnection")]
         public async Task<IActionResult> BatteryDisconnection([FromQuery] DataTableRequestModel model)
         {
-            var result = await _reportsService.BatteryDisconnection(model);
-
-            return Ok(new
+            try
             {
-                data = result.VehicleData,
-                count = result.ItemCount
-            });
+                var result = await _reportsService.BatteryDisconnection(model);
+
+                if (result == null)
+                    return NoContent();
+
+                if (model.DownloadType == "Excel")
+                {
+                    var reportName = $"BatteryDisconnection_{model.CustId}.xlsx";
+
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(result.VehicleData, reportName, null, null);
+
+                    return File(
+                        stream,
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        reportName);
+                }
+
+                if (model.DownloadType == "Pdf")
+                {
+                    var reportName = $"BatteryDisconnection_{model.CustId}.pdf";
+
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(result.VehicleData, reportName, null, null);
+
+                    return File(
+                        stream,
+                        "application/pdf",
+                        reportName);
+                }
+
+                return Ok(new
+                {
+                    data = result.VehicleData,
+                    count = result.ItemCount
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "An error occurred while fetching battery disconnection data.",
+                    error = ex.Message
+                });
+            }
         }
 
         [HttpPost("GetDistanceReportData")]
@@ -312,28 +425,71 @@ namespace Trackmaster_Backend.Controllers
         [HttpGet("GetAllStoppageReport")]
         public async Task<IActionResult> GetAllStoppageReport([FromQuery] DataTableRequestModel dtmodel)
          {
-           
-           var stoppage = await _reportsService.GetCombinedStoppageReport(dtmodel);
+            try
+            {
+                var stoppage = await _reportsService.GetCombinedStoppageReport(dtmodel);
+                if (dtmodel.DownloadType == "Excel")
+                {
+                    var reportName = $"StoppageReport_{dtmodel.CustId}.xlsx";
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(stoppage.data, reportName, null, null);
+                    return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
+                }
+                if (dtmodel.DownloadType == "Pdf")
+                {
+                    var reportName = $"StoppageReport_{dtmodel.CustId}.pdf";
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(stoppage.data, reportName, null, null);
+                    return File(stream, "application/pdf", reportName);
+                }
 
-            return Ok(new
+                return Ok(new
             {
                 data = stoppage.data,
                 count = stoppage.TotalCount
             });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "An error occurred while fetching Stoppage Report data.",
+                    error = ex.Message
+                });
+            }
 
         }
 
         [HttpGet("GetIdlingStatusReport")]
         public async Task<IActionResult> GetIdlingStatusReport([FromQuery] DataTableRequestModel dtmodel)
         {
-
-            var stoppage = await _reportsService.GetIdlingStatusReport(dtmodel);
-
-            return Ok(new
+            try
+            {
+                var stoppage = await _reportsService.GetIdlingStatusReport(dtmodel);
+                if (dtmodel.DownloadType == "Excel")
+                {
+                    var reportName = $"IdlingStatus_{dtmodel.CustId}.xlsx";
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(stoppage.data, reportName, null, null);
+                    return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
+                }
+                if (dtmodel.DownloadType == "Pdf")
+                {
+                    var reportName = $"IdlingStatus_{dtmodel.CustId}.pdf";
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(stoppage.data, reportName, null, null);
+                    return File(stream, "application/pdf", reportName);
+                }
+                return Ok(new
             {
                 data = stoppage.data,
                 count = stoppage.TotalCount
             });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "An error occurred while fetching Idling data.",
+                    error = ex.Message
+                });
+            }
 
         }
 
@@ -371,14 +527,18 @@ namespace Trackmaster_Backend.Controllers
                 var speedData = await _reportsService.getSpeedReport(mode, requestModel);
                 if (requestModel.DownloadType == "Excel")
                 {
-                    var reportName = $"OverSpeedAnalysis_{requestModel.CustId}.xlsx";
+                    var reportName = $"OverSpeedAnalysis_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.xlsx";
                     var stream = await _importExportExcelService.ExportToExcelFlatList(speedData.OSmainLst, reportName, null, null);
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                    Response.Headers["Content-Disposition"] = $"attachment; filename={reportName}";
                     return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
                 }
                 if (requestModel.DownloadType == "Pdf")
                 {
-                    var reportName = $"DistanceReport_{requestModel.CustId}.pdf";
+                    var reportName = $"OverSpeedAnalysis_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
                     var stream = await _importExportPdfService.ExportToPdfFlatList(speedData.OSmainLst, reportName, null, null);
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                    Response.Headers["Content-Disposition"] = $"attachment; filename={reportName}";
                     return File(stream, "application/pdf", reportName);
                 }
                 if (speedData != null)
@@ -406,6 +566,7 @@ namespace Trackmaster_Backend.Controllers
         #endregion
 
         [HttpPost("GetEntryExitReport")]
+
         public async Task<IActionResult> GetEntryExitReport([FromQuery] DataTableRequestModel model, string rtype, [FromQuery] string bbid = "")
         {
             var stoppage = await _reportsService.GetListofEntryExit(model, rtype, bbid);

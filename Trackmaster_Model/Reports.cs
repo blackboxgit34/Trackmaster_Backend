@@ -151,14 +151,40 @@ namespace Trackmaster_Model
             public DateTime? Time { get; set; }
             public string Speed { get; set; }
             public string Location { get; set; }
-            public string Status { get; set; }
-            public DateTime? Batterydisc { get; set; }
-            public DateTime? Batterycon { get; set; }
-            public string startloc { get; set; }
-            public string Endloc { get; set; }
-            public string Duration { get; set; }
+            public string Status { get; set; }           
+        }
+        public class BatteryDisconnectionResponse
+        {
+            public int ItemCount { get; set; }
+
+            public List<BatteryDisconnectionDto> VehicleData { get; set; } = new();
         }
 
+        public class BatteryDisconnectionDto
+        {
+            public int RowNo { get; set; }
+
+            public string BBID { get; set; }
+
+            public string VehName { get; set; }
+
+            public List<BatteryDisconnectionLogDto> Logs { get; set; } = new();
+        }
+
+        public class BatteryDisconnectionLogDto
+        {
+            public DateTime? Batterydisc { get; set; }
+
+            public DateTime? Batterycon { get; set; }
+
+            public string Startloc { get; set; }
+
+            public string Endloc { get; set; }
+
+            public string Duration { get; set; }
+
+            public string Status { get; set; }
+        }
         public class StoppageMainModel
         {
             public List<StoppageSubModel> StoppageSubModel { get; set; }
@@ -198,18 +224,13 @@ namespace Trackmaster_Model
             public string TotalIdlingTime { get; set; }          
             public string VehicleName { get; set; }           
             public string DriverName { get; set; }           
-            public string IgnitionOnOffCounter { get; set; }          
-            public int custid { get; set; }
             public List<IdlingSubStatus> IdlingSubStatuslist { get; set; }
         }
         public class IdlingSubStatus
         {
             public Boolean IgnitionStatus { get; set; }
             public string startDate { get; set; }           
-            public string stopDate { get; set; }           
-            public string IgnitionOnTime { get; set; }           
-            public string IgnitionOffTime { get; set; }          
-            public string VehicleStatus { get; set; }
+            public string stopDate { get; set; }                      
             public string location { get; set; }
             public string duration { get; set; }
             [DisplayName("POI Location")]

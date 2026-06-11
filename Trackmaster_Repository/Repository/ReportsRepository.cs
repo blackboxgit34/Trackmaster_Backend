@@ -621,10 +621,10 @@ namespace Trackmaster_Repository.Repository
             return result;
         }
 
-        public async Task<VehicleStatusResponse> BatteryDisconnection(DataTableRequestModel model)
+        public async Task<BatteryDisconnectionResponse> BatteryDisconnection(DataTableRequestModel model)
         {
-            var result = new VehicleStatusResponse();
-            result.VehicleData = new List<VehicleStatusDto>();
+            var result = new BatteryDisconnectionResponse();
+            result.VehicleData = new List<BatteryDisconnectionDto>(); 
 
             using (SqlConnection con = new SqlConnection(_connectionString43))
             using (SqlCommand cmd = new SqlCommand("NewTMVehicleStatus", con))
@@ -648,12 +648,12 @@ namespace Trackmaster_Repository.Repository
                 {
                     while (await dr.ReadAsync())
                     {
-                        result.VehicleData.Add(new VehicleStatusDto
+                        result.VehicleData.Add(new BatteryDisconnectionDto
                         {
                             RowNo = GetInt(dr["RowNo"]),
                             BBID = GetString(dr["BBID"]),
                             VehName = GetString(dr["vehname"]),
-                            Logs = new List<SpeedLogDto>()
+                            Logs = new List<BatteryDisconnectionLogDto>()
                         });
                     }
                 }
@@ -678,11 +678,11 @@ namespace Trackmaster_Repository.Repository
                     {
                         while (await dr.ReadAsync())
                         {
-                            item.Logs.Add(new SpeedLogDto
+                            item.Logs.Add(new BatteryDisconnectionLogDto
                             {
                                 Batterydisc = GetDateTime(dr["startdate"]),
                                 Batterycon = GetDateTime(dr["enddate"]),
-                                startloc = GetString(dr["sloc"]),
+                                Startloc = GetString(dr["sloc"]),
                                 Endloc = GetString(dr["eloc"]),
                                 Duration = GetString(dr["duration"]),
                                 Status = GetString(dr["Status"])

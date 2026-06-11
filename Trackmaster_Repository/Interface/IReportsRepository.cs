@@ -19,7 +19,7 @@ namespace Trackmaster_Repository.Interface
         Task<SMSReportEx> GetSentMessagesReport(DataTableRequestModel requestModel, int typeid, string messagetype, string vehicleNo); // neha k
         Task<ConsolidatedIgnitionModel> GetConsolidatedIgnitionStatus(DataTableRequestModel requestModel, string bbid, string reportName); // neha k
         Task<VehicleStatusResponse> VehicleStatus(DataTableRequestModel model);
-        Task<VehicleStatusResponse> BatteryDisconnection(DataTableRequestModel model);
+        Task<BatteryDisconnectionResponse> BatteryDisconnection(DataTableRequestModel model);
         Task<(List<StoppageSubModel> data, int TotalCount)> GetCombinedStoppageReport(DataTableRequestModel dtmodel);
         Task<(List<IdlingMainModel> data, int TotalCount)> GetIdlingStatusReport(DataTableRequestModel dtmodel);
         Task<(List<DistanceReportDataModel> data, int TotalCount)> GetDistanceReportData(DataTableRequestModel model);

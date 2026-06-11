@@ -67,9 +67,8 @@ namespace Trackmaster_Service
             PdfDocument pdf =
                 new PdfDocument(writer);
 
-            // LANDSCAPE MODE
             pdf.SetDefaultPageSize(
-                PageSize.A4.Rotate()
+                PageSize.A3.Rotate()
             );
 
             Document document =
@@ -106,14 +105,13 @@ namespace Trackmaster_Service
             }
 
             // ================= REPORT NAME =================
-
             document.Add(
-                new Paragraph(
-                    "Report Name : " + reportName
-                )
+                 new Paragraph(reportName)
                 .SetFontSize(14)
                 .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
+                .SetTextAlignment(TextAlignment.CENTER)
             );
+
 
             // ================= DATE =================
 
@@ -150,118 +148,204 @@ namespace Trackmaster_Service
 
             // ================= TABLE =================
 
+           
             if (data != null && data.Count > 0)
             {
-                var properties =
-                    typeof(T).GetProperties();
+                var properties = typeof(T).GetProperties();
 
-                // AUTO WIDTH TABLE
-                float[] columnWidths =
-                    Enumerable
-                    .Repeat(1f, properties.Length)
+                foreach (var parent in data)
+                {
+
+                    var parentProps = properties
+                    .Where(p => !IsEnumerableButNotString(p.GetValue(parent)))
                     .ToArray();
+                    bool isWideParentTable = parentProps.Length > 10;
+                    Table parentTable = isWideParentTable
+                        ? new Table(2).UseAllAvailableWidth()
+                        : new Table(parentProps.Length).UseAllAvailableWidth();
 
-                Table table =
-                    new Table(columnWidths);
+                   
 
-                table.SetWidth(
-                    UnitValue.CreatePercentValue(100)
-                );
-
-                // ================= HEADER =================
-
-                foreach (PropertyInfo prop in properties)
-                {
-                    _ = table.AddHeaderCell(
-                        new Cell().Add(
-                            new Paragraph(prop.Name)
-                                .SetFontSize(9)
-                                .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
-                        )
-                    );
-                }
-
-                // ================= DATA =================
-
-                foreach (var item in data)
-                {
-                    foreach (PropertyInfo prop in properties)
+                    if (!isWideParentTable)
                     {
-                        var value =
-                            prop.GetValue(item);
-
-                        // ================= HANDLE LIST =================
-
-                        if (
-                            value != null &&
-                            value is System.Collections.IEnumerable enumerable &&
-                            !(value is string)
-                        )
+                        foreach (var prop in parentProps)
                         {
-                            List<string> subItems =
-                                new List<string>();
-
-                            foreach (var subItem in enumerable)
-                            {
-                                if (subItem == null)
-                                    continue;
-
-                                var subProps =
-                                    subItem
-                                        .GetType()
-                                        .GetProperties();
-
-                                List<string> subValues =
-                                    new List<string>();
-
-                                foreach (var subProp in subProps)
-                                {
-                                    var subValue =
-                                        subProp.GetValue(subItem);
-
-                                    subValues.Add(
-                                        $"{subProp.Name}: {subValue}"
-                                    );
-                                }
-
-                                subItems.Add(
-                                    string.Join(
-                                        " | ",
-                                        subValues
-                                    )
-                                );
-                            }
-
-                            table.AddCell(
+                            parentTable.AddHeaderCell(
                                 new Cell().Add(
-                                    new Paragraph(
-                                        string.Join(
-                                            "\n\n",
-                                            subItems
-                                        )
-                                    )
-                                    .SetFontSize(7)
-                                )
-                            );
-                        }
-
-                        // ================= HANDLE NORMAL VALUE =================
-
-                        else
-                        {
-                            table.AddCell(
-                                new Cell().Add(
-                                    new Paragraph(
-                                        value?.ToString() ?? ""
-                                    )
-                                    .SetFontSize(8)
+                                    new Paragraph(prop.Name)
+                                    .SetFontSize(11)
+                                    .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
                                 )
                             );
                         }
                     }
-                }
 
-                document.Add(table);
+                   
+
+                    if (isWideParentTable)
+                    {
+                      
+                        parentTable.AddHeaderCell(
+                        new Cell().Add(
+                        new Paragraph("Property")
+                            .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
+                            )
+                        );
+
+                        parentTable.AddHeaderCell(
+                            new Cell().Add(
+                                new Paragraph("Value")
+                                .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
+                            )
+                        );
+
+                        foreach (var prop in parentProps)
+                        {
+                            var value = prop.GetValue(parent);
+
+                            parentTable.AddCell(prop.Name);
+
+                            parentTable.AddCell(
+                                new Cell()
+                                .Add(
+                                    new Paragraph(value?.ToString() ?? "")
+                                    //new Paragraph((value?.ToString() ?? "").Replace(" ", "\u00A0"))
+                                    .SetFontSize(11)
+                                )
+                            );
+                        }
+                    }
+                    else
+                    {
+                        foreach (var prop in parentProps)
+                        {
+                            var value = prop.GetValue(parent);
+
+                            parentTable.AddCell(
+                                new Cell()
+                                .Add(
+                                    new Paragraph(value?.ToString() ?? "")
+                                    //new Paragraph((value?.ToString() ?? "").Replace(" ", "\u00A0"))
+                                    .SetFontSize(11)
+                                )
+                                .SetKeepTogether(false)
+                            );
+                        }
+
+
+                    }
+
+                    document.Add(parentTable);
+
+                    // ================= CHILD TABLE =================
+                    foreach (var prop in properties)
+                    {
+                        var value = prop.GetValue(parent);
+
+                        if (!IsEnumerableButNotString(value))
+                            continue;
+
+                        var list = value as System.Collections.IEnumerable;
+
+                        var firstItem = list.Cast<object>().FirstOrDefault();
+
+                        if (firstItem == null)
+                            continue;
+
+                        var childProps = firstItem.GetType().GetProperties();
+
+                        bool isWideChildTable = childProps.Length > 10;
+
+                        Table childTable = isWideChildTable
+                            ? new Table(2).UseAllAvailableWidth()
+                            : new Table(childProps.Length).UseAllAvailableWidth();
+
+                        bool headerAdded = false;
+
+                        foreach (var item in list)
+                        {
+
+                            if (!headerAdded)
+                            {
+                               
+                                    if (isWideChildTable)
+                                    {
+                                        childTable.AddHeaderCell(
+                                            new Cell().Add(
+                                                new Paragraph("Property")
+                                                .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
+                                            )
+                                        );
+
+                                        childTable.AddHeaderCell(
+                                            new Cell().Add(
+                                                new Paragraph("Value")
+                                                .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
+                                            )
+                                        );
+                                    }
+                               
+                                else
+                                {
+                                    foreach (var cp in childProps)
+                                    {
+                                        childTable.AddHeaderCell(
+                                            new Cell().Add(
+                                                new Paragraph(cp.Name)
+                                                .SetFontSize(10)
+                                                .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
+                                            )
+                                        );
+                                    }
+                                }
+
+                                headerAdded = true;
+                            }
+
+                            if (isWideChildTable)
+                            {
+                                foreach (var cp in childProps)
+                                {
+                                    var childValue = cp.GetValue(item);
+
+                                    childTable.AddCell(cp.Name);
+
+                                    childTable.AddCell(
+                                        new Cell()
+                                        .Add(
+                                            new Paragraph(childValue?.ToString() ?? "")
+                                            //new Paragraph((childValue?.ToString() ?? "").Replace(" ", "\u00A0"))
+                                            .SetFontSize(10)
+                                        )
+                                    );
+                                }
+                            }
+                            else
+                            {
+                                foreach (var cp in childProps)
+                                {
+                                    var childValue = cp.GetValue(item);
+
+                                    childTable.AddCell(
+                                        new Cell()
+                                        .Add(
+                                            new Paragraph(childValue?.ToString() ?? "")
+                                           //new Paragraph((childValue?.ToString() ?? "").Replace(" ", "\u00A0"))
+                                           //.SetFontSize(10)
+                                            .SetFontSize(10)
+                                        )
+                                        .SetKeepTogether(false)
+                                    );
+                                }
+                            }
+
+                        }
+
+                        document.Add(childTable);
+                    }
+
+                    document.Add(new Paragraph("\n"));
+                }
             }
 
             document.Add(new Paragraph(" "));
@@ -346,5 +430,14 @@ namespace Trackmaster_Service
 
             return companyInfo;
         }
+
+        //06.06.2026
+        private bool IsEnumerableButNotString(object value)
+        {
+            return value != null &&
+                   value is System.Collections.IEnumerable &&
+                   !(value is string);
+        }
+
     }
 }
