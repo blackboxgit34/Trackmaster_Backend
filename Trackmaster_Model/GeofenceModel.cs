@@ -12,6 +12,7 @@ namespace Trackmaster_Model
         public string FenceName { get; set; }
         public string Radius { get; set; }
         public string FenceType { get; set; }
+        public bool IsActive { get; set; }
         public List<VehicleList> vehicleLists { get; set; } = new List<VehicleList>();
         public List<LatLongHistory> latLongList { get; set; } = new List<LatLongHistory>();
     }

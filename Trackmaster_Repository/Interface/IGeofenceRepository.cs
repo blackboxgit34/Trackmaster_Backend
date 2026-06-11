@@ -10,5 +10,6 @@ namespace Trackmaster_Repository.Interface
     public interface IGeofenceRepository
     {
         Task<string> SaveGeofence(GeofenceModel model);
+        Task<(List<GeofenceModel> geofenceList, int TotalCount)> GetGeofenceList(DataTableRequestModel model);
     }
 }

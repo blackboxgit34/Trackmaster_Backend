@@ -10,9 +10,11 @@ namespace Trackmaster_Backend.Controllers
     public class GeofenceController : ControllerBase
     {
         private readonly IGeofenceService _geofenceService;
-        public GeofenceController(IGeofenceService geofenceService)
+        private readonly IDashboardService _dashboardService;
+        public GeofenceController(IGeofenceService geofenceService, IDashboardService dashboardService)
         {
             _geofenceService = geofenceService;
+            _dashboardService = dashboardService;
         }
         [HttpPost("SaveGeofence")]
         public async Task<IActionResult> SaveGeofence(GeofenceModel model)
@@ -23,6 +25,30 @@ namespace Trackmaster_Backend.Controllers
                 return StatusCode(200, new
                 {
                     message = result,
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
+        [HttpGet("GetGeofenceList")]
+        public async Task<IActionResult> GetGeofenceList([FromQuery] DataTableRequestModel model)
+        {
+            try
+            {
+                var result = await _geofenceService.GetGeofenceList(model);
+                var vehicleListResult = await _dashboardService.GetAllVehicleListByCustId(model.CustId);
+                return Ok(new
+                {
+                    data = result.geofenceList,
+                    count = result.TotalCount,
+                    vehicleList = vehicleListResult
                 });
             }
             catch (Exception ex)
