@@ -1,9 +1,13 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Threading.Tasks;
 using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
+using static Trackmaster_Model.Reports;
 using static Trackmaster_Repository.DataTypeHelper;
 
 namespace Trackmaster_Repository.Repository
@@ -278,6 +282,164 @@ namespace Trackmaster_Repository.Repository
             {
                 throw new Exception($"Error getting POI data: {ex.Message}", ex);
             }
+        }
+
+        public async Task<ManagePoiResponse> ManagePoi(DataTableRequestModel request, string? id)
+        {
+            var response = new ManagePoiResponse();
+
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                await con.OpenAsync();
+
+                using var cmd = new SqlCommand("GetPoi_TM", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue(
+                    "@LowerBound",
+                    request.iDisplayStart);
+
+                cmd.Parameters.AddWithValue(
+                    "@UpperBound",
+                    request.iDisplayStart + request.iDisplayLength);
+
+                cmd.Parameters.AddWithValue(
+                    "@custId",
+                    request.CustId);
+
+                cmd.Parameters.AddWithValue(
+                    "@searchText",
+                    string.IsNullOrWhiteSpace(request.sSearch)
+                        ? DBNull.Value
+                        : request.sSearch);
+
+                cmd.Parameters.AddWithValue(
+                    "@id",
+                    string.IsNullOrWhiteSpace(id)
+                        ? DBNull.Value
+                        : id);
+
+                var itemCountParam = new SqlParameter("@ItemCount", SqlDbType.Int)
+                {
+                    Direction = ParameterDirection.Output
+                };
+
+                cmd.Parameters.Add(itemCountParam);
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    response.Data.Add(new ManagePoi
+                    {
+                        id = GetString(reader["id"]),
+                        custid = GetString(reader["custid"]),
+                        PoiName = GetString(reader["PoiName"]),
+                        Mobileno = GetString(reader["Mobileno"]),
+                        Latitude = GetString(reader["Latitude"]),
+                        Longitude = GetString(reader["Longitude"]),
+                        Radius = GetString(reader["Radius"]),
+                        POIStatus = GetString(reader["POIStatus"]),
+                        Approve = GetString(reader["Approve"])
+                    });
+                }
+
+                await reader.CloseAsync();
+
+                response.ItemCount =
+                    itemCountParam.Value != DBNull.Value
+                        ? Convert.ToInt32(itemCountParam.Value)
+                        : 0;
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(
+                    $"Error getting POI data: {ex.Message}", ex);
+            }
+        }
+        public async Task<(List<GeofenceModel> geofenceList, int TotalCount)> GetGeofenceList(DataTableRequestModel model)
+        {
+            var result = new List<GeofenceModel>();
+            int TotalCount = 0;
+            try
+            {
+                using (SqlConnection con = new SqlConnection(_connectionString43))
+                using (SqlCommand cmd = new SqlCommand("GetGeofenceList", con))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@custId", model.CustId);
+                    cmd.Parameters.AddWithValue("@iDisplayStart", model.iDisplayStart);
+                    cmd.Parameters.AddWithValue("@iDisplayLength", model.iDisplayLength);
+                    cmd.Parameters.AddWithValue("@sortColumn", model.sortColumn);
+                    cmd.Parameters.AddWithValue("@sortDirection", model.sortDirection);
+                    cmd.Parameters.AddWithValue("@sSearch", model.sSearch);
+
+                    SqlParameter totalCountParam =
+                        new SqlParameter("@TotalCount", SqlDbType.Int)
+                        {
+                            Direction = ParameterDirection.Output
+                        };
+
+                    cmd.Parameters.Add(totalCountParam);
+
+                    await con.OpenAsync();
+
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await dr.ReadAsync())
+                        {
+                            result.Add(new GeofenceModel
+                            {
+                                FenceId = GetInt(dr["FenceId"]),
+                                FenceName = GetString(dr["FenceName"]),
+                                FenceType = GetString(dr["FenceType"]),
+                                IsActive = GetBool(dr["IsActive"]),
+                                vehicleLists = new List<VehicleList>()
+                            });
+                        }
+                    }
+
+                    TotalCount = Convert.ToInt32(totalCountParam.Value);
+                    con.CloseAsync();
+                }
+                var tasks = result.Select(async item =>
+                {
+                    using (SqlConnection deviceCon = new SqlConnection(_connectionString43))
+                    using (SqlCommand deviceCmd = new SqlCommand("GetGeofenceDevicesList", deviceCon))
+                    {
+                        deviceCmd.CommandType = CommandType.StoredProcedure;
+                        deviceCmd.Parameters.AddWithValue("@FenceId", item.FenceId);
+                        deviceCmd.Parameters.AddWithValue("@FenceType", item.FenceType);
+                        deviceCmd.Parameters.AddWithValue("@CustId", model.CustId);
+                        await deviceCon.OpenAsync();
+
+                        using (SqlDataReader dr = await deviceCmd.ExecuteReaderAsync())
+                        {
+                            while (await dr.ReadAsync())
+                            {
+                                item.vehicleLists.Add(new VehicleList
+                                {
+                                    VehName = GetString(dr["VehName"]),
+                                    BBID = GetString(dr["BBID"]),
+                                    Type = GetString(dr["Type"])
+                                });
+                            }
+                        }
+
+                        deviceCon.CloseAsync();
+                    }
+                });
+
+                await Task.WhenAll(tasks);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            return (result, TotalCount);
         }
     }
 }
