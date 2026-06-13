@@ -164,5 +164,26 @@ namespace Trackmaster_Backend.Controllers
                 });
             }
         }
+        [HttpGet("DeleteGeofence")]
+        public async Task<IActionResult> DeleteGeofence(int FenceId, string Type)
+        {
+            try
+            {
+                var result = await _geofenceService.DeleteGeofence(FenceId, Type);
+                return StatusCode(200, new
+                {
+                    success = result,
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
     }
 }

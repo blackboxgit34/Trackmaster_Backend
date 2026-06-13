@@ -12,5 +12,6 @@ namespace Trackmaster_Service.Interface
         Task<List<PoiList>> GetPOi(string CustId);
         Task<ManagePoiResponse> ManagePoi(DataTableRequestModel request, string? id);
         Task<(List<GeofenceModel> geofenceList, int TotalCount)> GetGeofenceList(DataTableRequestModel model);
+        Task<bool> DeleteGeofence(int FenceId, string Type);
     }
 }
