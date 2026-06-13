@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
 using Trackmaster_Model;
 using Trackmaster_Service.Interface;
 
@@ -10,9 +12,11 @@ namespace Trackmaster_Backend.Controllers
     public class GeofenceController : ControllerBase
     {
         private readonly IGeofenceService _geofenceService;
-        public GeofenceController(IGeofenceService geofenceService)
+        private readonly IDashboardService _dashboardService;
+        public GeofenceController(IGeofenceService geofenceService, IDashboardService dashboardService)
         {
             _geofenceService = geofenceService;
+            _dashboardService = dashboardService;
         }
         [HttpPost("SaveGeofence")]
         public async Task<IActionResult> SaveGeofence(GeofenceModel model)
@@ -107,5 +111,58 @@ namespace Trackmaster_Backend.Controllers
             }
         }
 
+        [HttpPost("ManagePoi")]
+        public async Task<IActionResult> ManagePoi([FromQuery] DataTableRequestModel request, string? id = null)
+        {
+            try
+            {
+                var result = await _geofenceService.ManagePoi(request, id);
+
+                if (result != null && result.Data.Any())
+                {
+                    return StatusCode(200, new
+                    {
+                        success = true,
+                        data = result,
+                        message = "POI fetched successfully"
+                    });
+                }
+
+                return StatusCode(404, new
+                {
+                    success = false,
+                    data = result,
+                    message = "No POI found"
+                });
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        [HttpGet("GetGeofenceList")]
+        public async Task<IActionResult> GetGeofenceList([FromQuery] DataTableRequestModel model)
+        {
+            try
+            {
+                var result = await _geofenceService.GetGeofenceList(model);
+                var vehicleListResult = await _dashboardService.GetAllVehicleListByCustId(model.CustId);
+                return Ok(new
+                {
+                    data = result.geofenceList,
+                    count = result.TotalCount,
+                    vehicleList = vehicleListResult
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
     }
 }
