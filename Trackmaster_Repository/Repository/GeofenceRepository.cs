@@ -507,13 +507,9 @@ namespace Trackmaster_Repository.Repository
 
                 tran = con.BeginTransaction();
 
-                string mainTable = Type == "Circle" ? "FenceMainCircle" : "FenceMain";
-                string pointsTable = Type == "Circle" ? "FencePointsCircle" : "FencePoints";
-                string mappingTable = Type == "Circle" ? "FenceDeviceMapingCircle" : "FenceDeviceMaping";
-
                 // Delete Mapping
                 using (var cmd = new SqlCommand(
-                    $"DELETE FROM {mappingTable} WHERE FenceIDFK = @FenceId",
+                    $"DELETE FROM {(Type == "Circle" ? "FenceDeviceMapingCircle" : "FenceDeviceMaping")} WHERE FenceIDFK = @FenceId",
                     con, tran))
                 {
                     cmd.Parameters.AddWithValue("@FenceId", FenceId);
@@ -522,7 +518,7 @@ namespace Trackmaster_Repository.Repository
 
                 // Delete Points
                 using (var cmd = new SqlCommand(
-                    $"DELETE FROM {pointsTable} WHERE FenceIDFK = @FenceId",
+                    $"DELETE FROM {(Type == "Circle" ? "FencePointsCircle" : "FencePoints")} WHERE FenceIDFK = @FenceId",
                     con, tran))
                 {
                     cmd.Parameters.AddWithValue("@FenceId", FenceId);
@@ -531,7 +527,7 @@ namespace Trackmaster_Repository.Repository
 
                 // Delete Main Fence
                 using (var cmd = new SqlCommand(
-                    $"DELETE FROM {mainTable} WHERE ID = @FenceId",
+                    $"DELETE FROM {(Type == "Circle" ? "FenceMainCircle" : "FenceMain")} WHERE ID = @FenceId",
                     con, tran))
                 {
                     cmd.Parameters.AddWithValue("@FenceId", FenceId);
