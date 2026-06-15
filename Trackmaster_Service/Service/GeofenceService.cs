@@ -1,4 +1,6 @@
-﻿using Trackmaster_Model;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
 using Trackmaster_Repository.Repository;
 using Trackmaster_Service.Interface;
@@ -31,6 +33,19 @@ namespace Trackmaster_Service.Service
         public async Task<List<PoiList>>GetPOi(string CustId)
         {
             return await _geofenceRepository.GetPOI(CustId);
+        }
+
+        public async Task<ManagePoiResponse> ManagePoi(DataTableRequestModel request, string? id)
+        {
+            return await _geofenceRepository.ManagePoi(request, id);
+        }
+        public async Task<(List<GeofenceModel> geofenceList, int TotalCount)> GetGeofenceList(DataTableRequestModel model)
+        {
+            return await _geofenceRepository.GetGeofenceList(model);
+        }
+        public async Task<bool> DeleteGeofence(int FenceId, string Type)
+        {
+            return await _geofenceRepository.DeleteGeofence(FenceId, Type);
         }
 
         public async Task<(List<GeoFenceViolation> Data, int TotalCount)> GetGeoFenceViolationReport(DataTableRequestModel requestModel, string bbid)

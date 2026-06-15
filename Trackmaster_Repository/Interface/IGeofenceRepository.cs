@@ -13,6 +13,9 @@ namespace Trackmaster_Repository.Interface
         Task<bool> LocationExist(double lat, double longi, int custid);
         Task<Boolean> SavePOI(double lat, double longi, int custid, string location, string radius);
         Task<List<PoiList>> GetPOI(string custId);
+        Task<ManagePoiResponse> ManagePoi(DataTableRequestModel request, string? id);
+        Task<(List<GeofenceModel> geofenceList, int TotalCount)> GetGeofenceList(DataTableRequestModel model);
+        Task<bool> DeleteGeofence(int FenceId, string Type);
         Task<(List<GeoFenceViolation> Data, int TotalCount)> GetGeoFenceViolationReport(DataTableRequestModel requestModel, string bbid);
     }
 }

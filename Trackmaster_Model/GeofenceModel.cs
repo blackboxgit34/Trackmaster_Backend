@@ -13,6 +13,7 @@ namespace Trackmaster_Model
         public string FenceName { get; set; }
         public string Radius { get; set; }
         public string FenceType { get; set; }
+        public bool IsActive { get; set; }
         public List<VehicleList> vehicleLists { get; set; } = new List<VehicleList>();
         public List<LatLongHistory> latLongList { get; set; } = new List<LatLongHistory>();
     }
@@ -38,6 +39,18 @@ namespace Trackmaster_Model
 
     }
 
+    public class ManagePoi
+    {
+        public string id { get; set; }
+        public string custid { get; set; }
+        public string PoiName { get; set; }
+        public string Mobileno { get; set; }
+        public string Latitude { get; set; }
+        public string Longitude { get; set; }
+        public string Radius { get; set; }
+        public string POIStatus { get; set; }
+        public string Approve { get; set; }
+    }
     public class GeoFenceViolation
     {
         public int id { get; set; }
@@ -52,5 +65,10 @@ namespace Trackmaster_Model
         public int PageCount { get; set; }
     }
 
+    public class ManagePoiResponse
+    {
+        public int ItemCount { get; set; }
+        public List<ManagePoi> Data { get; set; } = new();
+    }
 
 }
