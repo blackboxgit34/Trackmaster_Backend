@@ -1,4 +1,6 @@
-﻿using Trackmaster_Model;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Trackmaster_Model;
 
 namespace Trackmaster_Service.Interface
 {
@@ -9,5 +11,7 @@ namespace Trackmaster_Service.Interface
         Task<Boolean> SavePOI(double lat, double longi, int custid, string location, string radius);
         Task<List<PoiList>> GetPOi(string CustId);
         Task<ManagePoiResponse> ManagePoi(DataTableRequestModel request, string? id);
+        Task<(List<GeofenceModel> geofenceList, int TotalCount)> GetGeofenceList(DataTableRequestModel model);
+        Task<bool> DeleteGeofence(int FenceId, string Type);
     }
 }
