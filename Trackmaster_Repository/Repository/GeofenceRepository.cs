@@ -553,13 +553,8 @@ namespace Trackmaster_Repository.Repository
                 return false;
             }
         }
-    }
-}
 
-
-
-
-        public async Task<(List<GeoFenceViolation> Data, int TotalCount)> GetGeoFenceViolationReport(DataTableRequestModel requestModel,string bbid )
+        public async Task<(List<GeoFenceViolation> Data, int TotalCount)> GetGeoFenceViolationReport(DataTableRequestModel requestModel, string bbid)
 
         {
             var result = new List<GeoFenceViolation>();
@@ -612,10 +607,10 @@ namespace Trackmaster_Repository.Repository
                 using var alertCmd = new SqlCommand("GeoAlert", alertCon);
                 alertCmd.CommandType = CommandType.StoredProcedure;
 
-                alertCmd.Parameters.AddWithValue("@custid", requestModel. CustId);
+                alertCmd.Parameters.AddWithValue("@custid", requestModel.CustId);
                 alertCmd.Parameters.AddWithValue("@bbid", vehicleBBID);
-                alertCmd.Parameters.AddWithValue("@date1", requestModel. beginDate);
-                alertCmd.Parameters.AddWithValue("@date2", requestModel. endDate);
+                alertCmd.Parameters.AddWithValue("@date1", requestModel.beginDate);
+                alertCmd.Parameters.AddWithValue("@date2", requestModel.endDate);
 
                 var alertDs = new DataSet();
 
@@ -651,3 +646,7 @@ namespace Trackmaster_Repository.Repository
         }
     }
 }
+
+
+
+
