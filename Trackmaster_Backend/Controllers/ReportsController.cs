@@ -2,16 +2,20 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using Org.BouncyCastle.Pqc.Crypto.Lms;
 using System;
 using System.Globalization;
 using System.Net;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Trackmaster_Model;
 using Trackmaster_Repository.Repository;
 using Trackmaster_Service;
 using Trackmaster_Service.Interface;
+using Trackmaster_Service.Service;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using static Trackmaster_Model.Reports;
 using static Trackmaster_Service.ImportExportExcelService;
@@ -26,12 +30,18 @@ namespace Trackmaster_Backend.Controllers
         private readonly IWebHostEnvironment _environment;
         private readonly ImportExportExcelService _importExportExcelService;
         private readonly ImportExportPdfService _importExportPdfService;
-        public ReportsController(IReportsService reportsService, IWebHostEnvironment environment, ImportExportExcelService importExportExcelService, ImportExportPdfService importExportPdfService)
+        private readonly IConfiguration _configuration;
+        private readonly IMongoService _mongoService;
+
+
+        public ReportsController(IReportsService reportsService, IWebHostEnvironment environment, ImportExportExcelService importExportExcelService, ImportExportPdfService importExportPdfService, IConfiguration configuration, IMongoService mongoService)
         {
             _reportsService = reportsService;
             _environment = environment;
             _importExportExcelService = importExportExcelService;
             _importExportPdfService = importExportPdfService;
+            _configuration = configuration;
+            _mongoService = mongoService;
         }
         /// <summary>
         /// Get crew report data
@@ -184,9 +194,12 @@ namespace Trackmaster_Backend.Controllers
 
                 if (downloadType == "Excel")
                 {
-                    var reportName = $"SMSNotificationReport_{DateTime.Now:yyyyMMdd}.xlsx";
+                    //var reportName = $"SMSNotificationReport_{DateTime.Now:yyyyMMdd}.xlsx";
+                    var reportName = $"SMSNotificationReport_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.xlsx";
                     var exportData = sms?.objSMSReport?.ToList();
                     var stream = await _importExportExcelService.ExportToExcelFlatList(exportData, reportName, null, null);
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");             
+                    Response.Headers["Content-Disposition"] = $"attachment; filename={reportName}";
                     return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
                 }
                 // ================= PDF EXPORT =================
@@ -252,21 +265,22 @@ namespace Trackmaster_Backend.Controllers
                 // ================= EXCEL EXPORT =================
                 if (downloadType == "Excel")
                 {
-                    var fileName =$"ConsolidatedIgnitionStatus_{DateTime.Now:yyyyMMdd}.xlsx";
-
+                    //var fileName =$"ConsolidatedIgnitionStatus_{DateTime.Now:yyyyMMdd}.xlsx";
+                    var fileName = $"Ignition On/Off Analysis_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.xlsx";
                     var exportData =consIgnition.ConsolidatedIgnitionList.ToList();
 
                     var stream =await _importExportExcelService.ExportToExcelFlatList(exportData,fileName,null,null);
-
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");             
+                    Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
                     return File(stream,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",fileName);
                 }
 
                 // ================= PDF EXPORT =================
                 if (downloadType == "Pdf")
                 {
-                    var fileName =$"ConsolidatedIgnitionStatus_{bbid}_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
+                    var fileName =$"Ignition On/Off Analysis_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
                     var exportData =consIgnition.ConsolidatedIgnitionList.ToList();
-                    var stream = await _importExportPdfService.ExportToPdfFlatList(exportData,"Consolidated Ignition Status Report", fileName, bbid);
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(exportData, "Ignition On/Off Analysis Report", fileName, bbid);
                     // expose header to frontend
                     Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
                     // force filename into response header
@@ -533,14 +547,18 @@ namespace Trackmaster_Backend.Controllers
                 var speedData = await _reportsService.getSpeedReport(mode, requestModel);
                 if (requestModel.DownloadType == "Excel")
                 {
-                    var reportName = $"OverSpeedAnalysis_{requestModel.CustId}.xlsx";
+                    var reportName = $"OverSpeedAnalysis_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.xlsx";
                     var stream = await _importExportExcelService.ExportToExcelFlatList(speedData.OSmainLst, reportName, null, null);
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                    Response.Headers["Content-Disposition"] = $"attachment; filename={reportName}";
                     return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
                 }
                 if (requestModel.DownloadType == "Pdf")
                 {
-                    var reportName = $"DistanceReport_{requestModel.CustId}.pdf";
+                    var reportName = $"OverSpeedAnalysis_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
                     var stream = await _importExportPdfService.ExportToPdfFlatList(speedData.OSmainLst, reportName, null, null);
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                    Response.Headers["Content-Disposition"] = $"attachment; filename={reportName}";
                     return File(stream, "application/pdf", reportName);
                 }
                 if (speedData != null)
@@ -567,7 +585,7 @@ namespace Trackmaster_Backend.Controllers
         }
         #endregion
 
-        [HttpPost("GetEntryExitReport")]
+        [HttpGet("GetEntryExitReport")]
 
         public async Task<IActionResult> GetEntryExitReport([FromQuery] DataTableRequestModel model, string rtype, [FromQuery] string bbid = "")
         {
@@ -592,5 +610,39 @@ namespace Trackmaster_Backend.Controllers
                 count = stoppage.PageCount
             });
         }
+        [HttpGet("GetLiveStatus")]
+        public async Task<IActionResult> GetLiveStatus(string pagename, [FromQuery] DataTableRequestModel model)
+        {
+            try
+            {
+                int sEcho = model.sEcho;
+                int start = model.iDisplayStart;
+                int length = model.iDisplayLength;
+                string search = model.sSearch;
+                string sortColumn = model.sortColumn;
+                string sortDirection = model.sortDirection;
+                    
+
+                var vehiclestatuslist = await _mongoService.GetLiveStatus(pagename, model);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Vehicle data retrieved successfully",
+                    data = vehiclestatuslist,
+
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
+
+       
     }
 }

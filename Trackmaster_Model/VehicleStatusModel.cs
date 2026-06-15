@@ -53,5 +53,6 @@ namespace Trackmaster_Model
         {
             public List<string> BBIDs { get; set; }
         }
+        
     }
 }

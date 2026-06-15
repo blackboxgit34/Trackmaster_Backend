@@ -1,9 +1,13 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Threading.Tasks;
 using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
+using static Trackmaster_Model.Reports;
 using static Trackmaster_Repository.DataTypeHelper;
 
 namespace Trackmaster_Repository.Repository
@@ -38,39 +42,6 @@ namespace Trackmaster_Repository.Repository
                         model.FenceId = Convert.ToInt32(
                             await cmd.ExecuteScalarAsync()
                         );
-
-                        if (model.FenceType == "Polygon")
-                        {
-                            foreach (var vehicle in model.vehicleLists)
-                            {
-                                using var mapCmd = new SqlCommand(
-                                    @"INSERT INTO FenceDeviceMaping(FenceIDFK,BBID)
-                              VALUES(@FenceIDFK,@BBID)",
-                                    con,
-                                    tran);
-
-                                mapCmd.Parameters.AddWithValue("@FenceIDFK", model.FenceId);
-                                mapCmd.Parameters.AddWithValue("@BBID", vehicle.BBID);
-
-                                await mapCmd.ExecuteNonQueryAsync();
-                            }
-                        }
-                        else
-                        {
-                            foreach (var vehicle in model.vehicleLists)
-                            {
-                                using var mapCmd = new SqlCommand(
-                                    @"INSERT INTO FenceDeviceMapingCircle(FenceIDFK,BBID)
-                              VALUES(@FenceIDFK,@BBID)",
-                                    con,
-                                    tran);
-
-                                mapCmd.Parameters.AddWithValue("@FenceIDFK", model.FenceId);
-                                mapCmd.Parameters.AddWithValue("@BBID", vehicle.BBID);
-
-                                await mapCmd.ExecuteNonQueryAsync();
-                            }
-                        }
                     }
                     else
                     {
@@ -84,6 +55,16 @@ namespace Trackmaster_Repository.Repository
                             deleteCmd.Parameters.AddWithValue("@FenceIDFK", model.FenceId);
 
                             await deleteCmd.ExecuteNonQueryAsync();
+
+
+                            using var deleteDeviceCmd = new SqlCommand(
+                                "DELETE FROM FenceDeviceMaping WHERE FenceIDFK=@FenceIDFK",
+                                con,
+                                tran);
+
+                            deleteDeviceCmd.Parameters.AddWithValue("@FenceIDFK", model.FenceId);
+
+                            await deleteDeviceCmd.ExecuteNonQueryAsync();
                         }
                         else
                         {
@@ -95,6 +76,16 @@ namespace Trackmaster_Repository.Repository
                             deleteCmd.Parameters.AddWithValue("@FenceIDFK", model.FenceId);
 
                             await deleteCmd.ExecuteNonQueryAsync();
+
+
+                            using var deleteDeviceCmd = new SqlCommand(
+                               "DELETE FROM FenceDeviceMapingCircle WHERE FenceIDFK=@FenceIDFK",
+                               con,
+                               tran);
+
+                            deleteDeviceCmd.Parameters.AddWithValue("@FenceIDFK", model.FenceId);
+
+                            await deleteDeviceCmd.ExecuteNonQueryAsync();
                         }
                     }
 
@@ -106,10 +97,7 @@ namespace Trackmaster_Repository.Repository
                         foreach (var point in model.latLongList)
                         {
                             using var pointCmd = new SqlCommand(
-                                @"INSERT INTO FencePoints
-                          (FenceIDFK,Lat,[Long])
-                          VALUES
-                          (@FenceIDFK,@Lat,@Long)",
+                                @"INSERT INTO FencePoints (FenceIDFK,Lat,[Long]) VALUES (@FenceIDFK,@Lat,@Long)",
                                 con,
                                 tran);
 
@@ -119,16 +107,26 @@ namespace Trackmaster_Repository.Repository
 
                             await pointCmd.ExecuteNonQueryAsync();
                         }
+
+                        foreach (var vehicle in model.vehicleLists)
+                        {
+                            using var mapCmd = new SqlCommand(
+                                @"INSERT INTO FenceDeviceMaping(FenceIDFK,BBID) VALUES(@FenceIDFK,@BBID)",
+                                con,
+                                tran);
+
+                            mapCmd.Parameters.AddWithValue("@FenceIDFK", model.FenceId);
+                            mapCmd.Parameters.AddWithValue("@BBID", vehicle.BBID);
+
+                            await mapCmd.ExecuteNonQueryAsync();
+                        }
                     }
                     else
                     {
                         foreach (var point in model.latLongList)
                         {
                             using var pointCmd = new SqlCommand(
-                                @"INSERT INTO FencePointsCircle
-                          (FenceIDFK,Lat,[Long],Radius)
-                          VALUES
-                          (@FenceIDFK,@Lat,@Long,@Radius)",
+                                @"INSERT INTO FencePointsCircle(FenceIDFK,Lat,[Long],Radius) VALUES (@FenceIDFK,@Lat,@Long,@Radius)",
                                 con,
                                 tran);
 
@@ -138,6 +136,19 @@ namespace Trackmaster_Repository.Repository
                             pointCmd.Parameters.AddWithValue("@Radius", model.Radius);
 
                             await pointCmd.ExecuteNonQueryAsync();
+                        }
+
+                        foreach (var vehicle in model.vehicleLists)
+                        {
+                            using var mapCmd = new SqlCommand(
+                                @"INSERT INTO FenceDeviceMapingCircle(FenceIDFK,BBID) VALUES(@FenceIDFK,@BBID)",
+                                con,
+                                tran);
+
+                            mapCmd.Parameters.AddWithValue("@FenceIDFK", model.FenceId);
+                            mapCmd.Parameters.AddWithValue("@BBID", vehicle.BBID);
+
+                            await mapCmd.ExecuteNonQueryAsync();
                         }
                     }
 
@@ -262,7 +273,7 @@ namespace Trackmaster_Repository.Repository
                 {
                     poiList.Add(new PoiList
                     {
-                      
+
                         id = GetString(reader["id"]),
                         lat = GetString(reader["lat"]),
                         lng = GetString(reader["longi"]),
@@ -355,6 +366,290 @@ namespace Trackmaster_Repository.Repository
                 throw new Exception(
                     $"Error getting POI data: {ex.Message}", ex);
             }
+        }
+        public async Task<(List<GeofenceModel> geofenceList, int TotalCount)> GetGeofenceList(DataTableRequestModel model)
+        {
+            var result = new List<GeofenceModel>();
+            int TotalCount = 0;
+
+            try
+            {
+                using (SqlConnection con = new SqlConnection(_connectionString43))
+                using (SqlCommand cmd = new SqlCommand("GetGeofenceList", con))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.AddWithValue("@custId", model.CustId);
+                    cmd.Parameters.AddWithValue("@iDisplayStart", model.iDisplayStart);
+                    cmd.Parameters.AddWithValue("@iDisplayLength", model.iDisplayLength);
+                    cmd.Parameters.AddWithValue("@sortColumn", model.sortColumn ?? "");
+                    cmd.Parameters.AddWithValue("@sortDirection", model.sortDirection ?? "");
+                    cmd.Parameters.AddWithValue("@sSearch", model.sSearch ?? "");
+
+                    SqlParameter totalCountParam = new SqlParameter("@TotalCount", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+
+                    cmd.Parameters.Add(totalCountParam);
+
+                    await con.OpenAsync();
+
+                    using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await dr.ReadAsync())
+                        {
+                            result.Add(new GeofenceModel
+                            {
+                                FenceId = GetInt(dr["FenceId"]),
+                                FenceName = GetString(dr["FenceName"]),
+                                FenceType = GetString(dr["FenceType"]),
+                                IsActive = GetBool(dr["IsActive"]),
+                                Radius = GetString(dr["Radius"]),
+                                vehicleLists = new List<VehicleList>(),
+                                latLongList = new List<LatLongHistory>()
+                            });
+                        }
+                    }
+
+                    TotalCount = totalCountParam.Value != DBNull.Value
+                        ? Convert.ToInt32(totalCountParam.Value)
+                        : 0;
+                }
+
+                var latLongTasks = result.Select(async item =>
+                {
+                    try
+                    {
+                        using (SqlConnection con = new SqlConnection(_connectionString43))
+                        using (SqlCommand cmd = new SqlCommand("GetGeofenceLatLongList", con))
+                        {
+                            cmd.CommandType = CommandType.StoredProcedure;
+
+                            cmd.Parameters.AddWithValue("@FenceId", item.FenceId);
+                            cmd.Parameters.AddWithValue("@FenceType", item.FenceType ?? "");
+
+                            await con.OpenAsync();
+
+                            using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await dr.ReadAsync())
+                                {
+                                    item.latLongList.Add(new LatLongHistory
+                                    {
+                                        latitude = GetDecimal(dr["Lat"]),
+                                        longitude = GetDecimal(dr["Long"])
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"LatLong Error FenceId={item.FenceId}: {ex.Message}");
+                    }
+                });
+
+                await Task.WhenAll(latLongTasks);
+
+                var vehicleTasks = result.Select(async item =>
+                {
+                    try
+                    {
+                        using (SqlConnection con = new SqlConnection(_connectionString43))
+                        using (SqlCommand cmd = new SqlCommand("GetGeofenceDevicesList", con))
+                        {
+                            cmd.CommandType = CommandType.StoredProcedure;
+
+                            cmd.Parameters.AddWithValue("@FenceId", item.FenceId);
+                            cmd.Parameters.AddWithValue("@FenceType", item.FenceType ?? "");
+                            cmd.Parameters.AddWithValue("@CustId", model.CustId);
+
+                            await con.OpenAsync();
+
+                            using (SqlDataReader dr = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await dr.ReadAsync())
+                                {
+                                    item.vehicleLists.Add(new VehicleList
+                                    {
+                                        VehName = GetString(dr["VehName"]),
+                                        BBID = GetString(dr["BBID"]),
+                                        Type = GetString(dr["Type"])
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Vehicle Error FenceId={item.FenceId}: {ex.Message}");
+                    }
+                });
+
+                await Task.WhenAll(vehicleTasks);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GetGeofenceList Error: {ex}");
+            }
+
+            return (result, TotalCount);
+        }
+        public async Task<bool> DeleteGeofence(int FenceId, string Type)
+        {
+            SqlTransaction tran = null;
+
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                await con.OpenAsync();
+
+                tran = con.BeginTransaction();
+
+                // Delete Mapping
+                using (var cmd = new SqlCommand(
+                    $"DELETE FROM {(Type == "Circle" ? "FenceDeviceMapingCircle" : "FenceDeviceMaping")} WHERE FenceIDFK = @FenceId",
+                    con, tran))
+                {
+                    cmd.Parameters.AddWithValue("@FenceId", FenceId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // Delete Points
+                using (var cmd = new SqlCommand(
+                    $"DELETE FROM {(Type == "Circle" ? "FencePointsCircle" : "FencePoints")} WHERE FenceIDFK = @FenceId",
+                    con, tran))
+                {
+                    cmd.Parameters.AddWithValue("@FenceId", FenceId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                // Delete Main Fence
+                using (var cmd = new SqlCommand(
+                    $"DELETE FROM {(Type == "Circle" ? "FenceMainCircle" : "FenceMain")} WHERE ID = @FenceId",
+                    con, tran))
+                {
+                    cmd.Parameters.AddWithValue("@FenceId", FenceId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+
+                await tran.CommitAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                if (tran != null)
+                {
+                    try
+                    {
+                        await tran.RollbackAsync();
+                    }
+                    catch
+                    {
+
+                    }
+                }
+                return false;
+            }
+        }
+
+        public async Task<(List<GeoFenceViolation> Data, int TotalCount)> GetGeoFenceViolationReport(DataTableRequestModel requestModel, string bbid)
+
+        {
+            var result = new List<GeoFenceViolation>();
+            int totalCount = 0;
+
+            using var con = new SqlConnection(_connectionString43);
+            await con.OpenAsync();
+
+            using var cmd = new SqlCommand("GeoFenceVehicle", con);
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            cmd.Parameters.AddWithValue("@LowerBand", requestModel.iDisplayStart);
+            cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
+            cmd.Parameters.AddWithValue("@UpperBand", requestModel.iDisplayLength);
+            cmd.Parameters.AddWithValue("@BBid",
+                string.IsNullOrWhiteSpace(bbid) ? DBNull.Value : (object)bbid);
+            cmd.Parameters.AddWithValue("@searchText",
+                string.IsNullOrWhiteSpace(requestModel.sSearch) ? DBNull.Value : (object)requestModel.sSearch);
+
+            var itemCountParam = new SqlParameter("@ItemCount", SqlDbType.Int)
+            {
+                Direction = ParameterDirection.Output
+            };
+
+            cmd.Parameters.Add(itemCountParam);
+
+            var ds = new DataSet();
+
+            using (var adapter = new SqlDataAdapter(cmd))
+            {
+                adapter.Fill(ds);
+            }
+
+            totalCount = itemCountParam.Value != DBNull.Value
+                ? Convert.ToInt32(itemCountParam.Value)
+                : 0;
+
+            if (ds.Tables.Count == 0 || ds.Tables[0].Rows.Count == 0)
+                return (new List<GeoFenceViolation>(), totalCount);
+
+            var tasks = ds.Tables[0].AsEnumerable().Select(async vehicleRow =>
+            {
+                var vehicleBBID = vehicleRow["bbid"]?.ToString() ?? string.Empty;
+
+                var vehicleResult = new List<GeoFenceViolation>();
+
+                using var alertCon = new SqlConnection(_connectionString43);
+                await alertCon.OpenAsync();
+
+                using var alertCmd = new SqlCommand("GeoAlert", alertCon);
+                alertCmd.CommandType = CommandType.StoredProcedure;
+
+                alertCmd.Parameters.AddWithValue("@custid", requestModel.CustId);
+                alertCmd.Parameters.AddWithValue("@bbid", vehicleBBID);
+                alertCmd.Parameters.AddWithValue("@date1", requestModel.beginDate);
+                alertCmd.Parameters.AddWithValue("@date2", requestModel.endDate);
+
+                var alertDs = new DataSet();
+
+                using (var alertAdapter = new SqlDataAdapter(alertCmd))
+                {
+                    alertAdapter.Fill(alertDs);
+                }
+
+                if (alertDs.Tables.Count > 0 && alertDs.Tables[0].Rows.Count > 0)
+                {
+                    vehicleResult.AddRange(
+                        alertDs.Tables[0].AsEnumerable().Select(row => new GeoFenceViolation
+                        {
+                            VehicleName = row["vehname"]?.ToString() ?? "",
+                            Location = row["location"]?.ToString() ?? "",
+                            GeoTime = row["geotime"]?.ToString() ?? "",
+                            FenceStatus = row["fencestatus"]?.ToString() ?? "",
+                            fencename = row["fencename"]?.ToString() ?? "",
+                            BBID = vehicleBBID,
+                            FenceViolationsCount = alertDs.Tables[0].Rows.Count,
+                            PageCount = totalCount
+                        }));
+                }
+
+                return vehicleResult;
+            });
+
+            result = (await Task.WhenAll(tasks))
+                .SelectMany(x => x)
+                .ToList();
+
+            return (result, totalCount);
+        }
+    }
+}
+
+
+
+
         }
 
         public async Task<bool> EditPoi(EditPoiRequest request)

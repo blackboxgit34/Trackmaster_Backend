@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Threading.Tasks;
 using Trackmaster_Model;
 using Trackmaster_Service.Interface;
 
@@ -10,12 +12,15 @@ namespace Trackmaster_Backend.Controllers
     public class GeofenceController : ControllerBase
     {
         private readonly IGeofenceService _geofenceService;
-        public GeofenceController(IGeofenceService geofenceService)
+        private readonly IDashboardService _dashboardService;
+        public GeofenceController(IGeofenceService geofenceService, IDashboardService dashboardService)
         {
             _geofenceService = geofenceService;
+            _dashboardService = dashboardService;
         }
         [HttpPost("SaveGeofence")]
         public async Task<IActionResult> SaveGeofence(GeofenceModel model)
+
         {
             try
             {
@@ -100,10 +105,15 @@ namespace Trackmaster_Backend.Controllers
                     });
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
-                throw;
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
             }
         }
 
@@ -136,7 +146,89 @@ namespace Trackmaster_Backend.Controllers
                 throw;
             }
         }
+        [HttpGet("GetGeofenceList")]
+        public async Task<IActionResult> GetGeofenceList([FromQuery] DataTableRequestModel model)
+        {
+            try
+            {
+                var result = await _geofenceService.GetGeofenceList(model);
+                var vehicleListResult = await _dashboardService.GetAllVehicleListByCustId(model.CustId);
+                return Ok(new
+                {
+                    data = result.geofenceList,
+                    count = result.TotalCount,
+                    vehicleList = vehicleListResult
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
+        [HttpGet("DeleteGeofence")]
+        public async Task<IActionResult> DeleteGeofence(int FenceId, string Type)
+        {
+            try
+            {
+                var result = await _geofenceService.DeleteGeofence(FenceId, Type);
+                return StatusCode(200, new
+                {
+                    success = result,
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
+        [HttpGet("GetGeoFenceViolation")]
+        public async Task<IActionResult> GetGeoFenceViolation([FromQuery] DataTableRequestModel requestModel,string bbid)
+        {
+            try
+            {
+                var result = await _geofenceService.GetGeoFenceViolationReport(requestModel, bbid);
 
+                if (result.Data != null && result.Data.Any())
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        recordsTotal = result.TotalCount,
+                        recordsFiltered = result.TotalCount,
+                        message = "GeoFenceViolation fetched successfully"
+                    });
+                }
+
+                return NotFound(new
+                {
+                    success = false,
+                    data = new List<GeoFenceViolation>(),
+                    recordsTotal = 0,
+                    recordsFiltered = 0,
+                    message = "No GeoFenceViolation found"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
         [HttpPost("EditPoi")]
         public async Task<IActionResult> EditPoi([FromBody] EditPoiRequest request)
         {
