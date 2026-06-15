@@ -2,16 +2,20 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
+using MongoDB.Driver;
 using Org.BouncyCastle.Pqc.Crypto.Lms;
 using System;
 using System.Globalization;
 using System.Net;
+using System.Text.Json;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Trackmaster_Model;
 using Trackmaster_Repository.Repository;
 using Trackmaster_Service;
 using Trackmaster_Service.Interface;
+using Trackmaster_Service.Service;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using static Trackmaster_Model.Reports;
 using static Trackmaster_Service.ImportExportExcelService;
@@ -26,12 +30,18 @@ namespace Trackmaster_Backend.Controllers
         private readonly IWebHostEnvironment _environment;
         private readonly ImportExportExcelService _importExportExcelService;
         private readonly ImportExportPdfService _importExportPdfService;
-        public ReportsController(IReportsService reportsService, IWebHostEnvironment environment, ImportExportExcelService importExportExcelService, ImportExportPdfService importExportPdfService)
+        private readonly IConfiguration _configuration;
+        private readonly IMongoService _mongoService;
+
+
+        public ReportsController(IReportsService reportsService, IWebHostEnvironment environment, ImportExportExcelService importExportExcelService, ImportExportPdfService importExportPdfService, IConfiguration configuration, IMongoService mongoService)
         {
             _reportsService = reportsService;
             _environment = environment;
             _importExportExcelService = importExportExcelService;
             _importExportPdfService = importExportPdfService;
+            _configuration = configuration;
+            _mongoService = mongoService;
         }
         /// <summary>
         /// Get crew report data
@@ -565,7 +575,7 @@ namespace Trackmaster_Backend.Controllers
         }
         #endregion
 
-        [HttpPost("GetEntryExitReport")]
+        [HttpGet("GetEntryExitReport")]
 
         public async Task<IActionResult> GetEntryExitReport([FromQuery] DataTableRequestModel model, string rtype, [FromQuery] string bbid = "")
         {
@@ -590,5 +600,39 @@ namespace Trackmaster_Backend.Controllers
                 count = stoppage.PageCount
             });
         }
+        [HttpGet("GetLiveStatus")]
+        public async Task<IActionResult> GetLiveStatus(string pagename, [FromQuery] DataTableRequestModel model)
+        {
+            try
+            {
+                int sEcho = model.sEcho;
+                int start = model.iDisplayStart;
+                int length = model.iDisplayLength;
+                string search = model.sSearch;
+                string sortColumn = model.sortColumn;
+                string sortDirection = model.sortDirection;
+                    
+
+                var vehiclestatuslist = await _mongoService.GetLiveStatus(pagename, model);
+                return Ok(new
+                {
+                    success = true,
+                    message = "Vehicle data retrieved successfully",
+                    data = vehiclestatuslist,
+
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
+
+       
     }
 }
