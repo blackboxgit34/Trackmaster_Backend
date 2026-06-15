@@ -8,5 +8,6 @@ namespace Trackmaster_Service.Interface
         Task<bool> LocationExist(float lat, float longi, int custid);
         Task<Boolean> SavePOI(double lat, double longi, int custid, string location, string radius);
         Task<List<PoiList>> GetPOi(string CustId);
+        Task<(List<GeoFenceViolation> Data, int TotalCount)> GetGeoFenceViolationReport(DataTableRequestModel requestModel, string bbid);
     }
 }

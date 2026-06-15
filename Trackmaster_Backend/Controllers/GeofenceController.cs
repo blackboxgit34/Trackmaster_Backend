@@ -16,6 +16,7 @@ namespace Trackmaster_Backend.Controllers
         }
         [HttpPost("SaveGeofence")]
         public async Task<IActionResult> SaveGeofence(GeofenceModel model)
+
         {
             try
             {
@@ -100,12 +101,55 @@ namespace Trackmaster_Backend.Controllers
                     });
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
 
-                throw;
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
             }
         }
 
+        [HttpGet("GetGeoFenceViolation")]
+        public async Task<IActionResult> GetGeoFenceViolation([FromQuery] DataTableRequestModel requestModel,string bbid)
+        {
+            try
+            {
+                var result = await _geofenceService.GetGeoFenceViolationReport(requestModel, bbid);
+
+                if (result.Data != null && result.Data.Any())
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        recordsTotal = result.TotalCount,
+                        recordsFiltered = result.TotalCount,
+                        message = "GeoFenceViolation fetched successfully"
+                    });
+                }
+
+                return NotFound(new
+                {
+                    success = false,
+                    data = new List<GeoFenceViolation>(),
+                    recordsTotal = 0,
+                    recordsFiltered = 0,
+                    message = "No GeoFenceViolation found"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
     }
 }

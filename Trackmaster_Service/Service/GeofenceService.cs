@@ -1,6 +1,8 @@
 ﻿using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
+using Trackmaster_Repository.Repository;
 using Trackmaster_Service.Interface;
+using static Trackmaster_Model.Reports;
 
 namespace Trackmaster_Service.Service
 {
@@ -30,5 +32,13 @@ namespace Trackmaster_Service.Service
         {
             return await _geofenceRepository.GetPOI(CustId);
         }
+
+        public async Task<(List<GeoFenceViolation> Data, int TotalCount)> GetGeoFenceViolationReport(DataTableRequestModel requestModel, string bbid)
+        {
+            return await _geofenceRepository.GetGeoFenceViolationReport(requestModel, bbid);
+        }
+
+
+       
     }
 }

@@ -279,5 +279,98 @@ namespace Trackmaster_Repository.Repository
                 throw new Exception($"Error getting POI data: {ex.Message}", ex);
             }
         }
+
+
+
+        public async Task<(List<GeoFenceViolation> Data, int TotalCount)> GetGeoFenceViolationReport(DataTableRequestModel requestModel,string bbid )
+
+        {
+            var result = new List<GeoFenceViolation>();
+            int totalCount = 0;
+
+            using var con = new SqlConnection(_connectionString43);
+            await con.OpenAsync();
+
+            using var cmd = new SqlCommand("GeoFenceVehicle", con);
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            cmd.Parameters.AddWithValue("@LowerBand", requestModel.iDisplayStart);
+            cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
+            cmd.Parameters.AddWithValue("@UpperBand", requestModel.iDisplayLength);
+            cmd.Parameters.AddWithValue("@BBid",
+                string.IsNullOrWhiteSpace(bbid) ? DBNull.Value : (object)bbid);
+            cmd.Parameters.AddWithValue("@searchText",
+                string.IsNullOrWhiteSpace(requestModel.sSearch) ? DBNull.Value : (object)requestModel.sSearch);
+
+            var itemCountParam = new SqlParameter("@ItemCount", SqlDbType.Int)
+            {
+                Direction = ParameterDirection.Output
+            };
+
+            cmd.Parameters.Add(itemCountParam);
+
+            var ds = new DataSet();
+
+            using (var adapter = new SqlDataAdapter(cmd))
+            {
+                adapter.Fill(ds);
+            }
+
+            totalCount = itemCountParam.Value != DBNull.Value
+                ? Convert.ToInt32(itemCountParam.Value)
+                : 0;
+
+            if (ds.Tables.Count == 0 || ds.Tables[0].Rows.Count == 0)
+                return (new List<GeoFenceViolation>(), totalCount);
+
+            var tasks = ds.Tables[0].AsEnumerable().Select(async vehicleRow =>
+            {
+                var vehicleBBID = vehicleRow["bbid"]?.ToString() ?? string.Empty;
+
+                var vehicleResult = new List<GeoFenceViolation>();
+
+                using var alertCon = new SqlConnection(_connectionString43);
+                await alertCon.OpenAsync();
+
+                using var alertCmd = new SqlCommand("GeoAlert", alertCon);
+                alertCmd.CommandType = CommandType.StoredProcedure;
+
+                alertCmd.Parameters.AddWithValue("@custid", requestModel. CustId);
+                alertCmd.Parameters.AddWithValue("@bbid", vehicleBBID);
+                alertCmd.Parameters.AddWithValue("@date1", requestModel. beginDate);
+                alertCmd.Parameters.AddWithValue("@date2", requestModel. endDate);
+
+                var alertDs = new DataSet();
+
+                using (var alertAdapter = new SqlDataAdapter(alertCmd))
+                {
+                    alertAdapter.Fill(alertDs);
+                }
+
+                if (alertDs.Tables.Count > 0 && alertDs.Tables[0].Rows.Count > 0)
+                {
+                    vehicleResult.AddRange(
+                        alertDs.Tables[0].AsEnumerable().Select(row => new GeoFenceViolation
+                        {
+                            VehicleName = row["vehname"]?.ToString() ?? "",
+                            Location = row["location"]?.ToString() ?? "",
+                            GeoTime = row["geotime"]?.ToString() ?? "",
+                            FenceStatus = row["fencestatus"]?.ToString() ?? "",
+                            fencename = row["fencename"]?.ToString() ?? "",
+                            BBID = vehicleBBID,
+                            FenceViolationsCount = alertDs.Tables[0].Rows.Count,
+                            PageCount = totalCount
+                        }));
+                }
+
+                return vehicleResult;
+            });
+
+            result = (await Task.WhenAll(tasks))
+                .SelectMany(x => x)
+                .ToList();
+
+            return (result, totalCount);
+        }
     }
 }
