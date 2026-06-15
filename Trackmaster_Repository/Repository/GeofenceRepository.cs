@@ -644,14 +644,6 @@ namespace Trackmaster_Repository.Repository
 
             return (result, totalCount);
         }
-    }
-}
-
-
-
-
-        }
-
         public async Task<bool> EditPoi(EditPoiRequest request)
         {
             try
