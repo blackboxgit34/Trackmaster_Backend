@@ -9,5 +9,6 @@ namespace Trackmaster_Service.Interface
         Task<Boolean> SavePOI(double lat, double longi, int custid, string location, string radius);
         Task<List<PoiList>> GetPOi(string CustId);
         Task<ManagePoiResponse> ManagePoi(DataTableRequestModel request, string? id);
+        Task<bool> EditPoi(EditPoiRequest request);
     }
 }

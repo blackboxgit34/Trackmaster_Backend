@@ -14,5 +14,6 @@ namespace Trackmaster_Repository.Interface
         Task<Boolean> SavePOI(double lat, double longi, int custid, string location, string radius);
         Task<List<PoiList>> GetPOI(string custId);
         Task<ManagePoiResponse> ManagePoi(DataTableRequestModel request, string? id);
+        Task<bool> EditPoi(EditPoiRequest request);
     }
 }

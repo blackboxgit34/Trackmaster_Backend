@@ -356,5 +356,34 @@ namespace Trackmaster_Repository.Repository
                     $"Error getting POI data: {ex.Message}", ex);
             }
         }
+
+        public async Task<bool> EditPoi(EditPoiRequest request)
+        {
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                await con.OpenAsync();
+
+                using var cmd = new SqlCommand("EditPoi", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@Action", request.Action);
+                cmd.Parameters.AddWithValue("@id", request.Id);
+
+                cmd.Parameters.AddWithValue("@lat", request.Latitude.HasValue ? request.Latitude.Value : DBNull.Value);
+                cmd.Parameters.AddWithValue("@longi", request.Longitude.HasValue ? request.Longitude.Value : DBNull.Value);
+                cmd.Parameters.AddWithValue("@details", string.IsNullOrWhiteSpace(request.Details) ? DBNull.Value : request.Details);
+                cmd.Parameters.AddWithValue("@radius", string.IsNullOrWhiteSpace(request.Radius) ? DBNull.Value : request.Radius);
+                var affectedRows = await cmd.ExecuteNonQueryAsync();
+
+                return affectedRows > 0;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(
+                    $"Error editing POI: {ex.Message}",
+                    ex);
+            }
+        }
     }
 }

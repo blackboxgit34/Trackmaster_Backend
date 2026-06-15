@@ -56,4 +56,19 @@ namespace Trackmaster_Model
         public List<ManagePoi> Data { get; set; } = new();
     }
 
+    public class EditPoiRequest
+    {
+        public string Action { get; set; } = string.Empty; // UPDATE / DELETE
+
+        public int Id { get; set; }
+
+        public double? Latitude { get; set; }
+
+        public double? Longitude { get; set; }
+
+        public string? Details { get; set; }
+
+        public string? Radius { get; set; }
+    }
+
 }
