@@ -177,7 +177,7 @@ namespace Trackmaster_Repository.Repository
                 using var tran = con.BeginTransaction();
                 try
                 {
-                    using var cmd = new SqlCommand("CustLocationExists", con, tran);
+                    using var cmd = new SqlCommand("New_Track_CustLocationExists", con, tran);
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@lat", lat);
                     cmd.Parameters.AddWithValue("@longi", longi);
@@ -223,7 +223,7 @@ namespace Trackmaster_Repository.Repository
                 using var tran = con.BeginTransaction();
                 try
                 {
-                    using var cmd = new SqlCommand("SavePOI", con, tran);
+                    using var cmd = new SqlCommand("New_Track_SavePOI", con, tran);
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@lat", lat);
                     cmd.Parameters.AddWithValue("@longi", longi);
@@ -263,7 +263,7 @@ namespace Trackmaster_Repository.Repository
             {
                 using var con = new SqlConnection(_connectionString43);
                 await con.OpenAsync();
-                using var cmd = new SqlCommand("GetPOI", con);
+                using var cmd = new SqlCommand("New_Tarck_GetPOI", con);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@CustId", custId);
 
@@ -559,30 +559,25 @@ namespace Trackmaster_Repository.Repository
         {
             var result = new List<GeoFenceViolation>();
             int totalCount = 0;
-
+            DateTime start = DateTime.Parse(requestModel.beginDate);
+            DateTime end = DateTime.Parse(requestModel.endDate);
+            string bgdate = start.ToString("yyyy-MM-dd HH:mm:ss");
+            string eddate = end.ToString("yyyy-MM-dd HH:mm:ss");
             using var con = new SqlConnection(_connectionString43);
             await con.OpenAsync();
 
-            using var cmd = new SqlCommand("GeoFenceVehicle", con);
+            using var cmd = new SqlCommand("New_TM_GeoFenceVehicle", con);
             cmd.CommandType = CommandType.StoredProcedure;
 
             cmd.Parameters.AddWithValue("@LowerBand", requestModel.iDisplayStart);
             cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
             cmd.Parameters.AddWithValue("@UpperBand", requestModel.iDisplayLength);
-            cmd.Parameters.AddWithValue("@BBid",
-                string.IsNullOrWhiteSpace(bbid) ? DBNull.Value : (object)bbid);
-            cmd.Parameters.AddWithValue("@searchText",
-                string.IsNullOrWhiteSpace(requestModel.sSearch) ? DBNull.Value : (object)requestModel.sSearch);
-
-            var itemCountParam = new SqlParameter("@ItemCount", SqlDbType.Int)
-            {
-                Direction = ParameterDirection.Output
-            };
-
+            SqlParameter itemCountParam = new SqlParameter("@itemcount", SqlDbType.Int);
+            cmd.Parameters.Add("@BBid", SqlDbType.VarChar).Value = string.IsNullOrWhiteSpace(bbid) || bbid == "null" ? DBNull.Value : bbid;
+            cmd.Parameters.Add("@searchText", SqlDbType.VarChar).Value = string.IsNullOrWhiteSpace(requestModel.sSearch) || requestModel.sSearch == "null" ? DBNull.Value : requestModel.sSearch;
+            itemCountParam.Direction = ParameterDirection.Output;
             cmd.Parameters.Add(itemCountParam);
-
             var ds = new DataSet();
-
             using (var adapter = new SqlDataAdapter(cmd))
             {
                 adapter.Fill(ds);
@@ -597,6 +592,7 @@ namespace Trackmaster_Repository.Repository
 
             var tasks = ds.Tables[0].AsEnumerable().Select(async vehicleRow =>
             {
+                
                 var vehicleBBID = vehicleRow["bbid"]?.ToString() ?? string.Empty;
 
                 var vehicleResult = new List<GeoFenceViolation>();
@@ -604,13 +600,13 @@ namespace Trackmaster_Repository.Repository
                 using var alertCon = new SqlConnection(_connectionString43);
                 await alertCon.OpenAsync();
 
-                using var alertCmd = new SqlCommand("GeoAlert", alertCon);
+                using var alertCmd = new SqlCommand("New_TM_GeoAlert", alertCon);
                 alertCmd.CommandType = CommandType.StoredProcedure;
 
                 alertCmd.Parameters.AddWithValue("@custid", requestModel.CustId);
                 alertCmd.Parameters.AddWithValue("@bbid", vehicleBBID);
-                alertCmd.Parameters.AddWithValue("@date1", requestModel.beginDate);
-                alertCmd.Parameters.AddWithValue("@date2", requestModel.endDate);
+                alertCmd.Parameters.AddWithValue("@date1", bgdate);
+                alertCmd.Parameters.AddWithValue("@date2", eddate);
 
                 var alertDs = new DataSet();
 
@@ -631,7 +627,6 @@ namespace Trackmaster_Repository.Repository
                             fencename = row["fencename"]?.ToString() ?? "",
                             BBID = vehicleBBID,
                             FenceViolationsCount = alertDs.Tables[0].Rows.Count,
-                            PageCount = totalCount
                         }));
                 }
 

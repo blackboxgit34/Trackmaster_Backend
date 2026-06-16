@@ -304,25 +304,31 @@ namespace Trackmaster_Model
             public int poisCovered { get; set; }
             public String Bbid { get; set; }
 
-            public int Totalpois { get; set; }
+            //public int Totalpois { get; set; }
 
             public List<POIEntryExitModel> poisCoveredList { get; set; }
         }
 
         public class POIEntryExitModel
         {
-            public string color { get; set; }
             public String POIName { get; set; }
             public string Intime { get; set; }
             public string OutTime { get; set; }
             public string duration { get; set; }
             public int POIID { get; set; }
+            [Browsable(false)]
             public string Bbid { get; set; }
+            [Browsable(false)]
             public double POILat { get; set; }
+            [Browsable(false)]
             public double POILong { get; set; }
+            [Browsable(false)]
             public string IsActive { get; set; }
+            [Browsable(false)]
             public string StartTempTime { get; set; }
+            [Browsable(false)]
             public string Vehname { get; set; }
+            [Browsable(false)]
             public string EndtTempTime { get; set; }
         }
 

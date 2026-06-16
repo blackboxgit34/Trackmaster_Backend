@@ -9,6 +9,7 @@ using System;
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Trackmaster_Model;
@@ -198,7 +199,7 @@ namespace Trackmaster_Backend.Controllers
                     var reportName = $"SMSNotificationReport_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.xlsx";
                     var exportData = sms?.objSMSReport?.ToList();
                     var stream = await _importExportExcelService.ExportToExcelFlatList(exportData, reportName, null, null);
-                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");             
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
                     Response.Headers["Content-Disposition"] = $"attachment; filename={reportName}";
                     return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
                 }
@@ -244,7 +245,7 @@ namespace Trackmaster_Backend.Controllers
         // neha k
         [HttpGet("GetConsolidatedIgnitionStatus")]
         public async Task<IActionResult> GetConsolidatedIgnitionStatus([FromQuery] DataTableRequestModel requestModel, string bbid, string reportName, string downloadType = null)
-        
+
         {
             try
             {
@@ -254,7 +255,7 @@ namespace Trackmaster_Backend.Controllers
                 if (upperBound == 0)
                     upperBound = 20;
 
-                ConsolidatedIgnitionModel consIgnition = await _reportsService.GetConsolidatedIgnitionStatus(requestModel,bbid,reportName);
+                ConsolidatedIgnitionModel consIgnition = await _reportsService.GetConsolidatedIgnitionStatus(requestModel, bbid, reportName);
 
                 if (consIgnition == null ||
                     consIgnition.ConsolidatedIgnitionList == null)
@@ -267,26 +268,26 @@ namespace Trackmaster_Backend.Controllers
                 {
                     //var fileName =$"ConsolidatedIgnitionStatus_{DateTime.Now:yyyyMMdd}.xlsx";
                     var fileName = $"Ignition On/Off Analysis_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.xlsx";
-                    var exportData =consIgnition.ConsolidatedIgnitionList.ToList();
+                    var exportData = consIgnition.ConsolidatedIgnitionList.ToList();
 
-                    var stream =await _importExportExcelService.ExportToExcelFlatList(exportData,fileName,null,null);
-                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");             
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(exportData, fileName, null, null);
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
                     Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
-                    return File(stream,"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",fileName);
+                    return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
                 }
 
                 // ================= PDF EXPORT =================
                 if (downloadType == "Pdf")
                 {
-                    var fileName =$"Ignition On/Off Analysis_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
-                    var exportData =consIgnition.ConsolidatedIgnitionList.ToList();
+                    var fileName = $"Ignition On/Off Analysis_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
+                    var exportData = consIgnition.ConsolidatedIgnitionList.ToList();
                     var stream = await _importExportPdfService.ExportToPdfFlatList(exportData, "Ignition On/Off Analysis Report", fileName, bbid);
                     // expose header to frontend
                     Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
                     // force filename into response header
-                    Response.Headers["Content-Disposition"] =$"attachment; filename={fileName}";
+                    Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
 
-                    return File(stream,"application/pdf",fileName);
+                    return File(stream, "application/pdf", fileName);
                 }
 
                 // ================= NORMAL RESPONSE =================
@@ -438,7 +439,7 @@ namespace Trackmaster_Backend.Controllers
 
         [HttpGet("GetAllStoppageReport")]
         public async Task<IActionResult> GetAllStoppageReport([FromQuery] DataTableRequestModel dtmodel)
-         {
+        {
             try
             {
                 var stoppage = await _reportsService.GetCombinedStoppageReport(dtmodel);
@@ -456,10 +457,10 @@ namespace Trackmaster_Backend.Controllers
                 }
 
                 return Ok(new
-            {
-                data = stoppage.data,
-                count = stoppage.TotalCount
-            });
+                {
+                    data = stoppage.data,
+                    count = stoppage.TotalCount
+                });
             }
             catch (Exception ex)
             {
@@ -491,10 +492,10 @@ namespace Trackmaster_Backend.Controllers
                     return File(stream, "application/pdf", reportName);
                 }
                 return Ok(new
-            {
-                data = stoppage.data,
-                count = stoppage.TotalCount
-            });
+                {
+                    data = stoppage.data,
+                    count = stoppage.TotalCount
+                });
             }
             catch (Exception ex)
             {
@@ -581,21 +582,45 @@ namespace Trackmaster_Backend.Controllers
 
         [HttpGet("GetEntryExitReport")]
 
+
         public async Task<IActionResult> GetEntryExitReport([FromQuery] DataTableRequestModel model, string rtype, [FromQuery] string bbid = "")
         {
             var stoppage = await _reportsService.GetListofEntryExit(model, rtype, bbid);
 
-            if(model.DownloadType == "Excel")
+            // Clean POIName
+            stoppage.vehicleList?
+                .SelectMany(v => v.poisCoveredList ?? Enumerable.Empty<POIEntryExitModel>())
+                .Where(p => !string.IsNullOrWhiteSpace(p.POIName))
+                .ToList()
+                .ForEach(p => p.POIName = WebUtility.HtmlDecode(
+                    Regex.Replace(p.POIName, "<.*?>", string.Empty)
+                ).Trim());
+
+            // Clean Duration
+            stoppage.vehicleList?
+                .SelectMany(v => v.poisCoveredList ?? Enumerable.Empty<POIEntryExitModel>())
+                .Where(p => !string.IsNullOrWhiteSpace(p.duration))
+                .ToList()
+                .ForEach(p => p.duration = WebUtility.HtmlDecode(
+                    Regex.Replace(p.duration, "<.*?>", string.Empty)
+                ).Trim());
+
+            if (model.DownloadType == "Excel")
             {
-                var reportName = $"EntryExitReport_{model.CustId}.xlsx";
-                var stream = await _importExportExcelService.ExportToExcelFlatList(stoppage.vehicleList, reportName, null, null);
-                return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
+                var fileName = $"GetEntryExitReport_{model.beginDate:yyyyMMdd}_to_{model.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.xlsx";
+                var stream = await _importExportExcelService.ExportToExcelFlatList(stoppage.vehicleList, fileName, null, null);
+                Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
+
+                return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }
-            if(model.DownloadType == "Pdf")
+            if (model.DownloadType == "Pdf")
             {
-                var reportName = $"EntryExitReport_{model.CustId}.pdf";
-                var stream = await _importExportPdfService.ExportToPdfFlatList(stoppage.vehicleList, reportName, null, null);
-                return File(stream, "application/pdf", reportName);
+                var fileName = $"GetEntryExitReport_{model.beginDate:yyyyMMdd}_to_{model.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
+                var stream = await _importExportPdfService.ExportToPdfFlatList(stoppage.vehicleList, fileName, null, null);
+                Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
+                return File(stream, "application/pdf", fileName);
             }
 
             return Ok(new
@@ -604,6 +629,7 @@ namespace Trackmaster_Backend.Controllers
                 count = stoppage.PageCount
             });
         }
+
         [HttpGet("GetLiveStatus")]
         public async Task<IActionResult> GetLiveStatus(string pagename, [FromQuery] DataTableRequestModel model)
         {
@@ -615,7 +641,7 @@ namespace Trackmaster_Backend.Controllers
                 string search = model.sSearch;
                 string sortColumn = model.sortColumn;
                 string sortDirection = model.sortDirection;
-                    
+
 
                 var vehiclestatuslist = await _mongoService.GetLiveStatus(pagename, model);
                 return Ok(new
@@ -637,6 +663,6 @@ namespace Trackmaster_Backend.Controllers
             }
         }
 
-       
+
     }
 }

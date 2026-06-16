@@ -62,7 +62,6 @@ namespace Trackmaster_Model
         public int Speed { get; set; }
         public String fencename { get; set; }
         public int FenceViolationsCount { get; set; }
-        public int PageCount { get; set; }
     }
 
     public class ManagePoiResponse

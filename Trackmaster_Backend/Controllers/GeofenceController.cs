@@ -205,7 +205,6 @@ namespace Trackmaster_Backend.Controllers
                         success = true,
                         data = result.Data,
                         recordsTotal = result.TotalCount,
-                        recordsFiltered = result.TotalCount,
                         message = "GeoFenceViolation fetched successfully"
                     });
                 }
