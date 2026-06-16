@@ -340,7 +340,10 @@ namespace Trackmaster_Backend.Controllers
                     var reportName = $"VehicleStatus_{model.CustId}.pdf";
 
                     var stream = await _importExportPdfService.ExportToPdfFlatList(result.VehicleData, reportName, null, null);
-
+                    // expose header to frontend
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                    // force filename into response header
+                    Response.Headers["Content-Disposition"] = $"attachment; filename={reportName}";
                     return File(
                         stream,
                         "application/pdf",
@@ -390,7 +393,10 @@ namespace Trackmaster_Backend.Controllers
                     var reportName = $"BatteryDisconnection_{model.CustId}.pdf";
 
                     var stream = await _importExportPdfService.ExportToPdfFlatList(result.VehicleData, reportName, null, null);
-
+                    // expose header to frontend
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                    // force filename into response header
+                    Response.Headers["Content-Disposition"] = $"attachment; filename={reportName}";
                     return File(
                         stream,
                         "application/pdf",

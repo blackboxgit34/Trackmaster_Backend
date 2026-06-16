@@ -17,5 +17,6 @@ namespace Trackmaster_Repository.Interface
         Task<(List<GeofenceModel> geofenceList, int TotalCount)> GetGeofenceList(DataTableRequestModel model);
         Task<bool> DeleteGeofence(int FenceId, string Type);
         Task<(List<GeoFenceViolation> Data, int TotalCount)> GetGeoFenceViolationReport(DataTableRequestModel requestModel, string bbid);
+        Task<bool> EditPoi(EditPoiRequest request);
     }
 }

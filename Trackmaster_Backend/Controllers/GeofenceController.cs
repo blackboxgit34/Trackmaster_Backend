@@ -228,5 +228,39 @@ namespace Trackmaster_Backend.Controllers
                 });
             }
         }
+        [HttpPost("EditPoi")]
+        public async Task<IActionResult> EditPoi([FromBody] EditPoiRequest request)
+        {
+            try
+            {
+                var result = await _geofenceService.EditPoi(request);
+
+                if (result)
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        message = request.Action.ToUpper() == "DELETE"
+                            ? "POI deleted successfully"
+                            : "POI updated successfully"
+                    });
+                }
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Operation failed"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+        }
+
     }
 }

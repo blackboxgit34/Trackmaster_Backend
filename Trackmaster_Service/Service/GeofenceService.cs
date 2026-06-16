@@ -38,6 +38,11 @@ namespace Trackmaster_Service.Service
         public async Task<ManagePoiResponse> ManagePoi(DataTableRequestModel request, string? id)
         {
             return await _geofenceRepository.ManagePoi(request, id);
+
+        }
+        public async Task<bool> EditPoi(EditPoiRequest request)
+        {
+            return await _geofenceRepository.EditPoi(request);
         }
         public async Task<(List<GeofenceModel> geofenceList, int TotalCount)> GetGeofenceList(DataTableRequestModel model)
         {
