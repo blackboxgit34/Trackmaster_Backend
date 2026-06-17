@@ -4,6 +4,7 @@ using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
 using Trackmaster_Repository.Repository;
 using Trackmaster_Service.Interface;
+using static Trackmaster_Model.Reports;
 
 namespace Trackmaster_Service.Service
 {
@@ -37,6 +38,11 @@ namespace Trackmaster_Service.Service
         public async Task<ManagePoiResponse> ManagePoi(DataTableRequestModel request, string? id)
         {
             return await _geofenceRepository.ManagePoi(request, id);
+
+        }
+        public async Task<bool> EditPoi(EditPoiRequest request)
+        {
+            return await _geofenceRepository.EditPoi(request);
         }
         public async Task<(List<GeofenceModel> geofenceList, int TotalCount)> GetGeofenceList(DataTableRequestModel model)
         {
@@ -46,5 +52,13 @@ namespace Trackmaster_Service.Service
         {
             return await _geofenceRepository.DeleteGeofence(FenceId, Type);
         }
+
+        public async Task<(List<GeoFenceViolation> Data, int TotalCount)> GetGeoFenceViolationReport(DataTableRequestModel requestModel, string bbid)
+        {
+            return await _geofenceRepository.GetGeoFenceViolationReport(requestModel, bbid);
+        }
+
+
+       
     }
 }

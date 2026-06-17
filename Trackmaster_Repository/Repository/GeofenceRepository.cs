@@ -177,7 +177,7 @@ namespace Trackmaster_Repository.Repository
                 using var tran = con.BeginTransaction();
                 try
                 {
-                    using var cmd = new SqlCommand("CustLocationExists", con, tran);
+                    using var cmd = new SqlCommand("New_Track_CustLocationExists", con, tran);
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@lat", lat);
                     cmd.Parameters.AddWithValue("@longi", longi);
@@ -223,7 +223,7 @@ namespace Trackmaster_Repository.Repository
                 using var tran = con.BeginTransaction();
                 try
                 {
-                    using var cmd = new SqlCommand("SavePOI", con, tran);
+                    using var cmd = new SqlCommand("New_Track_SavePOI", con, tran);
                     cmd.CommandType = CommandType.StoredProcedure;
                     cmd.Parameters.AddWithValue("@lat", lat);
                     cmd.Parameters.AddWithValue("@longi", longi);
@@ -263,7 +263,7 @@ namespace Trackmaster_Repository.Repository
             {
                 using var con = new SqlConnection(_connectionString43);
                 await con.OpenAsync();
-                using var cmd = new SqlCommand("GetPOI", con);
+                using var cmd = new SqlCommand("New_Tarck_GetPOI", con);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@CustId", custId);
 
@@ -553,6 +553,119 @@ namespace Trackmaster_Repository.Repository
                 return false;
             }
         }
+
+        public async Task<(List<GeoFenceViolation> Data, int TotalCount)> GetGeoFenceViolationReport(DataTableRequestModel requestModel, string bbid)
+
+        {
+            var result = new List<GeoFenceViolation>();
+            int totalCount = 0;
+            DateTime start = DateTime.Parse(requestModel.beginDate);
+            DateTime end = DateTime.Parse(requestModel.endDate);
+            string bgdate = start.ToString("yyyy-MM-dd HH:mm:ss");
+            string eddate = end.ToString("yyyy-MM-dd HH:mm:ss");
+            using var con = new SqlConnection(_connectionString43);
+            await con.OpenAsync();
+
+            using var cmd = new SqlCommand("New_TM_GeoFenceVehicle", con);
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            cmd.Parameters.AddWithValue("@LowerBand", requestModel.iDisplayStart);
+            cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
+            cmd.Parameters.AddWithValue("@UpperBand", requestModel.iDisplayLength);
+            SqlParameter itemCountParam = new SqlParameter("@itemcount", SqlDbType.Int);
+            cmd.Parameters.Add("@BBid", SqlDbType.VarChar).Value = string.IsNullOrWhiteSpace(bbid) || bbid == "null" ? DBNull.Value : bbid;
+            cmd.Parameters.Add("@searchText", SqlDbType.VarChar).Value = string.IsNullOrWhiteSpace(requestModel.sSearch) || requestModel.sSearch == "null" ? DBNull.Value : requestModel.sSearch;
+            itemCountParam.Direction = ParameterDirection.Output;
+            cmd.Parameters.Add(itemCountParam);
+            var ds = new DataSet();
+            using (var adapter = new SqlDataAdapter(cmd))
+            {
+                adapter.Fill(ds);
+            }
+
+            totalCount = itemCountParam.Value != DBNull.Value
+                ? Convert.ToInt32(itemCountParam.Value)
+                : 0;
+
+            if (ds.Tables.Count == 0 || ds.Tables[0].Rows.Count == 0)
+                return (new List<GeoFenceViolation>(), totalCount);
+
+            var tasks = ds.Tables[0].AsEnumerable().Select(async vehicleRow =>
+            {
+                
+                var vehicleBBID = vehicleRow["bbid"]?.ToString() ?? string.Empty;
+
+                var vehicleResult = new List<GeoFenceViolation>();
+
+                using var alertCon = new SqlConnection(_connectionString43);
+                await alertCon.OpenAsync();
+
+                using var alertCmd = new SqlCommand("New_TM_GeoAlert", alertCon);
+                alertCmd.CommandType = CommandType.StoredProcedure;
+
+                alertCmd.Parameters.AddWithValue("@custid", requestModel.CustId);
+                alertCmd.Parameters.AddWithValue("@bbid", vehicleBBID);
+                alertCmd.Parameters.AddWithValue("@date1", bgdate);
+                alertCmd.Parameters.AddWithValue("@date2", eddate);
+
+                var alertDs = new DataSet();
+
+                using (var alertAdapter = new SqlDataAdapter(alertCmd))
+                {
+                    alertAdapter.Fill(alertDs);
+                }
+
+                if (alertDs.Tables.Count > 0 && alertDs.Tables[0].Rows.Count > 0)
+                {
+                    vehicleResult.AddRange(
+                        alertDs.Tables[0].AsEnumerable().Select(row => new GeoFenceViolation
+                        {
+                            VehicleName = row["vehname"]?.ToString() ?? "",
+                            Location = row["location"]?.ToString() ?? "",
+                            GeoTime = row["geotime"]?.ToString() ?? "",
+                            FenceStatus = row["fencestatus"]?.ToString() ?? "",
+                            fencename = row["fencename"]?.ToString() ?? "",
+                            BBID = vehicleBBID,
+                            FenceViolationsCount = alertDs.Tables[0].Rows.Count,
+                        }));
+                }
+
+                return vehicleResult;
+            });
+
+            result = (await Task.WhenAll(tasks))
+                .SelectMany(x => x)
+                .ToList();
+
+            return (result, totalCount);
+        }
+        public async Task<bool> EditPoi(EditPoiRequest request)
+        {
+            try
+            {
+                using var con = new SqlConnection(_connectionString43);
+                await con.OpenAsync();
+
+                using var cmd = new SqlCommand("EditPoi", con);
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@Action", request.Action);
+                cmd.Parameters.AddWithValue("@id", request.Id);
+
+                cmd.Parameters.AddWithValue("@lat", request.Latitude.HasValue ? request.Latitude.Value : DBNull.Value);
+                cmd.Parameters.AddWithValue("@longi", request.Longitude.HasValue ? request.Longitude.Value : DBNull.Value);
+                cmd.Parameters.AddWithValue("@details", string.IsNullOrWhiteSpace(request.Details) ? DBNull.Value : request.Details);
+                cmd.Parameters.AddWithValue("@radius", string.IsNullOrWhiteSpace(request.Radius) ? DBNull.Value : request.Radius);
+                var affectedRows = await cmd.ExecuteNonQueryAsync();
+
+                return affectedRows > 0;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(
+                    $"Error editing POI: {ex.Message}",
+                    ex);
+            }
+        }
     }
 }
-

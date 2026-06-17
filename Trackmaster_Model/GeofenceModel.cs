@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -50,11 +51,38 @@ namespace Trackmaster_Model
         public string POIStatus { get; set; }
         public string Approve { get; set; }
     }
+    public class GeoFenceViolation
+    {
+        public int id { get; set; }
+        public String VehicleName { get; set; }
+        public String Location { get; set; }
+        public String GeoTime { get; set; }
+        public String FenceStatus { get; set; }
+        public string BBID { get; set; }
+        public int Speed { get; set; }
+        public String fencename { get; set; }
+        public int FenceViolationsCount { get; set; }
+    }
 
     public class ManagePoiResponse
     {
         public int ItemCount { get; set; }
         public List<ManagePoi> Data { get; set; } = new();
+    }
+
+    public class EditPoiRequest
+    {
+        public string Action { get; set; } = string.Empty; // UPDATE / DELETE
+
+        public int Id { get; set; }
+
+        public double? Latitude { get; set; }
+
+        public double? Longitude { get; set; }
+
+        public string? Details { get; set; }
+
+        public string? Radius { get; set; }
     }
 
 }
