@@ -73,6 +73,7 @@ namespace Trackmaster_Service
 
             Document document =
                 new Document(pdf);
+            document.SetMargins(10, 10, 10, 10);
 
             // ================= LOGO =================
 
@@ -158,83 +159,42 @@ namespace Trackmaster_Service
 
                     var parentProps = properties
                     .Where(p => !IsEnumerableButNotString(p.GetValue(parent)))
-                    .ToArray();
-                    bool isWideParentTable = parentProps.Length > 10;
-                    Table parentTable = isWideParentTable
-                        ? new Table(2).UseAllAvailableWidth()
-                        : new Table(parentProps.Length).UseAllAvailableWidth();
+                    .ToArray();                  
+                    float[] parentWidths =
+    Enumerable.Repeat(1f, parentProps.Length)
+              .ToArray();
 
-                   
-
-                    if (!isWideParentTable)
+                    Table parentTable =
+                        new Table(parentWidths)
+                        .UseAllAvailableWidth();
+                    foreach (var prop in parentProps)
                     {
-                        foreach (var prop in parentProps)
-                        {
-                            parentTable.AddHeaderCell(
-                                new Cell().Add(
-                                    new Paragraph(prop.Name)
-                                    .SetFontSize(11)
-                                    .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
-                                )
-                            );
-                        }
-                    }
-
-                   
-
-                    if (isWideParentTable)
-                    {
-                      
-                        parentTable.AddHeaderCell(
-                        new Cell().Add(
-                        new Paragraph("Property")
-                            .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
-                            )
-                        );
-
                         parentTable.AddHeaderCell(
                             new Cell().Add(
-                                new Paragraph("Value")
-                                .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
+                                new Paragraph(prop.Name)
+                                .SetFontSize(11)
+                                .SetFont(
+                                    PdfFontFactory.CreateFont(
+                                        StandardFonts.HELVETICA_BOLD
+                                    )
+                                )
                             )
                         );
-
-                        foreach (var prop in parentProps)
-                        {
-                            var value = prop.GetValue(parent);
-
-                            parentTable.AddCell(prop.Name);
-
-                            parentTable.AddCell(
-                                new Cell()
-                                .Add(
-                                    new Paragraph(value?.ToString() ?? "")
-                                    //new Paragraph((value?.ToString() ?? "").Replace(" ", "\u00A0"))
-                                    .SetFontSize(11)
-                                )
-                            );
-                        }
                     }
-                    else
+
+                    foreach (var prop in parentProps)
                     {
-                        foreach (var prop in parentProps)
-                        {
-                            var value = prop.GetValue(parent);
-
-                            parentTable.AddCell(
-                                new Cell()
-                                .Add(
-                                    new Paragraph(value?.ToString() ?? "")
-                                    //new Paragraph((value?.ToString() ?? "").Replace(" ", "\u00A0"))
-                                    .SetFontSize(11)
-                                )
-                                .SetKeepTogether(false)
-                            );
-                        }
-
-
+                        var value = prop.GetValue(parent);
+                        parentTable.AddCell(
+    new Cell()
+    .Add(
+        new Paragraph(
+            BreakLongText(value?.ToString() ?? "")
+        )
+        .SetFontSize(11)
+    )
+);
                     }
-
                     document.Add(parentTable);
 
                     // ================= CHILD TABLE =================
@@ -254,11 +214,13 @@ namespace Trackmaster_Service
 
                         var childProps = firstItem.GetType().GetProperties();
 
-                        bool isWideChildTable = childProps.Length > 10;
+                        float[] childWidths =
+    Enumerable.Repeat(1f, childProps.Length)
+              .ToArray();
 
-                        Table childTable = isWideChildTable
-                            ? new Table(2).UseAllAvailableWidth()
-                            : new Table(childProps.Length).UseAllAvailableWidth();
+                        Table childTable =
+                            new Table(childWidths)
+                            .UseAllAvailableWidth();
 
                         bool headerAdded = false;
 
@@ -267,76 +229,38 @@ namespace Trackmaster_Service
 
                             if (!headerAdded)
                             {
-                               
-                                    if (isWideChildTable)
-                                    {
-                                        childTable.AddHeaderCell(
-                                            new Cell().Add(
-                                                new Paragraph("Property")
-                                                .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
-                                            )
-                                        );
-
-                                        childTable.AddHeaderCell(
-                                            new Cell().Add(
-                                                new Paragraph("Value")
-                                                .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
-                                            )
-                                        );
-                                    }
-                               
-                                else
+                                foreach (var cp in childProps)
                                 {
-                                    foreach (var cp in childProps)
-                                    {
-                                        childTable.AddHeaderCell(
-                                            new Cell().Add(
-                                                new Paragraph(cp.Name)
-                                                .SetFontSize(10)
-                                                .SetFont(PdfFontFactory.CreateFont(StandardFonts.HELVETICA_BOLD))
+                                    childTable.AddHeaderCell(
+                                        new Cell().Add(
+                                            new Paragraph(cp.Name)
+                                            .SetFontSize(10)
+                                            .SetFont(
+                                                PdfFontFactory.CreateFont(
+                                                    StandardFonts.HELVETICA_BOLD
+                                                )
                                             )
-                                        );
-                                    }
+                                        )
+                                    );
                                 }
 
                                 headerAdded = true;
                             }
 
-                            if (isWideChildTable)
+                            foreach (var cp in childProps)
                             {
-                                foreach (var cp in childProps)
-                                {
-                                    var childValue = cp.GetValue(item);
+                                var childValue = cp.GetValue(item);
 
-                                    childTable.AddCell(cp.Name);
-
-                                    childTable.AddCell(
-                                        new Cell()
-                                        .Add(
-                                            new Paragraph(childValue?.ToString() ?? "")
-                                            //new Paragraph((childValue?.ToString() ?? "").Replace(" ", "\u00A0"))
-                                            .SetFontSize(10)
-                                        )
-                                    );
-                                }
-                            }
-                            else
-                            {
-                                foreach (var cp in childProps)
-                                {
-                                    var childValue = cp.GetValue(item);
-
-                                    childTable.AddCell(
-                                        new Cell()
-                                        .Add(
-                                            new Paragraph(childValue?.ToString() ?? "")
-                                           //new Paragraph((childValue?.ToString() ?? "").Replace(" ", "\u00A0"))
-                                           //.SetFontSize(10)
-                                            .SetFontSize(10)
-                                        )
-                                        .SetKeepTogether(false)
-                                    );
-                                }
+                                childTable.AddCell(
+    new Cell()
+    .Add(
+        new Paragraph(
+            BreakLongText(childValue?.ToString() ?? "")
+        )
+        .SetFontSize(10)
+    )
+    .SetKeepTogether(false)
+);
                             }
 
                         }
@@ -438,6 +362,25 @@ namespace Trackmaster_Service
                    value is System.Collections.IEnumerable &&
                    !(value is string);
         }
+        private string BreakLongText(string text, int chunkSize = 20)
+        {
+            if (string.IsNullOrEmpty(text))
+                return text;
+
+            // Only break continuous strings (no spaces)
+            if (!text.Contains(" ") && text.Length > chunkSize)
+            {
+                return string.Join("\n",
+                    Enumerable.Range(0, (text.Length + chunkSize - 1) / chunkSize)
+                              .Select(i => text.Substring(
+                                  i * chunkSize,
+                                  Math.Min(chunkSize, text.Length - i * chunkSize)
+                              )));
+            }
+
+            return text;
+        }
+
 
     }
 }
