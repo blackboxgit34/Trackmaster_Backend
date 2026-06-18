@@ -2127,7 +2127,7 @@ ORDER BY datadate";
                             using (SqlConnection con =
                                 new SqlConnection(_defaultConnectionOrange44))
                             using (SqlCommand cmd =
-                                new SqlCommand("[dbo].[GetPOIDetailsEntryExiy]", con))
+                                new SqlCommand("[dbo].[New_TM_GetPOIDetailsEntryExiy]", con))
                             {
                                 cmd.CommandType = CommandType.StoredProcedure;
 
