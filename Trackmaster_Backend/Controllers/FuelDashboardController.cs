@@ -33,5 +33,25 @@ namespace Trackmaster_Backend.Controllers
             }
         }
 
+
+        [HttpGet("FuelDisconAnalysisData")]
+
+        public async Task<IActionResult> FuelDisconAnalysisData(DateTime beginDate, DateTime endDate, string tblName, string analysisString)
+        {
+            try
+            {
+                var dashboardData = await _fueldashboardService.FuelDisconAnalysisAsync(beginDate, endDate, tblName, analysisString);
+                return Ok(dashboardData);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal Server Error",
+                    error = ex.Message
+                });
+            }
+        }
     }
 }

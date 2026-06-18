@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
+using Trackmaster_Repository.Repository;
 using Trackmaster_Service.Interface;
 
 namespace Trackmaster_Service.Service
@@ -34,6 +35,11 @@ namespace Trackmaster_Service.Service
                     Message = ex.Message
                 };
             }
+        }
+
+        public  async Task<List<FuelAnalysisResult>> FuelDisconAnalysisAsync(DateTime beginDate, DateTime endDate, string tblName, string analysisString)
+        {
+            return await _fueldashboardRepository.FuelDisconAnalysisAsync(beginDate,endDate,tblName,analysisString);
         }
 
     }

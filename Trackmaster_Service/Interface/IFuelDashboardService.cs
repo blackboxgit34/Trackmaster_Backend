@@ -10,5 +10,7 @@ namespace Trackmaster_Service.Interface
    public  interface IFuelDashboardService
     {
         Task<FuelDashboardModel> GetCurrentFuelData(int custid);
+        Task<List<FuelAnalysisResult>> FuelDisconAnalysisAsync(DateTime beginDate, DateTime endDate, string tblName, string analysisString);
+
     }
 }

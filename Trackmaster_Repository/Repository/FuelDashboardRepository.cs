@@ -7,10 +7,11 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
-
+using static Trackmaster_Repository.DataTypeHelper;
 
 namespace Trackmaster_Repository.Repository
 {
@@ -343,5 +344,202 @@ namespace Trackmaster_Repository.Repository
             }
             return finallevel;
         }
+
+
+        public async Task<List<FuelAnalysisResult>> FuelDisconAnalysisAsync(DateTime beginDate,DateTime endDate,string tblName,string analysisString)
+        {
+            const string dateFormat = "dd/MMM/yyyy hh:mm:ss  tt";
+
+            if (string.IsNullOrWhiteSpace(tblName) ||
+                !Regex.IsMatch(tblName, @"^[a-zA-Z0-9_]+$"))
+            {
+                throw new ArgumentException("Invalid table name.");
+            }
+
+            int targetFuelLevel = analysisString switch
+            {
+                "Discon" => -1,
+                "Garbage" => -340,
+                _ => throw new ArgumentException("Invalid AnalysisString.")
+            };
+
+            var results = new List<FuelAnalysisResult>();
+
+            bool flag = false;
+
+            DateTime startd = default;
+            DateTime endd = default;
+
+            FuelAnalysisResult current = null;
+
+            // ⭐ NEW
+            int disconCount = 0;
+
+            // ⭐ NEW
+            int garbageCount = 0;
+
+            string query = $@"
+        SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+        SELECT
+            datadate,
+            loc,
+            latitude,
+            longitude,
+            fuellevel
+        FROM [{tblName}]
+        WHERE datadate BETWEEN @BeginDate AND @EndDate
+        ORDER BY datadate ASC";
+
+            await using var con = new SqlConnection(_connectionString43);
+
+            await con.OpenAsync();
+
+            await using var cmd = new SqlCommand(query, con);
+
+            cmd.Parameters.Add("@BeginDate", SqlDbType.DateTime).Value = beginDate;
+            cmd.Parameters.Add("@EndDate", SqlDbType.DateTime).Value = endDate;
+
+            await using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                int fuelLevel = GetInt(reader["fuellevel"]);
+                DateTime currentDate = GetDateTime(reader["datadate"]);
+
+                if (fuelLevel == targetFuelLevel && !flag)
+                {
+                    current = new FuelAnalysisResult
+                    {
+                        StartDate = currentDate.ToString(dateFormat),
+                        SLoc = GetString(reader["loc"]),
+                        SLat = GetString(reader["latitude"]),
+                        SLong = GetString(reader["longitude"])
+                    };
+
+                    startd = currentDate;
+                    endd = currentDate;
+
+                    flag = true;
+                }
+                else if (fuelLevel == targetFuelLevel && flag)
+                {
+                    endd = currentDate;
+                }
+                else if (flag)
+                {
+                    current.EndDate = (endd < currentDate ? currentDate : endd)
+                        .ToString(dateFormat);
+
+                    if (endd < currentDate)
+                    {
+                        endd = currentDate;
+                    }
+
+                    current.ELoc = GetString(reader["loc"]);
+                    current.ELat = GetString(reader["latitude"]);
+                    current.ELong = GetString(reader["longitude"]);
+
+                    long totalSeconds = GetInt(
+                        endd.Subtract(startd).TotalSeconds);
+
+                    current.Duration = GetElapsedTime1(totalSeconds);
+                    current.Duration1 = totalSeconds;
+
+                    results.Add(current);
+
+                    // ⭐ NEW
+                    if (targetFuelLevel == -1)
+                    {
+                        disconCount++;
+                    }
+                    else
+                    {
+                        garbageCount++;
+                    }
+
+                    current = null;
+                    flag = false;
+                }
+            }
+
+            if (flag && current != null)
+            {
+                long totalSeconds =GetInt(
+                    endd.Subtract(startd).TotalSeconds);
+
+                if (totalSeconds > 0)
+                {
+                    current.Duration = GetElapsedTime1(totalSeconds);
+                    current.Duration1 = totalSeconds;
+                }
+
+                results.Add(current);
+                // ⭐ NEW
+                if (targetFuelLevel == -1)
+                {
+                    disconCount++;
+                }
+                else
+                {
+                    garbageCount++;
+                }
+            }
+            // ⭐ NEW
+            results.ForEach(item =>
+            {
+                item.DisconCount = disconCount;
+                item.GarbageCount = garbageCount;
+            });
+
+            return results;
+        }
+
+        private static string GetElapsedTime1(long interval)
+        {
+            String functionReturnValue = null;
+            try
+            {
+                long totalhours = 0;
+                long totalminutes = 0;
+                long totalseconds = 0;
+                long days = 0;
+                long hours = 0;
+                long Minutes = 0;
+                long Seconds = 0;
+                days =GetInt(GetFloat(interval / 86400));
+                totalhours = GetInt(GetFloat(interval / 3600));
+                totalminutes = GetInt(GetFloat(interval / 60));
+                totalseconds = GetInt(GetFloat(interval));
+                hours = totalhours % 24;
+                Minutes = totalminutes % 60;
+                Seconds = totalseconds % 60;
+                string dayT = GetString(days);
+                string hourT = GetString(hours);
+                string minT = GetString(Minutes);
+                string secT = GetString(Seconds);
+                if (dayT.Length == 1)
+                {
+                    dayT = "0" + dayT;
+                }
+                if (hourT.Length == 1)
+                {
+                    hourT = "0" + hourT;
+                }
+                if (minT.Length == 1)
+                {
+                    minT = "0" + minT;
+                }
+                if (secT.Length == 1)
+                {
+                    secT = "0" + secT;
+                }
+                functionReturnValue = dayT + "-" + hourT + ":" + minT + ":" + secT;
+            }
+            catch (Exception ex)
+            {
+            }
+            return functionReturnValue;
+        }
     }
-}
+}   

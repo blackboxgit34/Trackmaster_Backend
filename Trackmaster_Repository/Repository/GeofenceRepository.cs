@@ -592,7 +592,7 @@ namespace Trackmaster_Repository.Repository
 
             var tasks = ds.Tables[0].AsEnumerable().Select(async vehicleRow =>
             {
-                
+
                 var vehicleBBID = vehicleRow["bbid"]?.ToString() ?? string.Empty;
 
                 var vehicleResult = new List<GeoFenceViolation>();
@@ -620,11 +620,11 @@ namespace Trackmaster_Repository.Repository
                     vehicleResult.AddRange(
                         alertDs.Tables[0].AsEnumerable().Select(row => new GeoFenceViolation
                         {
-                            VehicleName = row["vehname"]?.ToString() ?? "",
-                            Location = row["location"]?.ToString() ?? "",
-                            GeoTime = row["geotime"]?.ToString() ?? "",
-                            FenceStatus = row["fencestatus"]?.ToString() ?? "",
-                            fencename = row["fencename"]?.ToString() ?? "",
+                            VehicleName = GetString(row["vehname"]),
+                            Location = GetString(row["location"]),
+                            GeoTime = GetString(row["geotime"]),
+                            FenceStatus = GetString(row["fencestatus"]),
+                            fencename = GetString(row["fencename"]),
                             BBID = vehicleBBID,
                             FenceViolationsCount = alertDs.Tables[0].Rows.Count,
                         }));
