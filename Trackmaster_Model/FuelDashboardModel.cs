@@ -11,6 +11,7 @@ namespace Trackmaster_Model
         {     
         public int totalGenset { get; set; }
         public int normalLevel { get; set; }
+        public int TotalVehicles { get; set; }
         public int lowLevel { get; set; }
 
         public string Message { get; set; }
