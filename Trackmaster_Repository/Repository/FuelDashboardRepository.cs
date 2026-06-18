@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
+using static Trackmaster_Repository.DataTypeHelper;
 
 
 namespace Trackmaster_Repository.Repository
@@ -33,16 +34,26 @@ namespace Trackmaster_Repository.Repository
                 int totalCnt = 0;
                 int lowLevel = 0;
                 int normalFuel = 0;
+                int TotalVehicles = 0;
 
                 
 
                 using (SqlConnection con = new SqlConnection(_connectionString43))
                 {
                     await con.OpenAsync();
+                    using var cmd1 = new SqlCommand("GetVehicleStatusTrackmaster", con);
+                    cmd1.CommandType = CommandType.StoredProcedure;
+                    cmd1.Parameters.AddWithValue("@custid", custid);
+                    using var reader = await cmd1.ExecuteReaderAsync();
+                    if (await reader.ReadAsync())
+                    {
+                       TotalVehicles = GetInt(reader["TotalVehicles"]);
+                        
+                    }
 
                     DataTable dt = new DataTable();
 
-                    using (SqlCommand cmd = new SqlCommand("[dbo].[GetGeneratorList]", con))
+                    using (SqlCommand cmd = new SqlCommand("[dbo].[GetCurFuelGeneratorList]", con))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@Custid", custid);
@@ -54,13 +65,17 @@ namespace Trackmaster_Repository.Repository
                     }
 
                     if (dt.Rows.Count == 0)
+                    {
+                        model.TotalVehicles = TotalVehicles;
                         return model;
+                    }
+                      
 
                     totalCnt = dt.Rows.Count;
 
                     foreach (DataRow row in dt.Rows)
                     {
-                        string bbid = Convert.ToString(row["GenID"]);
+                        string bbid = GetString(row["GenID"]);
 
                         decimal lowLevelValue = 0;
 
@@ -74,7 +89,7 @@ namespace Trackmaster_Repository.Repository
                             object obj = await cmd.ExecuteScalarAsync();
 
                             if (obj != null && obj != DBNull.Value)
-                                lowLevelValue = Convert.ToDecimal(obj);
+                                lowLevelValue = GetDecimal(obj);
                         }
 
                         if (lowLevelValue <= 0)
@@ -104,7 +119,7 @@ namespace Trackmaster_Repository.Repository
                             object obj = await cmd.ExecuteScalarAsync();
 
                             if (obj != null && obj != DBNull.Value)
-                                ShapeType = Convert.ToInt32(obj);
+                                ShapeType = GetInt(obj);
                         }
 
                         if (ShapeType == 1)
@@ -125,11 +140,11 @@ namespace Trackmaster_Repository.Repository
                                 {
                                     if (await dr.ReadAsync())
                                     {
-                                        Diameter = Convert.ToDouble(dr["Diameter"]);
-                                        Length = Convert.ToDouble(dr["Length"]);
-                                        FreqMin = Convert.ToDouble(dr["MinFreq"]);
-                                        FreqMax = Convert.ToDouble(dr["MaxFreq"]);
-                                        TotalLevel = Convert.ToDouble(dr["LevelInLiters"]);
+                                        Diameter = GetDouble(dr["Diameter"]);
+                                        Length = GetDouble(dr["Length"]);
+                                        FreqMin = GetDouble(dr["MinFreq"]);
+                                        FreqMax = GetDouble(dr["MaxFreq"]);
+                                        TotalLevel = GetDouble(dr["LevelInLiters"]);
                                     }
                                 }
                             }
@@ -149,7 +164,7 @@ namespace Trackmaster_Repository.Repository
                                 {
                                     if (await dr.ReadAsync())
                                     {
-                                        double fuelLevel = Convert.ToDouble(dr["FuelLevel"]);
+                                        double fuelLevel = GetDouble(dr["FuelLevel"]);
 
                                         FuelLevelinLiters =
                                             getRoundFinalValue(
@@ -176,9 +191,9 @@ namespace Trackmaster_Repository.Repository
                                 {
                                     if (await dr.ReadAsync())
                                     {
-                                        double fuelLevel = Convert.ToDouble(dr["FuelLevel"]);
+                                        double fuelLevel = GetDouble(dr["FuelLevel"]);
 
-                                        LastDateTime = Convert.ToDateTime(dr["DataDate"]);
+                                        LastDateTime = GetDateTime(dr["DataDate"]);
 
                                         LastValue =
                                            getRoundFinalValue(
@@ -211,12 +226,12 @@ namespace Trackmaster_Repository.Repository
                                 {
                                     if (await dr.ReadAsync())
                                     {
-                                        Height = Convert.ToDouble(dr["Height"]);
-                                        Length = Convert.ToDouble(dr["Length"]);
-                                        Width = Convert.ToDouble(dr["Width"]);
-                                        FreqMin = Convert.ToDouble(dr["MinFreq"]);
-                                        FreqMax = Convert.ToDouble(dr["MaxFreq"]);
-                                        TotalLevel = Convert.ToDouble(dr["LevelInLiters"]);
+                                        Height = GetDouble(dr["Height"]);
+                                        Length = GetDouble(dr["Length"]);
+                                        Width = GetDouble(dr["Width"]);
+                                        FreqMin = GetDouble(dr["MinFreq"]);
+                                        FreqMax = GetDouble(dr["MaxFreq"]);
+                                        TotalLevel = GetDouble(dr["LevelInLiters"]);
                                     }
                                 }
                             }
@@ -236,7 +251,7 @@ namespace Trackmaster_Repository.Repository
                                 {
                                     if (await dr.ReadAsync())
                                     {
-                                        double fuelLevel = Convert.ToDouble(dr["FuelLevel"]);
+                                        double fuelLevel = GetDouble(dr["FuelLevel"]);
 
                                         FuelLevelinLiters =
                                             getRectangularFinalValue(
@@ -265,9 +280,9 @@ namespace Trackmaster_Repository.Repository
                                 {
                                     if (await dr.ReadAsync())
                                     {
-                                        double fuelLevel = Convert.ToDouble(dr["FuelLevel"]);
+                                        double fuelLevel = GetDouble(dr["FuelLevel"]);
 
-                                        LastDateTime = Convert.ToDateTime(dr["DataDate"]);
+                                        LastDateTime = GetDateTime(dr["DataDate"]);
 
                                         LastValue =
                                             getRectangularFinalValue(
@@ -282,21 +297,33 @@ namespace Trackmaster_Repository.Repository
                                 }
                             }
                         }
+                        decimal fl = 0;
 
-                        decimal fl = FuelLevelinLiters == 0
-                            ? Math.Round(Convert.ToDecimal(LastValue), 2)
-                            : Convert.ToDecimal(FuelLevelinLiters);
+                        if (LastValue > 0)
+                        {
+                            fl = Math.Round(GetDecimal(LastValue), 2);
+                        }
+                        else
+                        {
+                            normalFuel++;
+                            continue;
+                        }
 
                         if (fl <= lowLevelValue)
+                        {
                             lowLevel++;
+                        }
                         else
+                        {
                             normalFuel++;
+                        }
                     }
                 }
 
                 model.totalGenset = totalCnt;
                 model.lowLevel = lowLevel;
                 model.normalLevel = normalFuel;
+                model.TotalVehicles = TotalVehicles;
                 model.Message = "Success";
             }
             catch (Exception ex)
@@ -304,6 +331,7 @@ namespace Trackmaster_Repository.Repository
                 model.totalGenset = 0;
                 model.lowLevel = 0;
                 model.normalLevel = 0;
+                model.TotalVehicles = 0;
                 model.Message = ex.Message;
             }
 
