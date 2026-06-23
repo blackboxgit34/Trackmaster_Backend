@@ -97,7 +97,7 @@ namespace Trackmaster_Repository.Repository
                         vehicle.deviceBattery = live.vtsBatteryLevel;
                        vehicle.RemainingFuelLevel = live.fuelLevel;
                        vehicle.acSignal = live.acSignal;
-
+                        vehicle.immobilizer = live.immobilizer;
                         //if (vehicle.RemainingFuelLevel > 0)
                         //{
                         //    int y = 0;
