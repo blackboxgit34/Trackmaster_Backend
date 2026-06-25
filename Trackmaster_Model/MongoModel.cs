@@ -47,6 +47,7 @@ namespace Trackmaster_Model
             public string model { get; set; }
             public int overspeed { get; set; }
             public bool acSignal { get; set; }
+            public int immobilizer { get; set; }
         }
 
         [BsonIgnoreExtraElements]
@@ -70,6 +71,7 @@ namespace Trackmaster_Model
 
             public double fuelLevel { get; set; }
             public bool acSignal { get; set; }
+            public int immobilizer { get; set; }
         }
     }
 }
