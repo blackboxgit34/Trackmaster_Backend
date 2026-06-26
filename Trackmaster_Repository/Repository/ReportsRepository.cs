@@ -2146,7 +2146,7 @@ ORDER BY datadate";
                                     DataTable dt = new DataTable();
                                     dt.Load(dr);
 
-                                    obj.poisCovered = dt.Rows.Count;
+                                    //obj.poisCovered = dt.Rows.Count;
 
                                     for (int i = 0; i < dt.Rows.Count; i++)
                                     {
@@ -2231,6 +2231,7 @@ ORDER BY datadate";
                         }
 
                         obj.poisCoveredList = obj.poisCoveredList;
+                        obj.poisCovered = obj.poisCoveredList.Count();
 
                         return obj;
                     });
