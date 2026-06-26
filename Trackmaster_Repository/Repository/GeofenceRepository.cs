@@ -554,30 +554,50 @@ namespace Trackmaster_Repository.Repository
             }
         }
 
-        public async Task<(List<GeoFenceViolation> Data, int TotalCount)> GetGeoFenceViolationReport(DataTableRequestModel requestModel, string bbid)
-
-        {
+        public async Task<(List<GeoFenceViolation> Data, int TotalCount)> GetGeoFenceViolationReport(
+    DataTableRequestModel requestModel,
+    string bbid)
+          {
             var result = new List<GeoFenceViolation>();
             int totalCount = 0;
+
             DateTime start = DateTime.Parse(requestModel.beginDate);
             DateTime end = DateTime.Parse(requestModel.endDate);
+
             string bgdate = start.ToString("yyyy-MM-dd HH:mm:ss");
             string eddate = end.ToString("yyyy-MM-dd HH:mm:ss");
+
             using var con = new SqlConnection(_connectionString43);
             await con.OpenAsync();
 
             using var cmd = new SqlCommand("New_TM_GeoFenceVehicle", con);
-            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.CommandType = CommandType.StoredProcedure;   
 
             cmd.Parameters.AddWithValue("@LowerBand", requestModel.iDisplayStart);
+            cmd.Parameters.AddWithValue("@UpperBand", requestModel.iDisplayStart + requestModel.iDisplayLength);
             cmd.Parameters.AddWithValue("@custId", requestModel.CustId);
-            cmd.Parameters.AddWithValue("@UpperBand", requestModel.iDisplayLength);
-            SqlParameter itemCountParam = new SqlParameter("@itemcount", SqlDbType.Int);
-            cmd.Parameters.Add("@BBid", SqlDbType.VarChar).Value = string.IsNullOrWhiteSpace(bbid) || bbid == "null" ? DBNull.Value : bbid;
-            cmd.Parameters.Add("@searchText", SqlDbType.VarChar).Value = string.IsNullOrWhiteSpace(requestModel.sSearch) || requestModel.sSearch == "null" ? DBNull.Value : requestModel.sSearch;
-            itemCountParam.Direction = ParameterDirection.Output;
+
+            cmd.Parameters.Add("@BBid", SqlDbType.VarChar).Value =
+                string.IsNullOrWhiteSpace(bbid) || bbid == "null"
+                    ? DBNull.Value
+                    : bbid;
+
+            cmd.Parameters.Add("@searchText", SqlDbType.VarChar).Value =
+                string.IsNullOrWhiteSpace(requestModel.sSearch) || requestModel.sSearch == "null"
+                    ? DBNull.Value
+                    : requestModel.sSearch;
+            cmd.Parameters.AddWithValue("@sortColumn", requestModel.sortColumn);
+            cmd.Parameters.AddWithValue("@sortDirection", requestModel.sortDirection);
+
+            SqlParameter itemCountParam = new SqlParameter("@itemcount", SqlDbType.Int)
+            {
+                Direction = ParameterDirection.Output
+            };
+
             cmd.Parameters.Add(itemCountParam);
+
             var ds = new DataSet();
+
             using (var adapter = new SqlDataAdapter(cmd))
             {
                 adapter.Fill(ds);
@@ -588,14 +608,21 @@ namespace Trackmaster_Repository.Repository
                 : 0;
 
             if (ds.Tables.Count == 0 || ds.Tables[0].Rows.Count == 0)
+            {
                 return (new List<GeoFenceViolation>(), totalCount);
+            }
 
             var tasks = ds.Tables[0].AsEnumerable().Select(async vehicleRow =>
             {
+                string vehicleBBID = GetString(vehicleRow["bbid"]);
 
-                var vehicleBBID = vehicleRow["bbid"]?.ToString() ?? string.Empty;
-
-                var vehicleResult = new List<GeoFenceViolation>();
+                var vehicle = new GeoFenceViolation
+                {
+                    VehicleName = GetString(vehicleRow["vehname"]),
+                    BBID = vehicleBBID,
+                    FenceViolationsCount = 0,
+                    Events = new List<GeoFenceViolationDetail>()
+                };
 
                 using var alertCon = new SqlConnection(_connectionString43);
                 await alertCon.OpenAsync();
@@ -617,25 +644,24 @@ namespace Trackmaster_Repository.Repository
 
                 if (alertDs.Tables.Count > 0 && alertDs.Tables[0].Rows.Count > 0)
                 {
-                    vehicleResult.AddRange(
-                        alertDs.Tables[0].AsEnumerable().Select(row => new GeoFenceViolation
+                    vehicle.FenceViolationsCount = alertDs.Tables[0].Rows.Count;
+
+                    vehicle.Events = alertDs.Tables[0]
+                        .AsEnumerable()
+                        .Select(row => new GeoFenceViolationDetail
                         {
-                            VehicleName = GetString(row["vehname"]),
                             Location = GetString(row["location"]),
                             GeoTime = GetString(row["geotime"]),
                             FenceStatus = GetString(row["fencestatus"]),
-                            fencename = GetString(row["fencename"]),
-                            BBID = vehicleBBID,
-                            FenceViolationsCount = alertDs.Tables[0].Rows.Count,
-                        }));
+                            FenceName = GetString(row["fencename"])
+                        })
+                        .ToList();
                 }
 
-                return vehicleResult;
+                return vehicle;
             });
 
-            result = (await Task.WhenAll(tasks))
-                .SelectMany(x => x)
-                .ToList();
+            result = (await Task.WhenAll(tasks)).ToList();
 
             return (result, totalCount);
         }

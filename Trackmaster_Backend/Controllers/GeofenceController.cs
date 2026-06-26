@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 using Trackmaster_Model;
+using Trackmaster_Service;
 using Trackmaster_Service.Interface;
 
 namespace Trackmaster_Backend.Controllers
@@ -13,10 +14,14 @@ namespace Trackmaster_Backend.Controllers
     {
         private readonly IGeofenceService _geofenceService;
         private readonly IDashboardService _dashboardService;
-        public GeofenceController(IGeofenceService geofenceService, IDashboardService dashboardService)
+        private readonly ImportExportExcelService _importExportExcelService;
+        private readonly ImportExportPdfService _importExportPdfService;
+        public GeofenceController(IGeofenceService geofenceService, IDashboardService dashboardService, ImportExportExcelService importExportExcelService, ImportExportPdfService importExportPdfService)
         {
             _geofenceService = geofenceService;
             _dashboardService = dashboardService;
+            _importExportExcelService = importExportExcelService;
+            _importExportPdfService = importExportPdfService;
         }
         [HttpPost("SaveGeofence")]
         public async Task<IActionResult> SaveGeofence(GeofenceModel model)
@@ -194,29 +199,38 @@ namespace Trackmaster_Backend.Controllers
         [HttpGet("GetGeoFenceViolation")]
         public async Task<IActionResult> GetGeoFenceViolation([FromQuery] DataTableRequestModel requestModel,string bbid)
         {
-            try
+            try    
             {
                 var result = await _geofenceService.GetGeoFenceViolationReport(requestModel, bbid);
 
-                if (result.Data != null && result.Data.Any())
+                if (requestModel.DownloadType == "Excel")
                 {
-                    return Ok(new
-                    {
-                        success = true,
-                        data = result.Data,
-                        recordsTotal = result.TotalCount,
-                        message = "GeoFenceViolation fetched successfully"
-                    });
+                    var fileName = $"GeoFenceViolationReport_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.xlsx";
+                    var stream = await _importExportExcelService.ExportToExcelFlatList(result.Data, fileName, null, null);
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                    Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
+
+                    return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+                }
+                if (requestModel.DownloadType == "Pdf")
+                {
+                    var fileName = $"GeoFenceViolationReport_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
+                    var stream = await _importExportPdfService.ExportToPdfFlatList(result.Data, fileName, null, null);
+                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                    Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
+                    return File(stream, "application/pdf", fileName);
                 }
 
-                return NotFound(new
+                return Ok(new
                 {
-                    success = false,
-                    data = new List<GeoFenceViolation>(),
-                    recordsTotal = 0,
-                    recordsFiltered = 0,
-                    message = "No GeoFenceViolation found"
+                    success = true,
+                    data = result.Data ?? new List<GeoFenceViolation>(),
+                    recordsTotal = result.TotalCount,
+                    message = result.Data.Any()
+                        ? "GeoFenceViolation fetched successfully"
+                        : "No GeoFenceViolation found"
                 });
+
             }
             catch (Exception ex)
             {
@@ -228,6 +242,7 @@ namespace Trackmaster_Backend.Controllers
                 });
             }
         }
+
         [HttpPost("EditPoi")]
         public async Task<IActionResult> EditPoi([FromBody] EditPoiRequest request)
         {

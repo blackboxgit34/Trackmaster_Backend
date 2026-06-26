@@ -48,6 +48,7 @@ namespace Trackmaster_Model
             public int overspeed { get; set; }
             public bool acSignal { get; set; }
             public int immobilizer { get; set; }
+            public string Status { get; set; }
         }
 
         [BsonIgnoreExtraElements]

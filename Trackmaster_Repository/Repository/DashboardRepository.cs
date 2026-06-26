@@ -1,11 +1,13 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using Trackmaster_Model;
 using Trackmaster_Repository.Interface;
+using static Trackmaster_Model.MongoModel;
 using static Trackmaster_Repository.DataTypeHelper;
 
 namespace Trackmaster_Repository.Repository
@@ -13,41 +15,105 @@ namespace Trackmaster_Repository.Repository
     public class DashboardRepository : IDashboardRepository
     {
         private readonly string _connectionString43;
+        private readonly IMongoDatabase _database;
+        private readonly string _connectionString44;
         public DashboardRepository(IConfiguration configuration)
         {
             _connectionString43 = configuration.GetConnectionString("DefaultConnection43");
+            var client = new MongoClient(configuration.GetConnectionString("MongoDb"));
+            _database = client.GetDatabase(configuration["MongoSettings:DatabaseName"]);
+            _connectionString44 = configuration.GetConnectionString("DefaultConnection44");
         }
-        public async Task<VehicleStatus> GetVehicleStatus(int userid)
-        {
-            var model = new VehicleStatus();
+
+        //public async Task<VehicleStatus> GetVehicleStatus(int userid)
+        //{
+        //    var model = new VehicleStatus();
+        //    try
+        //    {
+        //        using var con = new SqlConnection(_connectionString43);
+        //        using var cmd = new SqlCommand("GetVehicleStatusTrackmaster", con);
+        //        cmd.CommandType = CommandType.StoredProcedure;
+        //        cmd.Parameters.AddWithValue("@custid", userid);
+
+        //        await con.OpenAsync();
+        //        using var reader = await cmd.ExecuteReaderAsync();
+        //        if (await reader.ReadAsync())
+        //        {
+        //            model.TotalVehicles = GetInt(reader["TotalVehicles"]);
+        //            model.Moving = GetInt(reader["Moving"]);
+        //            model.HighSpeed = GetInt(reader["HiSpeed"]);
+        //            model.IgnitionON = GetInt(reader["IgnitionOn"]);
+        //            model.Parked = GetInt(reader["Parked"]);
+        //            model.Towed = GetInt(reader["Towed"]);
+        //            model.Unreachable = GetInt(reader["Unreachable"]);
+        //            model.BatteryDisconnect = GetInt(reader["BatteryDisconnect"]);
+        //            model.Breakdown = GetInt(reader["Breakdown"]);
+        //        }
+
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw ex;
+        //    }
+        //    return model;
+        //}
+
+        public async Task<List<VehicleMaster>> GetVehicleStatus(int userid)
+        {           
+            var list = new List<VehicleMaster>();
             try
             {
                 using var con = new SqlConnection(_connectionString43);
-                using var cmd = new SqlCommand("GetVehicleStatusTrackmaster", con);
+                using var cmd = new SqlCommand("GetVehicleStatusTrackmaster_new", con);
                 cmd.CommandType = CommandType.StoredProcedure;
                 cmd.Parameters.AddWithValue("@custid", userid);
 
                 await con.OpenAsync();
                 using var reader = await cmd.ExecuteReaderAsync();
-                if (await reader.ReadAsync())
+                while (await reader.ReadAsync())
                 {
-                    model.TotalVehicles = GetInt(reader["TotalVehicles"]);
-                    model.Moving = GetInt(reader["Moving"]);
-                    model.HighSpeed = GetInt(reader["HiSpeed"]);
-                    model.IgnitionON = GetInt(reader["IgnitionOn"]);
-                    model.Parked = GetInt(reader["Parked"]);
-                    model.Towed = GetInt(reader["Towed"]);
-                    model.Unreachable = GetInt(reader["Unreachable"]);
-                    model.BatteryDisconnect = GetInt(reader["BatteryDisconnect"]);
-                    model.Breakdown = GetInt(reader["Breakdown"]);
+                    list.Add(new VehicleMaster
+                    {
+                        BBID = GetString(reader["BBID"]),
+                    });
                 }
+                reader.Close();
+                var bbids = list.Select(x => x.BBID).Where(x => !string.IsNullOrEmpty(x)).Distinct().ToList();
+                // Mongo Data
+                var liveData = await GetLiveDataByBbids(bbids);
 
+                // Create Dictionary
+                var liveLookup = liveData.ToDictionary(x => x.bbid);
+                foreach (var vehicle in list)
+                {
+                    var live = liveData.FirstOrDefault(x => x.bbid == vehicle.BBID);
+
+                    if (live != null)
+                    {
+                        // Map Mongo fields to VehicleMaster
+                        vehicle.speed = live.speed;
+                        vehicle.lastUpdated = live.datadate;
+                        vehicle.IgnitionStatus = live.ignitionStatus;
+                    }
+                }
             }
             catch (Exception ex)
             {
                 throw ex;
             }
-            return model;
+            return list;
+        }
+
+        public async Task<List<DeviceLiveData>> GetLiveDataByBbids(List<string> bbids)
+        {
+            var collection = _database.GetCollection<DeviceLiveData>("bbmain");
+            // loop here
+
+            var filter = Builders<DeviceLiveData>.Filter.In(x => x.bbid, bbids);
+
+            var result = await collection.Find(filter).ToListAsync();
+
+            return result;
         }
 
         public async Task<VehicleUtilization> GetVehicleUtilization(int userid)
@@ -90,7 +156,7 @@ namespace Trackmaster_Repository.Repository
                 }
                 if (end == DateTime.MinValue)
                 {
-                    end = GetDateTime(DateTime.Today.AddSeconds(-1)) ;
+                    end = GetDateTime(DateTime.Today.AddSeconds(-1));
                 }
                 using var con = new SqlConnection(_connectionString43);
                 using var cmd = new SqlCommand("GetSpeedAnalysisTrackmaster", con);
@@ -219,8 +285,8 @@ namespace Trackmaster_Repository.Repository
                     list.Add(new OverSpeedReport
                     {
                         DateTime = GetDateTime(reader["ReportDay"]).ToString("yyyy-MM-dd"),
-                        overspeedCount =  GetInt(reader["overSpeedCount"]),
-                        OverCustomCount =  GetInt(reader["nonOverSpeed"])
+                        overspeedCount = GetInt(reader["overSpeedCount"]),
+                        OverCustomCount = GetInt(reader["nonOverSpeed"])
                     });
                 }
             }
@@ -269,7 +335,6 @@ namespace Trackmaster_Repository.Repository
 
             return result;
         }
-
 
         public async Task<List<AverageDrivingHours>> GetAverageDrivingHours(int custId)
         {

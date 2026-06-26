@@ -53,15 +53,19 @@ namespace Trackmaster_Model
     }
     public class GeoFenceViolation
     {
-        public int id { get; set; }
-        public String VehicleName { get; set; }
-        public String Location { get; set; }
-        public String GeoTime { get; set; }
-        public String FenceStatus { get; set; }
+        public string VehicleName { get; set; }
         public string BBID { get; set; }
-        public int Speed { get; set; }
-        public String fencename { get; set; }
         public int FenceViolationsCount { get; set; }
+
+        public List<GeoFenceViolationDetail> Events { get; set; } = new List<GeoFenceViolationDetail>();
+    }
+
+    public class GeoFenceViolationDetail
+    {
+        public string Location { get; set; }
+        public string GeoTime { get; set; }
+        public string FenceStatus { get; set; }
+        public string FenceName { get; set; }
     }
 
     public class ManagePoiResponse

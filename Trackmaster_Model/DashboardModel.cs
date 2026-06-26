@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using static Trackmaster_Model.MongoModel;
 
 namespace Trackmaster_Model
 {
@@ -12,7 +13,8 @@ namespace Trackmaster_Model
     {
         public bool IsSuccess { get; set; }
         public string Message { get; set; }
-        public VehicleStatus vehicleStatus { get; set; } = new VehicleStatus();
+        //public VehicleStatus vehicleStatus { get; set; } = new VehicleStatus();
+        public List<VehicleMaster> vehicleStatus { get; set; } = new List<VehicleMaster>();
         public VehicleUtilization vehicleUtilization { get; set; } = new VehicleUtilization();
         public SpeedAnalysis speedAnalysis { get; set; } = new SpeedAnalysis();
         public List<VehicleList> vehicleList { get; set; } = new List<VehicleList>();

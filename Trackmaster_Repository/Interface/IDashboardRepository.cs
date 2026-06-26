@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Trackmaster_Model;
+using static Trackmaster_Model.MongoModel;
 
 namespace Trackmaster_Repository.Interface
 {
     public interface IDashboardRepository
     {
-        Task<VehicleStatus> GetVehicleStatus(int userid);
+        Task<List<VehicleMaster>> GetVehicleStatus(int userid);
         Task<VehicleUtilization> GetVehicleUtilization(int userid);
         Task<SpeedAnalysis> GetSpeedAnalysis(int userid, DateTime start, DateTime end);
         Task<List<VehicleList>> GetAllVehicleListByCustId(int userid);
