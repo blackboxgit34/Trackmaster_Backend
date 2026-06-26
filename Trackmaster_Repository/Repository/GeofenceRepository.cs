@@ -682,9 +682,9 @@ namespace Trackmaster_Repository.Repository
                 cmd.Parameters.AddWithValue("@longi", request.Longitude.HasValue ? request.Longitude.Value : DBNull.Value);
                 cmd.Parameters.AddWithValue("@details", string.IsNullOrWhiteSpace(request.Details) ? DBNull.Value : request.Details);
                 cmd.Parameters.AddWithValue("@radius", string.IsNullOrWhiteSpace(request.Radius) ? DBNull.Value : request.Radius);
-                var affectedRows = await cmd.ExecuteNonQueryAsync();
+                var rows = await cmd.ExecuteNonQueryAsync();
 
-                return affectedRows > 0;
+                return rows > 0;
             }
             catch (Exception ex)
             {

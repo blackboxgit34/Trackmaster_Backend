@@ -244,7 +244,7 @@ namespace Trackmaster_Backend.Controllers
         }
 
         [HttpPost("EditPoi")]
-        public async Task<IActionResult> EditPoi([FromBody] EditPoiRequest request)
+        public async Task<IActionResult> EditPoi([FromQuery] EditPoiRequest request)
         {
             try
             {
