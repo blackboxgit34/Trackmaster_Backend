@@ -1,5 +1,4 @@
-﻿using HMSCL.Models;
-using Trackmaster_Model;
+﻿using Trackmaster_Model;
 
 namespace Trackmaster_Repository.Interface
 {

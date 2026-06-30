@@ -1,4 +1,4 @@
-﻿namespace HMSCL.Models
+﻿namespace Trackmaster_Model
 {
     public class LoginUser
     {
