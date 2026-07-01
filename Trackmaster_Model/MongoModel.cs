@@ -49,6 +49,7 @@ namespace Trackmaster_Model
             public bool acSignal { get; set; }
             public int immobilizer { get; set; }
             public string Status { get; set; }
+            public int alertsCount { get; set; }
         }
 
         [BsonIgnoreExtraElements]

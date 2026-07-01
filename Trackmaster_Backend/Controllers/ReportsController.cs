@@ -615,8 +615,8 @@ namespace Trackmaster_Backend.Controllers
             {
                 var fileName = $"GetEntryExitReport_{model.beginDate:yyyyMMdd}_to_{model.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.xlsx";
                 var stream = await _importExportExcelService.ExportToExcelFlatList(stoppage.vehicleList, fileName, null, null);
-                Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
-                Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
+                //Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                //Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
 
                 return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }
@@ -624,8 +624,8 @@ namespace Trackmaster_Backend.Controllers
             {
                 var fileName = $"GetEntryExitReport_{model.beginDate:yyyyMMdd}_to_{model.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
                 var stream = await _importExportPdfService.ExportToPdfFlatList(stoppage.vehicleList, fileName, null, null);
-                Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
-                Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
+                //Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
+                //Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
                 return File(stream, "application/pdf", fileName);
             }
 

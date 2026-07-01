@@ -45,7 +45,8 @@ builder.Services.AddCors(options =>
         {
             policy.AllowAnyOrigin()
                   .AllowAnyHeader()
-                  .AllowAnyMethod();
+                  .AllowAnyMethod()
+                  .WithExposedHeaders("Content-Disposition");
         });
 });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

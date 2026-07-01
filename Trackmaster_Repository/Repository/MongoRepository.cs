@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Driver;
@@ -77,6 +78,8 @@ namespace Trackmaster_Repository.Repository
 
                 // Create Dictionary
                 var liveLookup = liveData.ToDictionary(x => x.bbid);
+                DateTime beginDate = DateTime.Today;     
+                DateTime endDate = DateTime.Now;
                 foreach (var vehicle in list)
                 {
                     var live = liveData.FirstOrDefault(x => x.bbid == vehicle.BBID);
@@ -121,6 +124,19 @@ namespace Trackmaster_Repository.Repository
                         // ✅ no mongo data — ALWAYS Unreachable, not just when filtering
                         vehicle.Status = "Unreachable";
                     }
+                    // ✅ Battery disconnection alert count per bbid (bbid used as table name)
+                    if (!string.IsNullOrEmpty(vehicle.BBID))
+                    {
+                        try
+                        {
+                            vehicle.alertsCount = BatteryDisconnectionCount(beginDate, endDate, vehicle.BBID);
+                        }
+                        catch
+                        {
+                            // table may not exist for this bbid, etc. — keep count 0
+                            vehicle.alertsCount = 0;
+                        }
+                    }
                 }
 
                 //totalCount = itemCountParam.Value == DBNull.Value ? 0 : Convert.ToInt32(itemCountParam.Value);
@@ -135,12 +151,8 @@ namespace Trackmaster_Repository.Repository
                     // ✅ normal flow — SP handles paging
                     totalCount = itemCountParam.Value == DBNull.Value ? 0 : Convert.ToInt32(itemCountParam.Value);
                 }
-
-
                 // ✅ normal flow — SP handles paging, use SP output count
                 totalCount = itemCountParam.Value == DBNull.Value ? 0 : Convert.ToInt32(itemCountParam.Value);
-
-
                 if (list.Count > 0)
                 {
                     list[0].TotalRecords = totalCount;
@@ -214,6 +226,56 @@ namespace Trackmaster_Repository.Repository
             //    return "High Speed";
 
             return "Unknown";
+        }
+
+        public int BatteryDisconnectionCount(DateTime beginDate, DateTime endDate, string tblName)
+        {
+            string p1 = beginDate.ToString("yyyy.MM.dd HH:mm:ss");
+            string p2 = endDate.ToString("yyyy.MM.dd HH:mm:ss");
+            try
+            {
+                int count = 0;
+                bool flag = false;
+
+                using var con = new SqlConnection(_connectionString43);
+                using var cmd = new SqlCommand(
+                    "SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; " +
+                    "select vehbatvoltage, datadate from " + tblName +
+                    " where datadate between '" + p1 + "' and '" + p2 + "' order by datadate asc", con);
+                cmd.CommandType = CommandType.Text;
+
+                con.Open();
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    int volt = Convert.ToInt32(reader["vehbatvoltage"]);
+
+                    if (volt < 5 && flag == false)
+                    {
+                        // start of a disconnection
+                        flag = true;
+                    }
+                    else if (volt >= 5 && flag == true)
+                    {
+                        // disconnection ended -> one complete event
+                        count++;
+                        flag = false;
+                    }
+                }
+                reader.Close();
+
+                // still disconnected at end of range -> count the open event
+                if (flag == true)
+                {
+                    count++;
+                }
+
+                return count;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
     }
 }
