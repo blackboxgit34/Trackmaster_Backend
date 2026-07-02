@@ -199,8 +199,6 @@ namespace Trackmaster_Backend.Controllers
                     var reportName = $"SMSNotificationReport_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.xlsx";
                     var exportData = sms?.objSMSReport?.ToList();
                     var stream = await _importExportExcelService.ExportToExcelFlatList(exportData, reportName, null, null);
-                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
-                    Response.Headers["Content-Disposition"] = $"attachment; filename={reportName}";
                     return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", reportName);
                 }
                 // ================= PDF EXPORT =================
@@ -210,10 +208,6 @@ namespace Trackmaster_Backend.Controllers
                     var reportName = $"SMSNotificationReport_{requestModel.beginDate:ddMMMyyyy}_To_{requestModel.endDate:ddMMMyyyy}.pdf";
                     var exportData = sms?.objSMSReport?.ToList();
                     var stream = await _importExportPdfService.ExportToPdfFlatList(exportData, reportName, null, null);
-                    //  IMPORTANT: expose header to frontend
-                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
-                    //  IMPORTANT: force filename into response header
-                    Response.Headers["Content-Disposition"] = $"attachment; filename={reportName}";
                     return File(stream, "application/pdf", reportName);
                 }
                 // ================= NORMAL RESPONSE =================
@@ -271,8 +265,6 @@ namespace Trackmaster_Backend.Controllers
                     var exportData = consIgnition.ConsolidatedIgnitionList.ToList();
 
                     var stream = await _importExportExcelService.ExportToExcelFlatList(exportData, fileName, null, null);
-                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
-                    Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
                     return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
                 }
 
@@ -282,11 +274,6 @@ namespace Trackmaster_Backend.Controllers
                     var fileName = $"Ignition On/Off Analysis_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
                     var exportData = consIgnition.ConsolidatedIgnitionList.ToList();
                     var stream = await _importExportPdfService.ExportToPdfFlatList(exportData, "Ignition On/Off Analysis Report", fileName, bbid);
-                    // expose header to frontend
-                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
-                    // force filename into response header
-                    Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
-
                     return File(stream, "application/pdf", fileName);
                 }
 
