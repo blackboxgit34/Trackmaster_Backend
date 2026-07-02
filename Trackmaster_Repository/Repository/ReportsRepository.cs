@@ -2187,7 +2187,7 @@ ORDER BY datadate";
                                         poiTable.Load(dr);
                                     }
 
-                                    obj.poisCovered = poiTable.Rows.Count;
+                                    obj.Totalpois = poiTable.Rows.Count;
 
                                     foreach (DataRow poiRow in poiTable.Rows)
                                     {
@@ -2231,7 +2231,6 @@ ORDER BY datadate";
 
                         obj.poisCoveredList = obj.poisCoveredList;
                         obj.poisCovered = obj.poisCoveredList.Count();
-
                         return obj;
                     });
 

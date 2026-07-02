@@ -304,7 +304,7 @@ namespace Trackmaster_Model
             public int poisCovered { get; set; }
             public String Bbid { get; set; }
 
-            //public int Totalpois { get; set; }
+            public int Totalpois { get; set; }
 
             public List<POIEntryExitModel> poisCoveredList { get; set; }
         }

@@ -202,25 +202,18 @@ namespace Trackmaster_Backend.Controllers
             try    
             {
                 var result = await _geofenceService.GetGeoFenceViolationReport(requestModel, bbid);
-
                 if (requestModel.DownloadType == "Excel")
                 {
                     var fileName = $"GeoFenceViolationReport_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.xlsx";
                     var stream = await _importExportExcelService.ExportToExcelFlatList(result.Data, fileName, null, null);
-                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
-                    Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
-
                     return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
                 }
                 if (requestModel.DownloadType == "Pdf")
                 {
                     var fileName = $"GeoFenceViolationReport_{requestModel.beginDate:yyyyMMdd}_to_{requestModel.endDate:yyyyMMdd}_{DateTime.Now:HHmmss}.pdf";
                     var stream = await _importExportPdfService.ExportToPdfFlatList(result.Data, fileName, null, null);
-                    Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
-                    Response.Headers["Content-Disposition"] = $"attachment; filename={fileName}";
                     return File(stream, "application/pdf", fileName);
                 }
-
                 return Ok(new
                 {
                     success = true,
@@ -230,7 +223,6 @@ namespace Trackmaster_Backend.Controllers
                         ? "GeoFenceViolation fetched successfully"
                         : "No GeoFenceViolation found"
                 });
-
             }
             catch (Exception ex)
             {
