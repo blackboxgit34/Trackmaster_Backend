@@ -67,7 +67,7 @@ namespace Trackmaster_Repository.Repository
                         MobNo = GetString(reader["Mob_No"]),
                         Type = GetString(reader["type"]),
                         model = GetString(reader["model"]),
-                        overspeed = GetInt(reader["overspeed"]),
+                       
 
                     });
                 }
@@ -90,7 +90,7 @@ namespace Trackmaster_Repository.Repository
                         vehicle.lat = live.latitude;
                         vehicle.lng = live.longitude;
                         vehicle.speed = live.speed;
-                        vehicle.lastUpdated = live.datadate;
+                        vehicle.lastUpdated = live.dataDate;
                         vehicle.location = live.location;
                         vehicle.gsmSignal = live.gsmsignal;
                         vehicle.gpsAntConStatus = live.gsmsignal;
@@ -101,6 +101,25 @@ namespace Trackmaster_Repository.Repository
                         vehicle.RemainingFuelLevel = live.fuelLevel;
                         vehicle.acSignal = live.acSignal;
                         vehicle.immobilizer = live.immobilizer;
+                        vehicle.distance = live.distance;
+                        vehicle.distance0h = live.distance0h;
+                        var wHour = live.ioJson?.wHour ?? 0;
+                        var wHour0h = live.ioJson?.wHour0h ?? 0;
+                        vehicle.wHour = wHour;
+                        vehicle.wHour0h = wHour0h;
+                        vehicle.BBID= live.bbid;
+                        vehicle.VehName= live.vehName;
+                        vehicle.overSpeedLimit = live.overSpeedLimit;
+
+                        // ✅ Today's distance = total distance - distance at 00:00
+                        vehicle.todayDistance = live.distance >= live.distance0h
+                            ? Math.Round(live.distance - live.distance0h, 2)
+                            : 0;
+
+                        // ✅ Today's running hours = total wHour - wHour at 00:00
+                        vehicle.todayWHour = wHour >= wHour0h
+                             ? Math.Round(wHour - wHour0h, 2)
+                                        : 0;
 
                         // Step 4: ComputeStatus called ONLY when status filter is active
                         if (!string.IsNullOrEmpty(model.Status))
@@ -109,8 +128,8 @@ namespace Trackmaster_Repository.Repository
                                 live.speed,
                                 live.ignitionStatus,
                                 //live.currIgnitionStatus,
-                                live.datadate,
-                                vehicle.overspeed
+                                live.dataDate,
+                                vehicle.overSpeedLimit
                             );
                         }
 
@@ -167,7 +186,7 @@ namespace Trackmaster_Repository.Repository
 
         public async Task<List<DeviceLiveData>> GetLiveDataByBbids(List<string> bbids)
         {
-            var collection = _database.GetCollection<DeviceLiveData>("bbmain");
+            var collection = _database.GetCollection<DeviceLiveData>("LiveStatus");
             // loop here
 
             var filter = Builders<DeviceLiveData>.Filter.In(x => x.bbid, bbids);
@@ -252,7 +271,7 @@ namespace Trackmaster_Repository.Repository
 
                     if (volt < 5 && flag == false)
                     {
-                        // start of a disconnection
+                        // start of a disconnection   
                         flag = true;
                     }
                     else if (volt >= 5 && flag == true)

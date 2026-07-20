@@ -36,7 +36,7 @@ namespace Trackmaster_Model
             public string LastDateTime { get; set; }
 
             public string DisconnectedData { get; set; }
-            public string distance { get; set; }
+
 
             public int gpsAntConStatus { get; set; }
             public bool GPSFix { get; set; }
@@ -45,11 +45,18 @@ namespace Trackmaster_Model
             public int deviceBattery { get; set; }
             public string Type { get; set; }
             public string model { get; set; }
-            public int overspeed { get; set; }
+            public int overSpeedLimit { get; set; }
             public bool acSignal { get; set; }
             public int immobilizer { get; set; }
             public string Status { get; set; }
             public int alertsCount { get; set; }
+            public Double distance0h { get; set; }
+            public Double distance { get; set; }
+            public double todayDistance { get; set; }
+            public double todayWHour { get; set; }
+            public double wHour { get; set; }
+            public double wHour0h { get; set; }
+
         }
 
         [BsonIgnoreExtraElements]
@@ -63,17 +70,35 @@ namespace Trackmaster_Model
             public double latitude { get; set; }
             public double longitude { get; set; }
             public int speed { get; set; }
-            public DateTime datadate { get; set; }
+            public DateTime dataDate { get; set; }
             public int gsmsignal { get; set; }
             public bool hasfix { get; set; }
             public bool ignitionStatus { get; set; }
             public double vehicleBatteryVoltage { get; set; }
             public int vtsBatteryLevel { get; set; }
             public string location { get; set; }
-
             public double fuelLevel { get; set; }
             public bool acSignal { get; set; }
             public int immobilizer { get; set; }
+            public Double distance0h { get; set; }
+            public Double distance { get; set; }
+            public string vehName { get; set; }
+            public int overSpeedLimit { get; set; }
+
+            [BsonElement("ioJson")]
+            public IoJsonData ioJson { get; set; }
+        }
+
+
+        [BsonIgnoreExtraElements]
+        public class IoJsonData
+        {
+            [BsonElement("wHour")]
+            public double wHour { get; set; }
+
+            [BsonElement("wHour0h")]
+            public double wHour0h { get; set; }
+
         }
     }
 }

@@ -92,8 +92,9 @@ namespace Trackmaster_Repository.Repository
                     {
                         // Map Mongo fields to VehicleMaster
                         vehicle.speed = live.speed;
-                        vehicle.lastUpdated = live.datadate;
+                        vehicle.lastUpdated = live.dataDate;
                         vehicle.IgnitionStatus = live.ignitionStatus;
+                        vehicle.overSpeedLimit = live.overSpeedLimit;
                     }
                 }
             }
@@ -106,7 +107,7 @@ namespace Trackmaster_Repository.Repository
 
         public async Task<List<DeviceLiveData>> GetLiveDataByBbids(List<string> bbids)
         {
-            var collection = _database.GetCollection<DeviceLiveData>("bbmain");
+            var collection = _database.GetCollection<DeviceLiveData>("LiveStatus");
             // loop here
 
             var filter = Builders<DeviceLiveData>.Filter.In(x => x.bbid, bbids);
