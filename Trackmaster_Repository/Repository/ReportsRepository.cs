@@ -2099,7 +2099,7 @@ ORDER BY datadate";
                     {
                         dataT.Load(dr);
                     }
-
+                    await con.CloseAsync();
                     modelObj.PageCount =GetInt(cmd.Parameters["@ItemCount"].Value);
                 }
 

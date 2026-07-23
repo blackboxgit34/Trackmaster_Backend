@@ -189,6 +189,7 @@ namespace Trackmaster_Repository.Repository
                     poiCmd.Parameters.AddWithValue("@custid", custid);
                     var poiCount = GetInt(await poiCmd.ExecuteScalarAsync());
                     await tran.CommitAsync();
+                    await con.CloseAsync();
 
                     //if (string.IsNullOrEmpty(LOC))
                     //{
@@ -232,6 +233,7 @@ namespace Trackmaster_Repository.Repository
                     cmd.Parameters.AddWithValue("@radius", radius);
                     var affectedRows = GetInt(await cmd.ExecuteScalarAsync());
                     await tran.CommitAsync();
+                    await con.CloseAsync();
                     if (affectedRows > 0)
                     {
                         return true;
@@ -282,7 +284,7 @@ namespace Trackmaster_Repository.Repository
                         poitype = GetString(reader["poitype"])
                     });
                 }
-
+                await con.CloseAsync();
                 return poiList;
             }
             catch (Exception ex)
@@ -603,6 +605,7 @@ namespace Trackmaster_Repository.Repository
                 adapter.Fill(ds);
             }
 
+            await con.CloseAsync();
             totalCount = itemCountParam.Value != DBNull.Value
                 ? Convert.ToInt32(itemCountParam.Value)
                 : 0;
@@ -641,7 +644,7 @@ namespace Trackmaster_Repository.Repository
                 {
                     alertAdapter.Fill(alertDs);
                 }
-
+                await con.CloseAsync();
                 if (alertDs.Tables.Count > 0 && alertDs.Tables[0].Rows.Count > 0)
                 {
                     vehicle.FenceViolationsCount = alertDs.Tables[0].Rows.Count;

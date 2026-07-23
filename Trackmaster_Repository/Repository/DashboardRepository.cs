@@ -78,6 +78,7 @@ namespace Trackmaster_Repository.Repository
                     });
                 }
                 reader.Close();
+                await con.CloseAsync();
                 var bbids = list.Select(x => x.BBID).Where(x => !string.IsNullOrEmpty(x)).Distinct().ToList();
                 // Mongo Data
                 var liveData = await GetLiveDataByBbids(bbids);
@@ -235,6 +236,7 @@ namespace Trackmaster_Repository.Repository
                         Type = GetString(reader["Type"])
                     });
                 }
+                await con.CloseAsync();
             }
             catch (Exception ex)
             {
@@ -290,6 +292,7 @@ namespace Trackmaster_Repository.Repository
                         OverCustomCount = GetInt(reader["nonOverSpeed"])
                     });
                 }
+                await con.CloseAsync();
             }
             catch (Exception ex)
             {
@@ -360,14 +363,13 @@ namespace Trackmaster_Repository.Repository
                     });
 
                 }
+                await con.CloseAsync();
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Error: " + ex.Message);
             }
             return list;
-
-
         }
     }
 }

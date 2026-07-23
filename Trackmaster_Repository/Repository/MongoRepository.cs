@@ -72,6 +72,7 @@ namespace Trackmaster_Repository.Repository
                     });
                 }
                 reader.Close();
+                await con.CloseAsync();
                 var bbids = list.Select(x => x.BBID).Where(x => !string.IsNullOrEmpty(x)).Distinct().ToList();
                 // Mongo Data
                 var liveData = await GetLiveDataByBbids(bbids);
