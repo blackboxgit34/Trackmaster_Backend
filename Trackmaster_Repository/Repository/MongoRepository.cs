@@ -105,22 +105,27 @@ namespace Trackmaster_Repository.Repository
                         vehicle.distance = live.distance;
                         vehicle.distance0h = live.distance0h;
                         var wHour = live.ioJson?.wHour ?? 0;
-                        var wHour0h = live.ioJson?.wHour0h ?? 0;
+                        var wHour0h = live.ioJson0h?.wHour ?? 0;
                         vehicle.wHour = wHour;
                         vehicle.wHour0h = wHour0h;
                         vehicle.BBID= live.bbid;
                         vehicle.VehName= live.vehName;
                         vehicle.overSpeedLimit = live.overSpeedLimit;
-
                         // ✅ Today's distance = total distance - distance at 00:00
                         vehicle.todayDistance = live.distance >= live.distance0h
                             ? Math.Round(live.distance - live.distance0h, 2)
                             : 0;
-
                         // ✅ Today's running hours = total wHour - wHour at 00:00
+                        //vehicle.todayWHour = wHour >= wHour0h
+                        //     ? Math.Round(wHour - wHour0h, 2)
+                        //                : 0;
+
+
+                        // ✅ Today's running hours = current wHour - wHour captured at 00:00
                         vehicle.todayWHour = wHour >= wHour0h
-                             ? Math.Round(wHour - wHour0h, 2)
-                                        : 0;
+                            ? Math.Round(wHour - wHour0h, 2)
+                            : 0;
+
 
                         // Step 4: ComputeStatus called ONLY when status filter is active
                         if (!string.IsNullOrEmpty(model.Status))
@@ -133,7 +138,6 @@ namespace Trackmaster_Repository.Repository
                                 vehicle.overSpeedLimit
                             );
                         }
-
                         //if (vehicle.RemainingFuelLevel > 0)
                         //{
                         //    int y = 0;
@@ -158,7 +162,6 @@ namespace Trackmaster_Repository.Repository
                         }
                     }
                 }
-
                 //totalCount = itemCountParam.Value == DBNull.Value ? 0 : Convert.ToInt32(itemCountParam.Value);
                 if (!string.IsNullOrEmpty(model.Status))
                 {

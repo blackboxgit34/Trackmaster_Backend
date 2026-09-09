@@ -87,6 +87,9 @@ namespace Trackmaster_Model
 
             [BsonElement("ioJson")]
             public IoJsonData ioJson { get; set; }
+
+            [BsonElement("ioJson0h")]
+            public IoJsonData ioJson0h { get; set; }
         }
 
 
@@ -95,9 +98,6 @@ namespace Trackmaster_Model
         {
             [BsonElement("wHour")]
             public double wHour { get; set; }
-
-            [BsonElement("wHour0h")]
-            public double wHour0h { get; set; }
 
         }
     }
